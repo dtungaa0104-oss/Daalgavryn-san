@@ -370,3 +370,16 @@ def ai_generate():
     )
     
     return jsonify({"content": message.content[0].text})
+import anthropic
+
+@app.route("/api/ai-generate", methods=["POST"])
+def ai_generate():
+    data   = request.json
+    prompt = data.get("prompt", "")
+    client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+    msg    = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=4000,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return jsonify({"content": msg.content[0].text})
