@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}{% if q %}Засах{% else %}Даалгавар нэмэх{% endif %} — Admin{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo">⚙ Admin</div>
+    <nav class="sidebar-nav">
+      <a href="/admin" class="slink">📊 Хяналтын самбар</a>
+      <a href="/admin/add" class="slink active">➕ Даалгавар нэмэх</a>
+      <a href="/admin/list" class="slink">📋 Жагсаалт</a>
+      <a href="/" class="slink">🌐 Сайт харах</a>
+      <a href="/admin/logout" class="slink logout">🚪 Гарах</a>
+    </nav>
+  </aside>
+
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <h1>{% if q %}Даалгавар засах <span class="mono">#{{ q.id }}</span>{% else %}Шинэ даалгавар нэмэх{% endif %}</h1>
+    </div>
+
+    <form method="POST" class="add-form" action="{% if q %}/admin/edit/{{ q.id }}{% else %}/admin/add{% endif %}">
+      <div class="form-grid">
+
+        <div class="field-group">
+          <label>Анги <span class="req">*</span></label>
+          <select name="grade" required>
+            {% for g in range(1,13) %}
+            <option value="{{ g }}" {% if q and q.grade==g %}selected{% endif %}>{{ g }}-р анги</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label>Хичээл <span class="req">*</span></label>
+          <select name="subject" required>
+            {% for key, subjs in subjects.items() %}
+              {% for s in subjs %}
+              <option value="{{ s }}" {% if q and q.subject==s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label>Хүндрэлийн түвшин <span class="req">*</span></label>
+          <select name="difficulty" required>
+            {% for d in difficulties %}
+            <option value="{{ d }}" {% if q and q.difficulty==d %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label>Блумын шат <span class="req">*</span></label>
+          <select name="bloom" required>
+            {% for b in blooms %}
+            <option value="{{ b }}" {% if q and q.bloom==b %}selected{% endif %}>{{ b }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label>Даалгаврын төрөл <span class="req">*</span></label>
+          <select name="q_type" id="q_type" required onchange="toggleOptions()">
+            {% for t in q_types %}
+            <option value="{{ t }}" {% if q and q.q_type==t %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label>Сэдэв</label>
+          <input type="text" name="topic" placeholder="Жишээ: Тэгшитгэл" value="{{ q.topic if q else '' }}" />
+        </div>
+
+      </div>
+
+      <div class="field-group full">
+        <label>Даалгаврын текст <span class="req">*</span></label>
+        <textarea name="question" rows="4" required placeholder="Даалгаврын асуултыг бичнэ үү...">{{ q.question if q else '' }}</textarea>
+      </div>
+
+      <div id="options-section" class="options-grid">
+        <div class="field-group">
+          <label>А хариулт</label>
+          <input type="text" name="option_a" placeholder="А сонголт" value="{{ q.option_a if q else '' }}" />
+        </div>
+        <div class="field-group">
+          <label>Б хариулт</label>
+          <input type="text" name="option_b" placeholder="Б сонголт" value="{{ q.option_b if q else '' }}" />
+        </div>
+        <div class="field-group">
+          <label>В хариулт</label>
+          <input type="text" name="option_c" placeholder="В сонголт" value="{{ q.option_c if q else '' }}" />
+        </div>
+        <div class="field-group">
+          <label>Г хариулт</label>
+          <input type="text" name="option_d" placeholder="Г сонголт" value="{{ q.option_d if q else '' }}" />
+        </div>
+      </div>
+
+      <div class="field-group" style="max-width:200px">
+        <label>Зөв хариулт</label>
+        <select name="answer">
+          {% for ans in ['А','Б','В','Г'] %}
+          <option value="{{ ans }}" {% if q and q.answer==ans %}selected{% endif %}>{{ ans }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+          {% if q %}💾 Хадгалах{% else %}✦ Нэмэх{% endif %}
+        </button>
+        <a href="/admin/list" class="btn btn-outline">Цуцлах</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function toggleOptions() {
+  const type = document.getElementById('q_type').value;
+  const sec  = document.getElementById('options-section');
+  sec.style.display = type === 'Нээлттэй' ? 'none' : 'grid';
+}
+toggleOptions();
+</script>
+{% endblock %}

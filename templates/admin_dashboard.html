@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Admin — Хяналтын самбар{% endblock %}
+{% block content %}
+<div class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo">⚙ Admin</div>
+    <nav class="sidebar-nav">
+      <a href="/admin" class="slink active">📊 Хяналтын самбар</a>
+      <a href="/admin/add" class="slink">➕ Даалгавар нэмэх</a>
+      <a href="/admin/list" class="slink">📋 Даалгаврын жагсаалт</a>
+      <a href="/" class="slink">🌐 Сайт харах</a>
+      <a href="/admin/logout" class="slink logout">🚪 Гарах</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <h1>Хяналтын самбар</h1>
+      <a href="/admin/add" class="btn btn-primary btn-sm">➕ Шинэ даалгавар</a>
+    </div>
+
+    <!-- Stats -->
+    <div class="admin-stats">
+      <div class="astat-card">
+        <span class="astat-num">{{ total }}</span>
+        <span class="astat-label">Нийт даалгавар</span>
+      </div>
+      {% for row in by_diff %}
+      <div class="astat-card">
+        <span class="astat-num diff-{{ row.difficulty }}">{{ row.cnt }}</span>
+        <span class="astat-label">{{ row.difficulty }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Subject breakdown -->
+    <div class="admin-section">
+      <h2>Хичээлээр</h2>
+      <div class="subj-bars">
+        {% set max_cnt = by_sub[0].cnt if by_sub else 1 %}
+        {% for row in by_sub %}
+        <div class="sbar-row">
+          <span class="sbar-label">{{ row.subject }}</span>
+          <div class="sbar-wrap">
+            <div class="sbar-fill" style="width:{{ (row.cnt / max_cnt * 100)|int }}%">{{ row.cnt }}</div>
+          </div>
+        </div>
+        {% endfor %}
+        {% if not by_sub %}
+        <p class="muted-text">Одоохондоо даалгавар байхгүй байна.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Recent -->
+    <div class="admin-section">
+      <h2>Сүүлд нэмэгдсэн</h2>
+      {% if recent %}
+      <table class="admin-table">
+        <thead><tr><th>#</th><th>Анги</th><th>Хичээл</th><th>Хүндрэл</th><th>Даалгавар</th><th></th></tr></thead>
+        <tbody>
+          {% for q in recent %}
+          <tr>
+            <td class="mono">{{ q.id }}</td>
+            <td>{{ q.grade }}-р</td>
+            <td>{{ q.subject }}</td>
+            <td><span class="q-diff diff-{{ q.difficulty }}">{{ q.difficulty }}</span></td>
+            <td class="q-preview">{{ q.question[:60] }}{% if q.question|length > 60 %}…{% endif %}</td>
+            <td>
+              <a href="/admin/edit/{{ q.id }}" class="btn btn-sm btn-outline">Засах</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <a href="/admin/list" class="btn btn-outline btn-sm" style="margin-top:.8rem">Бүгдийг харах →</a>
+      {% else %}
+      <div class="empty-state" style="height:120px">
+        <p>Даалгавар байхгүй байна. <a href="/admin/add">Эхнийхийг нэмэх →</a></p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

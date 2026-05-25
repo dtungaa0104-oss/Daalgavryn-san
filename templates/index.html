@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Орхонтуул ЕБС — Нүүр хуудас{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-label">БҮРЭН ДУНД БОЛОВСРОЛЫН</div>
+    <h1 class="hero-title">ДААЛГАВРЫН <br><span class="accent">САН</span></h1>
+    <p class="hero-desc">1–12-р ангийн бүх хичээлийн даалгавар. Улсын болон бусад шалгалтыг блупринтийн дагуу автоматаар үүсгэнэ.</p>
+    <div class="hero-actions">
+      <a href="/questions" class="btn btn-primary">Даалгавар хайх</a>
+      <a href="/blueprint" class="btn btn-outline">Шалгалт үүсгэх</a>
+    </div>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-card"><span class="stat-num" data-target="4820">0</span><span class="stat-label">Нийт даалгавар</span></div>
+    <div class="stat-card"><span class="stat-num" data-target="12">0</span><span class="stat-label">Анги</span></div>
+    <div class="stat-card"><span class="stat-num" data-target="10">0</span><span class="stat-label">Хичээл</span></div>
+    <div class="stat-card"><span class="stat-num" data-target="4">0</span><span class="stat-label">Шалгалтын төрөл</span></div>
+  </div>
+</section>
+
+<!-- Шалгалтын төрлүүд -->
+<section class="exam-types-section">
+  <h2 class="section-title">Шалгалтын <span class="accent">төрлүүд</span></h2>
+  <p class="section-sub">Монгол ЕБС-ийн шалгалтын системийн дагуу</p>
+  <div class="exam-type-cards">
+
+    {% for eid, et in exam_types.items() %}
+    <div class="et-card" style="--et-color: {{ et.color }}">
+      <div class="et-top">
+        <span class="et-icon">{{ et.icon }}</span>
+        <div class="et-grades">
+          {% for g in et.grades %}<span class="et-grade-pill">{{ g }}-р анги</span>{% endfor %}
+        </div>
+      </div>
+      <h3 class="et-name">{{ et.name }}</h3>
+      <p class="et-desc">{{ et.desc }}</p>
+      <div class="et-meta">
+        <span>⏱ {{ et.blueprint.duration }}</span>
+        <span>📊 {{ et.blueprint.total }} даалгавар</span>
+        <span>🎯 {{ et.blueprint.score }} оноо</span>
+      </div>
+      {% if et.blueprint.note %}
+      <div class="et-note">{{ et.blueprint.note }}</div>
+      {% endif %}
+      <a href="/blueprint?exam={{ eid }}" class="btn btn-sm et-btn">Шалгалт үүсгэх →</a>
+    </div>
+    {% endfor %}
+
+  </div>
+</section>
+
+<!-- Ангиар хайх -->
+<section class="grade-nav">
+  <h2 class="section-title">Ангиар <span class="accent">хайх</span></h2>
+  <div class="grade-grid">
+    {% for g in range(1, 13) %}
+    {% set et = exam_types[grade_exam_map.get(g, 'guitsegdel')] %}
+    <a href="/questions?grade={{ g }}" class="grade-box" style="--et-color: {{ et.color }}">
+      <span class="grade-num">{{ g }}</span>
+      <span class="grade-label">{{ g }}-р анги</span>
+      <span class="grade-type-badge">{{ et.icon }} {{ et.name }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('.stat-num[data-target]').forEach(el => {
+  const target = +el.dataset.target;
+  let current = 0;
+  const step = Math.ceil(target / 60);
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = current.toLocaleString();
+    if (current >= target) clearInterval(timer);
+  }, 25);
+});
+</script>
+{% endblock %}

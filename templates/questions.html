@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Даалгавар хайх — Орхонтуул ЕБС{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Даалгаврын <span class="accent">Сан</span></h1>
+  <p>Анги, хичээл, хүндрэлийн түвшин, Блумын шатаар шүүж хайна</p>
+</div>
+
+<div class="filter-panel">
+  <div class="filter-row">
+    <div class="filter-group">
+      <label>Анги</label>
+      <select id="f-grade">
+        {% for g in range(1,13) %}<option value="{{ g }}" {% if request.args.get('grade')|int == g %}selected{% endif %}>{{ g }}-р анги</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Хичээл</label>
+      <select id="f-subject">
+        {% for key, subjs in subjects.items() %}
+          {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Хүндрэл</label>
+      <select id="f-difficulty">
+        <option value="all">Бүгд</option>
+        {% for d in difficulties %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Блумын шат</label>
+      <select id="f-bloom">
+        <option value="all">Бүгд</option>
+        {% for b in blooms %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Тоо</label>
+      <select id="f-count">
+        <option value="10">10</option>
+        <option value="20" selected>20</option>
+        <option value="30">30</option>
+        <option value="40">40</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="loadQuestions()">Хайх</button>
+  </div>
+</div>
+
+<div class="results-bar" id="results-bar" style="display:none">
+  <span id="result-count"></span>
+  <div class="bar-actions">
+    <button class="btn btn-sm btn-outline" onclick="selectAll()">Бүгдийг сонгох</button>
+    <button class="btn btn-sm" onclick="downloadSelected()">⬇ Татах</button>
+  </div>
+</div>
+
+<div class="questions-grid" id="questions-container">
+  <div class="empty-state">
+    <div class="empty-icon">◈</div>
+    <p>Шүүлтүүрээ тохируулаад "Хайх" товчийг дарна уу</p>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+let allQuestions = [];
+let selected = new Set();
+
+async function loadQuestions() {
+  const grade = document.getElementById('f-grade').value;
+  const subject = document.getElementById('f-subject').value;
+  const difficulty = document.getElementById('f-difficulty').value;
+  const bloom = document.getElementById('f-bloom').value;
+  const count = document.getElementById('f-count').value;
+
+  const container = document.getElementById('questions-container');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Татаж байна...</p></div>';
+
+  const res = await fetch(`/api/questions?grade=${grade}&subject=${encodeURIComponent(subject)}&difficulty=${encodeURIComponent(difficulty)}&bloom=${encodeURIComponent(bloom)}&count=${count}`);
+  const data = await res.json();
+  allQuestions = data.questions;
+  selected.clear();
+  renderQuestions(allQuestions);
+}
+
+function renderQuestions(questions) {
+  const container = document.getElementById('questions-container');
+  const bar = document.getElementById('results-bar');
+
+  if (questions.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">○</div><p>Таарах даалгавар олдсонгүй</p></div>';
+    bar.style.display = 'none';
+    return;
+  }
+
+  bar.style.display = 'flex';
+  document.getElementById('result-count').textContent = `${questions.length} даалгавар олдлоо`;
+
+  container.innerHTML = questions.map((q, i) => `
+    <div class="question-card ${selected.has(q.id) ? 'selected' : ''}" id="card-${q.id}" onclick="toggleSelect('${q.id}')">
+      <div class="card-header">
+        <span class="q-id">${q.id}</span>
+        <span class="q-diff diff-${q.difficulty}">${q.difficulty}</span>
+        <span class="q-bloom">${q.bloom}</span>
+        <span class="q-score">${q.score} оноо</span>
+      </div>
+      <div class="card-body">
+        <p class="q-text">${i+1}. ${q.question}</p>
+        ${q.options ? `<div class="q-options">${q.options.map(o => `<span class="q-opt">${o}</span>`).join('')}</div>` : ''}
+      </div>
+      <div class="card-footer">
+        <span class="q-type">${q.type}</span>
+        <span class="q-topic">${q.topic}</span>
+        <div class="check-icon">${selected.has(q.id) ? '✓' : ''}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleSelect(id) {
+  if (selected.has(id)) selected.delete(id);
+  else selected.add(id);
+  const card = document.getElementById(`card-${id}`);
+  card.classList.toggle('selected');
+  card.querySelector('.check-icon').textContent = selected.has(id) ? '✓' : '';
+}
+
+function selectAll() {
+  allQuestions.forEach(q => selected.add(q.id));
+  renderQuestions(allQuestions);
+}
+
+function downloadSelected() {
+  const qs = allQuestions.filter(q => selected.has(q.id));
+  if (qs.length === 0) { alert('Даалгавар сонгоно уу'); return; }
+  
+  let text = `ОРХОНТУУЛ ЕБС — ДААЛГАВРЫН САН\n${'='.repeat(50)}\n\n`;
+  qs.forEach((q, i) => {
+    text += `${i+1}. [${q.difficulty}] [${q.bloom}] ${q.question}\n`;
+    if (q.options) q.options.forEach(o => text += `   ${o}\n`);
+    text += `   Хариулт: ${q.answer}  |  Оноо: ${q.score}\n\n`;
+  });
+
+  const blob = new Blob([text], {type: 'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `daalgavar_${Date.now()}.txt`;
+  a.click();
+}
+
+// Auto-load on page load if grade param exists
+window.onload = () => {
+  const params = new URLSearchParams(location.search);
+  if (params.get('grade')) loadQuestions();
+};
+</script>
+{% endblock %}
