@@ -1,550 +1,84 @@
-<!DOCTYPE html>
-<html lang="mn">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Орхонтуул ЕБС — Нүүр хуудас</title>
-<style>
-/* ═══════════════════════════════════════════
-   ӨНГӨНИЙ СИСТЕМ
-═══════════════════════════════════════════ */
-:root {
-  --green-50:  #EAF3DE;
-  --green-100: #C0DD97;
-  --green-200: #97C459;
-  --green-400: #639922;
-  --green-600: #3B6D11;
-  --green-700: #27500A;
-  --green-800: #173404;
-  --teal-50:   #E1F5EE;
-  --teal-400:  #1D9E75;
-  --teal-600:  #0F6E56;
-  --white:     #ffffff;
-  --text-dark: #173404;
-  --text-mid:  #3B6D11;
-  --text-muted:#639922;
-}
+{% extends "base.html" %}
+{% block title %}Орхонтуул ЕБС — Нүүр хуудас{% endblock %}
+{% block content %}
 
-/* ═══════════════════════════════════════════
-   RESET
-═══════════════════════════════════════════ */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{
-  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
-  background-color: #f0f7e8;
-  background-image:
-    radial-gradient(circle, #97C459 1px, transparent 1px),
-    radial-gradient(circle, #C0DD97 1px, transparent 1px);
-  background-size: 40px 40px, 20px 20px;
-  background-position: 0 0, 10px 10px;
-  min-height:100vh;
-  color:var(--text-dark);
-}
-
-/* ═══════════════════════════════════════════
-   NAVBAR
-═══════════════════════════════════════════ */
-.navbar{
-  background: var(--teal-600);
-  border-bottom: 3px solid var(--green-200);
-  padding: 0 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 60px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.navbar-brand{
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #fff;
-  font-size: 18px;
-  font-weight: 700;
-  text-decoration: none;
-}
-.brand-icon{
-  width: 32px; height: 32px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 8px;
-  display:flex; align-items:center; justify-content:center;
-  font-size: 18px;
-}
-.navbar-sub{
-  font-size: 12px;
-  font-weight: 400;
-  opacity: 0.7;
-  margin-left: 4px;
-}
-.navbar-links{display:flex;gap:4px;}
-.navbar-links a{
-  color: rgba(255,255,255,0.8);
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 6px 14px;
-  border-radius: 6px;
-  transition: all .15s;
-}
-.navbar-links a:hover,
-.navbar-links a.active{
-  background: rgba(255,255,255,0.15);
-  color: #fff;
-}
-
-/* ═══════════════════════════════════════════
-   HERO SECTION — геометр хээтэй
-═══════════════════════════════════════════ */
-.hero{
-  position: relative;
-  overflow: hidden;
-  background: var(--teal-600);
-  padding: 64px 32px 56px;
-  text-align: center;
-}
-/* SVG геометр хээ */
-.hero::before{
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='70'%3E%3Cpolygon points='40,3 76,22 76,60 40,79 4,60 4,22' fill='none' stroke='rgba(151,196,89,0.25)' stroke-width='1'/%3E%3Cpolygon points='40,18 62,30 62,54 40,66 18,54 18,30' fill='none' stroke='rgba(151,196,89,0.15)' stroke-width='0.5'/%3E%3C/svg%3E");
-  background-size: 80px 70px;
-}
-/* Доод давалгаа */
-.hero::after{
-  content: '';
-  position: absolute;
-  bottom: -1px; left: 0; right: 0;
-  height: 60px;
-  background: #f0f7e8;
-  clip-path: ellipse(55% 100% at 50% 100%);
-}
-.hero-inner{position:relative;z-index:2;}
-.hero-badge{
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.25);
-  color: #d4efb8;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  padding: 5px 16px;
-  border-radius: 99px;
-  margin-bottom: 20px;
-}
-.hero h1{
-  font-size: 42px;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1.1;
-  margin-bottom: 10px;
-  letter-spacing: -1px;
-}
-.hero h1 span{color: var(--green-200);}
-.hero p{
-  font-size: 15px;
-  color: rgba(255,255,255,0.75);
-  max-width: 520px;
-  margin: 0 auto 28px;
-  line-height: 1.6;
-}
-.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
-.btn-white{
-  background: #fff;
-  color: var(--teal-600);
-  padding: 11px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  text-decoration: none;
-  border: none;
-  cursor: pointer;
-  transition: all .2s;
-}
-.btn-white:hover{background: var(--green-50);}
-.btn-ghost{
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-  padding: 11px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-  border: 1px solid rgba(255,255,255,0.3);
-  cursor: pointer;
-  transition: all .2s;
-}
-.btn-ghost:hover{background: rgba(255,255,255,0.2);}
-
-/* ═══════════════════════════════════════════
-   СТАТИСТИК ХЭСЭГ
-═══════════════════════════════════════════ */
-.stats-bar{
-  background: var(--white);
-  border-top: none;
-  border-bottom: 3px solid var(--green-50);
-  display: grid;
-  grid-template-columns: repeat(4,1fr);
-}
-.stat-item{
-  padding: 20px 16px;
-  text-align: center;
-  border-right: 1px solid var(--green-50);
-}
-.stat-item:last-child{border-right: none;}
-.stat-num{
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--teal-600);
-  line-height: 1;
-  margin-bottom: 4px;
-}
-.stat-lbl{
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 500;
-}
-
-/* ═══════════════════════════════════════════
-   MAIN CONTENT
-═══════════════════════════════════════════ */
-.container{max-width:1100px;margin:0 auto;padding:0 24px;}
-.section{padding:48px 0;}
-
-/* Section title */
-.section-head{
-  display:flex;align-items:center;gap:14px;margin-bottom:28px;
-}
-.section-head-line{flex:1;height:2px;background:var(--green-100);}
-.section-title{
-  font-size:12px;font-weight:700;letter-spacing:2px;
-  color:var(--text-muted);text-transform:uppercase;white-space:nowrap;
-}
-
-/* ═══════════════════════════════════════════
-   ШАЛГАЛТЫН КАРТ
-═══════════════════════════════════════════ */
-.exam-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:16px;
-}
-.exam-card{
-  background: var(--white);
-  border-radius: 14px;
-  padding: 24px 20px;
-  border: 1.5px solid var(--green-50);
-  position: relative;
-  overflow: hidden;
-  text-decoration: none;
-  color: var(--text-dark);
-  transition: all .2s;
-  display: block;
-}
-.exam-card:hover{
-  border-color: var(--green-100);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(63,110,17,0.12);
-}
-/* Дээд зураас */
-.exam-card::before{
-  content:'';
-  position:absolute;
-  top:0;left:0;right:0;
-  height:4px;
-}
-.exam-card.ulsiin::before{background:linear-gradient(90deg,#27500A,#639922);}
-.exam-card.devshih::before{background:linear-gradient(90deg,#1D9E75,#97C459);}
-.exam-card.guitsegdel::before{background:linear-gradient(90deg,#97C459,#C0DD97);}
-.exam-card.elselt::before{background:linear-gradient(90deg,#173404,#3B6D11);}
-
-/* Геометр дэвсгэр хээ картанд */
-.exam-card::after{
-  content:'';
-  position:absolute;
-  bottom:-20px;right:-20px;
-  width:100px;height:100px;
-  border-radius:50%;
-  opacity:.05;
-}
-.exam-card.ulsiin::after{background:#27500A;}
-.exam-card.devshih::after{background:#1D9E75;}
-.exam-card.guitsegdel::after{background:#97C459;}
-.exam-card.elselt::after{background:#173404;}
-
-.exam-icon{font-size:28px;margin-bottom:10px;display:block;}
-.exam-name{font-size:16px;font-weight:700;color:var(--text-dark);margin-bottom:6px;}
-.exam-grades{
-  display:inline-block;
-  font-size:11px;
-  background:var(--green-50);
-  color:var(--teal-600);
-  padding:3px 10px;
-  border-radius:99px;
-  font-weight:600;
-  margin-bottom:12px;
-}
-.exam-desc{font-size:12px;color:var(--text-muted);line-height:1.5;margin-bottom:14px;}
-.exam-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
-.exam-tag{
-  font-size:11px;
-  background:#f0f7e8;
-  color:var(--text-mid);
-  padding:3px 9px;
-  border-radius:5px;
-  border:1px solid var(--green-100);
-}
-.exam-link{
-  font-size:12px;font-weight:600;
-  color:var(--teal-600);
-  display:flex;align-items:center;gap:4px;
-}
-.exam-note{
-  font-size:11px;color:var(--text-muted);
-  margin-top:6px;padding-top:10px;
-  border-top:1px dashed var(--green-100);
-}
-
-/* ═══════════════════════════════════════════
-   АНГИАР ХАЙХ
-═══════════════════════════════════════════ */
-/* Section ялгах өнгө */
-.section-alt{
-  background: var(--white);
-  border-top: 2px solid var(--green-50);
-  border-bottom: 2px solid var(--green-50);
-  padding: 40px 0;
-}
-.grade-grid{
-  display:flex;flex-wrap:wrap;gap:10px;
-}
-.grade-pill{
-  display:flex;flex-direction:column;
-  align-items:center;
-  padding:10px 14px;
-  border-radius:10px;
-  text-decoration:none;
-  font-size:14px;font-weight:700;
-  min-width:72px;
-  border:1.5px solid;
-  transition:all .15s;
-}
-.grade-pill:hover{transform:translateY(-2px);}
-.grade-pill span.sub{font-size:9px;font-weight:500;margin-top:3px;text-align:center;line-height:1.2;}
-
-/* Шалгалтын төрлөөр ялгасан өнгө */
-.grade-pill.guitsegdel{
-  background:var(--green-50);color:var(--teal-600);border-color:var(--green-100);
-}
-.grade-pill.guitsegdel span.sub{color:var(--text-muted);}
-.grade-pill.ulsiin{
-  background:#173404;color:#d4efb8;border-color:#27500A;
-}
-.grade-pill.ulsiin span.sub{color:var(--green-100);}
-.grade-pill.devshih{
-  background:var(--teal-50);color:var(--teal-600);border-color:#9FE1CB;
-}
-.grade-pill.devshih span.sub{color:var(--teal-400);}
-.grade-pill.elselt{
-  background:#27500A;color:#C0DD97;border-color:#3B6D11;
-}
-.grade-pill.elselt span.sub{color:var(--green-100);}
-
-/* Нэмэлт тайлбар */
-.legend{
-  display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;
-}
-.legend-item{
-  display:flex;align-items:center;gap:6px;
-  font-size:11px;color:var(--text-mid);
-}
-.legend-dot{width:10px;height:10px;border-radius:3px;}
-
-/* ═══════════════════════════════════════════
-   FOOTER
-═══════════════════════════════════════════ */
-footer{
-  background:var(--teal-600);
-  color:rgba(255,255,255,0.7);
-  text-align:center;
-  padding:20px;
-  font-size:12px;
-  border-top:3px solid var(--green-200);
-}
-footer strong{color:#fff;}
-</style>
-</head>
-<body>
-
-<!-- NAVBAR -->
-<nav class="navbar">
-  <a href="/" class="navbar-brand">
-    <div class="brand-icon">◈</div>
-    ОРХОНТУУЛ ЕБС
-    <span class="navbar-sub">Даалгаврын Сан</span>
-  </a>
-  <div class="navbar-links">
-    <a href="/" class="active">Нүүр</a>
-    <a href="/questions">Даалгавар</a>
-    <a href="/blueprint">Блупринт</a>
-  </div>
-</nav>
-
-<!-- HERO -->
 <section class="hero">
-  <div class="hero-inner">
-    <div class="hero-badge">⬡ 1–12-Р АНГИ · БҮРЭН ДУНД БОЛОВСРОЛ</div>
-    <h1>ДААЛГАВРЫН<br><span>САН</span></h1>
-    <p>1–12-р ангийн бүх хичээлийн даалгавар. Улсын болон бусад шалгалтыг блупринтийн дагуу автоматаар үүсгэнэ.</p>
-    <div class="hero-btns">
-      <a href="/questions" class="btn-white">Даалгавар хайх</a>
-      <a href="/blueprint" class="btn-ghost">Шалгалт үүсгэх</a>
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-label">БҮРЭН ДУНД БОЛОВСРОЛЫН</div>
+    <h1 class="hero-title">ДААЛГАВРЫН <br><span class="accent">САН</span></h1>
+    <p class="hero-desc">1–12-р ангийн бүх хичээлийн даалгавар. Улсын болон бусад шалгалтыг блупринтийн дагуу автоматаар үүсгэнэ.</p>
+    <div class="hero-actions">
+      <a href="/questions" class="btn btn-primary">Даалгавар хайх</a>
+      <a href="/blueprint" class="btn btn-outline">Шалгалт үүсгэх</a>
     </div>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-card"><span class="stat-num" data-target="4820">0</span><span class="stat-label">Нийт даалгавар</span></div>
+    <div class="stat-card"><span class="stat-num" data-target="12">0</span><span class="stat-label">Анги</span></div>
+    <div class="stat-card"><span class="stat-num" data-target="10">0</span><span class="stat-label">Хичээл</span></div>
+    <div class="stat-card"><span class="stat-num" data-target="4">0</span><span class="stat-label">Шалгалтын төрөл</span></div>
   </div>
 </section>
 
-<!-- СТАТИСТИК -->
-<div class="stats-bar">
-  <div class="stat-item">
-    <div class="stat-num">0</div>
-    <div class="stat-lbl">Нийт даалгавар</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num">12</div>
-    <div class="stat-lbl">Анги</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num">0</div>
-    <div class="stat-lbl">Хичээл</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num">4</div>
-    <div class="stat-lbl">Шалгалтын төрөл</div>
-  </div>
-</div>
+<!-- Шалгалтын төрлүүд -->
+<section class="exam-types-section">
+  <h2 class="section-title">Шалгалтын <span class="accent">төрлүүд</span></h2>
+  <p class="section-sub">Монгол ЕБС-ийн шалгалтын системийн дагуу</p>
+  <div class="exam-type-cards">
 
-<!-- ШАЛГАЛТЫН ТӨРЛҮҮД -->
-<div class="container">
-  <div class="section">
-    <div class="section-head">
-      <div class="section-head-line"></div>
-      <div class="section-title">Шалгалтын төрлүүд</div>
-      <div class="section-head-line"></div>
-    </div>
-    <div class="exam-grid">
-
-      <a href="/blueprint?exam=ulsiin" class="exam-card ulsiin">
-        <span class="exam-icon">🏆</span>
-        <div class="exam-name">Улсын шалгалт</div>
-        <div class="exam-grades">5-р · 9-р · 12-р анги</div>
-        <div class="exam-desc">Улсын журмын стандарт шалгалт. Блупринтийн дагуу автоматаар үүсгэнэ.</div>
-        <div class="exam-tags">
-          <span class="exam-tag">⏱ 90 минут</span>
-          <span class="exam-tag">📊 40 даалгавар</span>
-          <span class="exam-tag">🎯 72 оноо</span>
+    {% for eid, et in exam_types.items() %}
+    <div class="et-card" style="--et-color: {{ et.color }}">
+      <div class="et-top">
+        <span class="et-icon">{{ et.icon }}</span>
+        <div class="et-grades">
+          {% for g in et.grades %}<span class="et-grade-pill">{{ g }}-р анги</span>{% endfor %}
         </div>
-        <div class="exam-link">Шалгалт үүсгэх →</div>
-      </a>
-
-      <a href="/blueprint?exam=devshih" class="exam-card devshih">
-        <span class="exam-icon">📋</span>
-        <div class="exam-name">Анги дэвших шалгалт</div>
-        <div class="exam-grades">6 · 7 · 8 · 10 · 11-р анги</div>
-        <div class="exam-desc">Анги дэвших дотоод шалгалт. Стандарт блупринтийн дагуу.</div>
-        <div class="exam-tags">
-          <span class="exam-tag">⏱ 60 минут</span>
-          <span class="exam-tag">📊 25 даалгавар</span>
-          <span class="exam-tag">🎯 49 оноо</span>
-        </div>
-        <div class="exam-link">Шалгалт үүсгэх →</div>
-      </a>
-
-      <a href="/blueprint?exam=guitsegdel" class="exam-card guitsegdel">
-        <span class="exam-icon">📝</span>
-        <div class="exam-name">Гүйцэтгэлийн үнэлгээ</div>
-        <div class="exam-grades">1–11-р анги</div>
-        <div class="exam-desc">Дотоод гүйцэтгэлийн үнэлгээ. Нормчилсон оноогүй, ажиглалтаар дүгнэнэ.</div>
-        <div class="exam-tags">
-          <span class="exam-tag">⏱ 30 минут</span>
-          <span class="exam-tag">📊 10 даалгавар</span>
-          <span class="exam-tag">🎯 10 оноо</span>
-        </div>
-        <div class="exam-link">Шалгалт үүсгэх →</div>
-        <div class="exam-note">Оноогүй — ажиглалтын дэвтэр хөтлөнө</div>
-      </a>
-
-      <a href="/blueprint?exam=elselt" class="exam-card elselt">
-        <span class="exam-icon">🎓</span>
-        <div class="exam-name">Элсэлтийн шалгалт</div>
-        <div class="exam-grades">12-р анги</div>
-        <div class="exam-desc">Их, дээд сургуульд элсэх ЭЕШ (МИС)-ийн загвар шалгалт.</div>
-        <div class="exam-tags">
-          <span class="exam-tag">⏱ 90 минут</span>
-          <span class="exam-tag">📊 40 даалгавар</span>
-          <span class="exam-tag">🎯 100 оноо</span>
-        </div>
-        <div class="exam-link">Шалгалт үүсгэх →</div>
-        <div class="exam-note">100 оноо — нэг буруу = −0.2 оноо</div>
-      </a>
-
+      </div>
+      <h3 class="et-name">{{ et.name }}</h3>
+      <p class="et-desc">{{ et.desc }}</p>
+      <div class="et-meta">
+        <span>⏱ {{ et.blueprint.duration }}</span>
+        <span>📊 {{ et.blueprint.total }} даалгавар</span>
+        <span>🎯 {{ et.blueprint.score }} оноо</span>
+      </div>
+      {% if et.blueprint.note %}
+      <div class="et-note">{{ et.blueprint.note }}</div>
+      {% endif %}
+      <a href="/blueprint?exam={{ eid }}" class="btn btn-sm et-btn">Шалгалт үүсгэх →</a>
     </div>
+    {% endfor %}
+
   </div>
-</div>
+</section>
 
-<!-- АНГИАР ХАЙХ -->
-<div class="section-alt">
-  <div class="container">
-    <div class="section-head">
-      <div class="section-head-line"></div>
-      <div class="section-title">Ангиар хайх</div>
-      <div class="section-head-line"></div>
-    </div>
-
-    <!-- Тайлбар -->
-    <div class="legend">
-      <div class="legend-item">
-        <div class="legend-dot" style="background:#EAF3DE;border:1px solid #C0DD97;"></div>
-        📝 Гүйцэтгэлийн үнэлгээ
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background:#173404;"></div>
-        🏆 Улсын шалгалт
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background:#E1F5EE;border:1px solid #9FE1CB;"></div>
-        📋 Анги дэвших
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background:#27500A;"></div>
-        🎓 Элсэлтийн шалгалт
-      </div>
-    </div>
-
-    <div class="grade-grid">
-      <a href="/questions?grade=1"  class="grade-pill guitsegdel">1<span class="sub">Гүйцэтгэл</span></a>
-      <a href="/questions?grade=2"  class="grade-pill guitsegdel">2<span class="sub">Гүйцэтгэл</span></a>
-      <a href="/questions?grade=3"  class="grade-pill guitsegdel">3<span class="sub">Гүйцэтгэл</span></a>
-      <a href="/questions?grade=4"  class="grade-pill guitsegdel">4<span class="sub">Гүйцэтгэл</span></a>
-      <a href="/questions?grade=5"  class="grade-pill ulsiin">5<span class="sub">Улсын</span></a>
-      <a href="/questions?grade=6"  class="grade-pill devshih">6<span class="sub">Дэвших</span></a>
-      <a href="/questions?grade=7"  class="grade-pill devshih">7<span class="sub">Дэвших</span></a>
-      <a href="/questions?grade=8"  class="grade-pill devshih">8<span class="sub">Дэвших</span></a>
-      <a href="/questions?grade=9"  class="grade-pill ulsiin">9<span class="sub">Улсын</span></a>
-      <a href="/questions?grade=10" class="grade-pill devshih">10<span class="sub">Дэвших</span></a>
-      <a href="/questions?grade=11" class="grade-pill devshih">11<span class="sub">Дэвших</span></a>
-      <a href="/questions?grade=12" class="grade-pill elselt">12<span class="sub">Элсэлт</span></a>
-    </div>
+<!-- Ангиар хайх -->
+<section class="grade-nav">
+  <h2 class="section-title">Ангиар <span class="accent">хайх</span></h2>
+  <div class="grade-grid">
+    {% for g in range(1, 13) %}
+    {% set et = exam_types[grade_exam_map.get(g, 'guitsegdel')] %}
+    <a href="/questions?grade={{ g }}" class="grade-box" style="--et-color: {{ et.color }}">
+      <span class="grade-num">{{ g }}</span>
+      <span class="grade-label">{{ g }}-р анги</span>
+      <span class="grade-type-badge">{{ et.icon }} {{ et.name }}</span>
+    </a>
+    {% endfor %}
   </div>
-</div>
+</section>
 
-<!-- FOOTER -->
-<footer>
-  © 2025 <strong>Орхонтуул ЕБС</strong> · Даалгаврын сан · МУ-ын боловсролын стандартын дагуу
-</footer>
-
-</body>
-</html>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('.stat-num[data-target]').forEach(el => {
+  const target = +el.dataset.target;
+  let current = 0;
+  const step = Math.ceil(target / 60);
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = current.toLocaleString();
+    if (current >= target) clearInterval(timer);
+  }, 25);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Файлаар оруулах — Admin{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo">⚙ Admin</div>
+    <nav class="sidebar-nav">
+      <a href="/admin" class="slink">📊 Хяналтын самбар</a>
+      <a href="/admin/add" class="slink">✏ Нэг нэмэх</a>
+      <a href="/admin/import" class="slink active">📂 Файлаар оруулах</a>
+      <a href="/admin/ai-generate" class="slink">🤖 AI үүсгэгч</a>
+      <a href="/admin/list" class="slink">📋 Жагсаалт</a>
+      <a href="/" class="slink">🌐 Сайт харах</a>
+      <a href="/admin/logout" class="slink logout">🚪 Гарах</a>
+    </nav>
+  </aside>
+
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <h1>📂 Файлаар даалгавар оруулах</h1>
+    </div>
+
+    <!-- Format guide -->
+    <div class="import-guide">
+      <h3>📋 Файлын формат</h3>
+      <div class="guide-grid">
+        <div class="guide-card">
+          <div class="guide-icon">📄</div>
+          <h4>PDF / Word (.docx)</h4>
+          <p>Даалгавруудыг дугаарлан бичнэ:</p>
+          <pre class="code-preview">1. 2+2 нийлбэр хэд вэ?
+А. 3
+Б. 4
+В. 5
+Г. 6
+Хариулт: Б
+
+2. Монголын нийслэл хот аль вэ?
+А. Эрдэнэт
+Б. Дархан
+В. Улаанбаатар
+Г. Чойбалсан
+Хариулт: В</pre>
+        </div>
+        <div class="guide-card">
+          <div class="guide-icon">📝</div>
+          <h4>Нээлттэй даалгавар</h4>
+          <p>Сонголтгүй даалгавар:</p>
+          <pre class="code-preview">1. Монгол улсын талбай хэд вэ?
+Хариулт: 1,564,116 км²
+
+2. Нар дэлхийгээс хэр зайтай вэ?
+Хариулт: 150 сая км</pre>
+          <div class="guide-tip">💡 Сонголт байхгүй бол автоматаар "Нээлттэй" болно</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload form -->
+    <div class="import-form-box">
+      <div class="form-grid" style="margin-bottom:1.2rem">
+        <div class="field-group">
+          <label>Анги <span class="req">*</span></label>
+          <select id="imp-grade">
+            {% for g in range(1,13) %}<option value="{{ g }}">{{ g }}-р анги</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Хичээл <span class="req">*</span></label>
+          <select id="imp-subject">
+            {% for key, subjs in subjects.items() %}
+              {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Үндсэн хүндрэл</label>
+          <select id="imp-diff">
+            {% for d in difficulties %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Drag & drop area -->
+      <div class="drop-zone" id="drop-zone">
+        <div class="drop-icon">📂</div>
+        <p class="drop-text">PDF, Word (.docx), эсвэл .txt файлаа энд чирнэ үү</p>
+        <p class="drop-sub">эсвэл</p>
+        <label class="btn btn-outline" for="file-input">Файл сонгох</label>
+        <input type="file" id="file-input" accept=".pdf,.docx,.doc,.txt" style="display:none">
+        <p class="file-name" id="file-name"></p>
+      </div>
+
+      <button class="btn btn-primary btn-full" style="margin-top:1rem" onclick="uploadFile()">
+        ⬆ Оруулах
+      </button>
+    </div>
+
+    <!-- Result -->
+    <div id="import-result" style="display:none" class="import-result"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Drag & drop
+const zone  = document.getElementById('drop-zone');
+const input = document.getElementById('file-input');
+let selectedFile = null;
+
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault(); zone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) setFile(f);
+});
+input.addEventListener('change', () => { if (input.files[0]) setFile(input.files[0]); });
+
+function setFile(f) {
+  selectedFile = f;
+  document.getElementById('file-name').textContent = '✓ ' + f.name;
+  zone.classList.add('has-file');
+}
+
+async function uploadFile() {
+  if (!selectedFile) { alert('Файл сонгоно уу'); return; }
+
+  const fd = new FormData();
+  fd.append('file', selectedFile);
+  fd.append('grade',               document.getElementById('imp-grade').value);
+  fd.append('subject',             document.getElementById('imp-subject').value);
+  fd.append('default_difficulty',  document.getElementById('imp-diff').value);
+
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '⏳ Боловсруулж байна...';
+
+  const res  = await fetch('/admin/import', { method: 'POST', body: fd });
+  const data = await res.json();
+  btn.disabled = false; btn.textContent = '⬆ Оруулах';
+
+  const box = document.getElementById('import-result');
+  box.style.display = 'block';
+
+  if (data.error) {
+    box.innerHTML = `<div class="result-error">❌ ${data.error}</div>`;
+    return;
+  }
+
+  const preview = (data.preview || []).map((q,i) => `
+    <div class="prev-item">
+      <strong>${i+1}. ${q.question}</strong>
+      ${q.option_a ? `<div class="prev-opts">А. ${q.option_a} &nbsp; Б. ${q.option_b} &nbsp; В. ${q.option_c} &nbsp; Г. ${q.option_d}</div>` : ''}
+      <span class="prev-meta">${q.difficulty} · ${q.bloom} · Зөв: ${q.answer}</span>
+    </div>
+  `).join('');
+
+  box.innerHTML = `
+    <div class="result-success">
+      <div class="result-nums">
+        <div class="rn-item"><span>${data.saved}</span><label>Хадгалагдсан</label></div>
+        ${data.skipped ? `<div class="rn-item"><span>${data.skipped}</span><label>Алгасагдсан</label></div>` : ''}
+      </div>
+      <h3>Урьдчилан харах (эхний 3)</h3>
+      ${preview}
+      <a href="/admin/list" class="btn btn-primary" style="margin-top:1rem">Жагсаалт харах →</a>
+    </div>`;
+}
+</script>
+{% endblock %}
