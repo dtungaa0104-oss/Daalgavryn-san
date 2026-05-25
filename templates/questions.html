@@ -1,10 +1,325 @@
 {% extends "base.html" %}
 {% block title %}Даалгавар хайх — Орхонтуул ЕБС{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/green.css">
+<style>
+/* ══════════════════════════════════════════
+   QUESTIONS ХУУДАСНЫ НОГООН ДИЗАЙН
+══════════════════════════════════════════ */
+
+/* Page header */
+.page-header {
+  position: relative;
+  overflow: hidden;
+  background: #0F6E56;
+  padding: 40px 32px 52px;
+  text-align: center;
+}
+.page-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='70'%3E%3Cpolygon points='40,3 76,22 76,60 40,79 4,60 4,22' fill='none' stroke='rgba(151,196,89,0.25)' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 80px 70px;
+}
+.page-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0; right: 0;
+  height: 48px;
+  background: #f0f7e8;
+  clip-path: ellipse(55% 100% at 50% 100%);
+}
+.page-header h1 {
+  position: relative;
+  z-index: 2;
+  font-size: 30px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+.page-header h1 .accent { color: #97C459; }
+.page-header p {
+  position: relative;
+  z-index: 2;
+  font-size: 14px;
+  color: rgba(255,255,255,0.75);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* Filter panel */
+.filter-panel {
+  background: #fff;
+  border-bottom: 2px solid #C0DD97;
+  padding: 16px 28px;
+  position: sticky;
+  top: 60px;
+  z-index: 50;
+}
+.filter-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 100px;
+}
+.filter-group label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #639922;
+}
+.filter-group select {
+  padding: 8px 12px;
+  border: 1.5px solid #C0DD97;
+  border-radius: 8px;
+  background: #f6fbf0;
+  color: #173404;
+  font-size: 13px;
+  font-family: inherit;
+  appearance: none;
+  cursor: pointer;
+}
+.filter-group select:focus {
+  outline: none;
+  border-color: #0F6E56;
+  box-shadow: 0 0 0 3px rgba(15,110,86,0.1);
+}
+.btn.btn-primary {
+  padding: 9px 22px;
+  background: linear-gradient(135deg, #0F6E56, #27500A);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: all .2s;
+}
+.btn.btn-primary:hover {
+  background: linear-gradient(135deg, #27500A, #0F6E56);
+  transform: translateY(-1px);
+}
+
+/* Results bar */
+.results-bar {
+  max-width: 1100px;
+  margin: 20px auto 0;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#result-count {
+  font-size: 13px;
+  color: #639922;
+  font-weight: 500;
+}
+.bar-actions { display: flex; gap: 8px; }
+.btn.btn-sm {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: inherit;
+  background: #0F6E56;
+  color: #fff;
+  border: none;
+  transition: all .15s;
+}
+.btn.btn-sm:hover { background: #27500A; }
+.btn.btn-sm.btn-outline {
+  background: transparent;
+  color: #0F6E56;
+  border: 1.5px solid #0F6E56;
+}
+.btn.btn-sm.btn-outline:hover { background: #EAF3DE; }
+
+/* Questions grid */
+.questions-grid {
+  max-width: 1100px;
+  margin: 16px auto 48px;
+  padding: 0 28px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+/* Question card */
+.question-card {
+  background: #fff;
+  border: 1.5px solid #C0DD97;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+}
+.question-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0F6E56, #97C459);
+}
+.question-card:hover {
+  border-color: #97C459;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(15,110,86,0.1);
+}
+.question-card.selected {
+  border-color: #0F6E56;
+  background: #EAF3DE;
+  box-shadow: 0 0 0 3px rgba(15,110,86,0.15);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px 0;
+  flex-wrap: wrap;
+}
+.q-id {
+  font-size: 10px;
+  color: #97C459;
+  font-weight: 700;
+  font-family: monospace;
+  background: #f0f7e8;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.q-diff {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+.diff-Хялбар { background: #EAF3DE; color: #27500A; border: 1px solid #C0DD97; }
+.diff-Дунд   { background: #E1F5EE; color: #085041; border: 1px solid #9FE1CB; }
+.diff-Хүнд   { background: #173404; color: #C0DD97; }
+.q-bloom {
+  font-size: 10px;
+  background: #fff;
+  color: #639922;
+  border: 1px solid #C0DD97;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+.q-score {
+  font-size: 10px;
+  background: #EAF3DE;
+  color: #27500A;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-weight: 700;
+  margin-left: auto;
+}
+
+.card-body {
+  padding: 10px 14px;
+}
+.q-text {
+  font-size: 13px;
+  color: #173404;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.q-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.q-opt {
+  font-size: 12px;
+  background: #f6fbf0;
+  border: 1px solid #EAF3DE;
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: #3B6D11;
+  display: block;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #f6fbf0;
+  border-top: 1px solid #EAF3DE;
+}
+.q-type, .q-topic {
+  font-size: 10px;
+  color: #639922;
+}
+.q-topic { flex: 1; }
+.check-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid #C0DD97;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0F6E56;
+  background: #fff;
+  transition: all .15s;
+}
+.question-card.selected .check-icon {
+  background: #0F6E56;
+  border-color: #0F6E56;
+  color: #fff;
+}
+
+/* Empty / Loading */
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: #639922;
+}
+.empty-icon { font-size: 48px; opacity: .35; margin-bottom: 12px; }
+.loading {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 20px;
+  gap: 14px;
+  color: #3B6D11;
+}
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid #C0DD97;
+  border-top-color: #0F6E56;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+{% endblock %}
+
 {% block content %}
 
 <div class="page-header">
-  <h1>Даалгаврын <span class="accent">Сан</span>
-  <link rel="stylesheet" href="/static/css/green.css"></h1>
+  <h1>Даалгаврын <span class="accent">Сан</span></h1>
   <p>Анги, хичээл, хүндрэлийн түвшин, Блумын шатаар шүүж хайна</p>
 </div>
 
@@ -13,7 +328,9 @@
     <div class="filter-group">
       <label>Анги</label>
       <select id="f-grade">
-        {% for g in range(1,13) %}<option value="{{ g }}" {% if request.args.get('grade')|int == g %}selected{% endif %}>{{ g }}-р анги</option>{% endfor %}
+        {% for g in range(1,13) %}
+        <option value="{{ g }}" {% if request.args.get('grade')|int == g %}selected{% endif %}>{{ g }}-р анги</option>
+        {% endfor %}
       </select>
     </div>
     <div class="filter-group">
@@ -47,7 +364,7 @@
         <option value="40">40</option>
       </select>
     </div>
-    <button class="btn btn-primary" onclick="loadQuestions()">Хайх</button>
+    <button class="btn btn-primary" onclick="loadQuestions()">🔍 Хайх</button>
   </div>
 </div>
 
@@ -73,11 +390,11 @@ let allQuestions = [];
 let selected = new Set();
 
 async function loadQuestions() {
-  const grade = document.getElementById('f-grade').value;
-  const subject = document.getElementById('f-subject').value;
+  const grade      = document.getElementById('f-grade').value;
+  const subject    = document.getElementById('f-subject').value;
   const difficulty = document.getElementById('f-difficulty').value;
-  const bloom = document.getElementById('f-bloom').value;
-  const count = document.getElementById('f-count').value;
+  const bloom      = document.getElementById('f-bloom').value;
+  const count      = document.getElementById('f-count').value;
 
   const container = document.getElementById('questions-container');
   container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Татаж байна...</p></div>';
@@ -139,14 +456,12 @@ function selectAll() {
 function downloadSelected() {
   const qs = allQuestions.filter(q => selected.has(q.id));
   if (qs.length === 0) { alert('Даалгавар сонгоно уу'); return; }
-  
   let text = `ОРХОНТУУЛ ЕБС — ДААЛГАВРЫН САН\n${'='.repeat(50)}\n\n`;
   qs.forEach((q, i) => {
     text += `${i+1}. [${q.difficulty}] [${q.bloom}] ${q.question}\n`;
     if (q.options) q.options.forEach(o => text += `   ${o}\n`);
     text += `   Хариулт: ${q.answer}  |  Оноо: ${q.score}\n\n`;
   });
-
   const blob = new Blob([text], {type: 'text/plain;charset=utf-8'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -154,7 +469,6 @@ function downloadSelected() {
   a.click();
 }
 
-// Auto-load on page load if grade param exists
 window.onload = () => {
   const params = new URLSearchParams(location.search);
   if (params.get('grade')) loadQuestions();
