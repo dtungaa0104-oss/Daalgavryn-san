@@ -1,0 +1,254 @@
+/* ═══════════════════════════════════════════════════════
+   Орхонтуул ЕБС — Ногоон дизайн систем
+   Бүх хуудасны template-д нэмнэ:
+   <link rel="stylesheet" href="/static/css/green.css">
+═══════════════════════════════════════════════════════ */
+
+:root {
+  --g50:  #EAF3DE;
+  --g100: #C0DD97;
+  --g200: #97C459;
+  --g400: #639922;
+  --g600: #3B6D11;
+  --g700: #27500A;
+  --g800: #173404;
+  --t50:  #E1F5EE;
+  --t400: #1D9E75;
+  --t600: #0F6E56;
+  --white: #ffffff;
+}
+
+/* ── BODY: цайвар ногоон цэгэн хээтэй фон ── */
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: #f0f7e8;
+  background-image:
+    radial-gradient(circle, #97C459 1px, transparent 1px),
+    radial-gradient(circle, #C0DD97 1px, transparent 1px);
+  background-size: 40px 40px, 20px 20px;
+  background-position: 0 0, 10px 10px;
+  min-height: 100vh;
+  color: var(--g800);
+}
+
+/* ── NAVBAR ── */
+.navbar, nav.navbar {
+  background: var(--t600) !important;
+  border-bottom: 3px solid var(--g200) !important;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.navbar-brand, .navbar .brand {
+  color: #fff !important;
+  font-size: 17px;
+  font-weight: 700;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.navbar-links a, .navbar a, nav a {
+  color: rgba(255,255,255,0.8) !important;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: all .15s;
+}
+.navbar-links a:hover,
+.navbar-links a.active,
+.navbar a:hover,
+nav a.active {
+  background: rgba(255,255,255,0.15) !important;
+  color: #fff !important;
+}
+
+/* ── PAGE HEADER: геометр хээтэй ногоон header ── */
+.page-header {
+  position: relative;
+  overflow: hidden;
+  background: var(--t600);
+  padding: 40px 32px 48px;
+  text-align: center;
+}
+.page-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='70'%3E%3Cpolygon points='40,3 76,22 76,60 40,79 4,60 4,22' fill='none' stroke='rgba(151,196,89,0.25)' stroke-width='1'/%3E%3Cpolygon points='40,18 62,30 62,54 40,66 18,54 18,30' fill='none' stroke='rgba(151,196,89,0.15)' stroke-width='0.5'/%3E%3C/svg%3E");
+  background-size: 80px 70px;
+}
+.page-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0; right: 0;
+  height: 48px;
+  background: #f0f7e8;
+  clip-path: ellipse(55% 100% at 50% 100%);
+}
+.page-header h1,
+.page-header .page-title {
+  position: relative;
+  z-index: 2;
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.page-header p,
+.page-header .page-desc {
+  position: relative;
+  z-index: 2;
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  max-width: 560px;
+  margin: 0 auto;
+}
+.page-badge {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #d4efb8;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  padding: 4px 14px;
+  border-radius: 99px;
+  margin-bottom: 12px;
+}
+
+/* ── КАРТ, хайрцаг ── */
+.card, .question-card, .exam-card, .blueprint-card {
+  background: var(--white);
+  border: 1.5px solid var(--g100) !important;
+  border-radius: 12px !important;
+  transition: all .2s;
+}
+.card:hover, .question-card:hover, .exam-card:hover {
+  border-color: var(--g200) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(63,110,17,0.1);
+}
+
+/* ── ТОВЧ, BADGE ── */
+.btn-primary, .btn-green, button[type=submit] {
+  background: var(--t600) !important;
+  color: #fff !important;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-primary:hover, .btn-green:hover, button[type=submit]:hover {
+  background: var(--g700) !important;
+}
+.btn-outline {
+  background: transparent !important;
+  color: var(--t600) !important;
+  border: 2px solid var(--t600) !important;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.badge, .tag {
+  background: var(--g50);
+  color: var(--g600);
+  border: 1px solid var(--g100);
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+}
+
+/* ── FILTER, ХАЙЛТ ── */
+.filter-bar, .search-bar, .filter-section {
+  background: var(--white) !important;
+  border: 1.5px solid var(--g100) !important;
+  border-radius: 12px !important;
+}
+select, .form-select {
+  border: 1.5px solid var(--g100) !important;
+  background: var(--g50) !important;
+  border-radius: 7px !important;
+  color: var(--g800) !important;
+}
+select:focus, .form-select:focus {
+  border-color: var(--t600) !important;
+  outline: none !important;
+}
+input[type=text], input[type=search], .form-input {
+  border: 1.5px solid var(--g100) !important;
+  border-radius: 7px !important;
+}
+input:focus, .form-input:focus {
+  border-color: var(--t600) !important;
+  outline: none !important;
+}
+
+/* ── ХҮСНЭГТ ── */
+table thead tr {
+  background: var(--g800) !important;
+  color: var(--g100) !important;
+}
+table tbody tr:hover {
+  background: var(--g50) !important;
+}
+table th { color: var(--g100) !important; }
+table td { border-color: var(--g50) !important; }
+
+/* ── ХЭСГИЙГ ЯЛГАХ ── */
+.section-alt, .section-white {
+  background: var(--white);
+  border-top: 2px solid var(--g50);
+  border-bottom: 2px solid var(--g50);
+}
+.section-green {
+  background: var(--g50);
+  border-top: 2px solid var(--g100);
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.section-head-line {
+  flex: 1;
+  height: 2px;
+  background: var(--g100);
+}
+.section-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--g400);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── FOOTER ── */
+footer {
+  background: var(--t600) !important;
+  color: rgba(255,255,255,0.7) !important;
+  text-align: center;
+  padding: 20px;
+  font-size: 12px;
+  border-top: 3px solid var(--g200) !important;
+}
+footer strong { color: #fff !important; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--g50); }
+::-webkit-scrollbar-thumb { background: var(--g100); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--g200); }
