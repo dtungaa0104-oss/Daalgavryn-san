@@ -355,3 +355,18 @@ def admin_edit(qid):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+import anthropic
+
+@app.route("/api/ai-generate", methods=["POST"])
+def ai_generate():
+    data = request.json
+    prompt = data.get("prompt", "")
+    
+    client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+    message = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=4000,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    
+    return jsonify({"content": message.content[0].text})
