@@ -133,12 +133,12 @@ def login_required(f):
 # ══ Public pages ══════════════════════════════════════════
 @app.route("/")
 def index():
-    return render_template("index.html", subjects=SUBJECTS, exam_types=EXAM_TYPES)
+    return render_template("index.html", subjects=SUBJECTS, exam_types=EXAM_TYPES, grade_exam_map=GRADE_EXAM_MAP)
 
 @app.route("/questions")
 def questions_page():
     return render_template("questions.html", subjects=SUBJECTS,
-                           difficulties=DIFFICULTY, blooms=BLOOM, exam_types=EXAM_TYPES)
+                           difficulties=DIFFICULTY, blooms=BLOOM, exam_types=EXAM_TYPES, grade_exam_map=GRADE_EXAM_MAP)
 
 @app.route("/blueprint")
 def blueprint_page():
