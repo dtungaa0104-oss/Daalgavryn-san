@@ -2,23 +2,18 @@
 {% block title %}Блупринт — Шалгалт үүсгэх{% endblock %}
 {% block content %}
 
-<div class="page-header">
-  <h1>Блупринтийн дагуу <span class="accent">Шалгалт</span> үүсгэх</h1>
-  <p>Шалгалтын төрлийг сонгоход блупринт автоматаар тохируулагдана</p>
-</div>
-
 <div class="blueprint-layout">
 
-  <!-- ═══ CONFIG PANEL ═══ -->
+  <!-- ══ ЗҮҮН: Тохиргоо ══ -->
   <div class="bp-config">
 
-    <!-- ① Шалгалтын төрөл -->
+    <!-- 1. Шалгалтын төрөл -->
     <h2 class="panel-title">① Шалгалтын төрөл</h2>
     <div class="exam-type-selector" id="exam-type-selector">
       {% for eid, et in exam_types.items() %}
       <button class="et-select-btn" id="etbtn-{{ eid }}"
               onclick="selectExamType('{{ eid }}')"
-              style="--et-color: {{ et.color }}">
+              style="--et-color:{{ et.color }}">
         <span class="etb-icon">{{ et.icon }}</span>
         <div class="etb-info">
           <strong>{{ et.name }}</strong>
@@ -28,52 +23,54 @@
       {% endfor %}
     </div>
 
-    <!-- ② Анги -->
+    <!-- 2. Анги -->
     <h2 class="panel-title" style="margin-top:1.5rem">② Анги</h2>
     <div class="grade-selector" id="grade-selector">
       {% for g in range(1,13) %}
       {% set et = exam_types[grade_exam_map.get(g, 'guitsegdel')] %}
       <button class="grade-btn" id="gbtn-{{ g }}"
               onclick="selectGrade({{ g }})"
-              style="--et-color: {{ et.color }}"
+              style="--et-color:{{ et.color }}"
               title="{{ et.name }}">{{ g }}</button>
       {% endfor %}
     </div>
     <div class="grade-exam-info" id="grade-exam-info"></div>
 
-    <!-- ③ Хичээл -->
+    <!-- 3. Хичээл -->
     <h2 class="panel-title" style="margin-top:1.5rem">③ Хичээл</h2>
-    <select id="bp-subject" class="styled-select" onchange="syncAiSubject()">
+    <select id="bp-subject" class="styled-select">
       {% for key, subjs in subjects.items() %}
         {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
       {% endfor %}
     </select>
 
-    <!-- ④ Блупринт -->
+    <!-- 4. Блупринт -->
     <h2 class="panel-title" style="margin-top:1.5rem">④ Блупринт</h2>
     <div class="blueprint-sliders">
       {% for diff in difficulties %}
       <div class="slider-row">
         <span class="diff-label diff-{{ diff }}">{{ diff }}</span>
-        <input type="range" min="0" max="20" value="0"
+        <input type="range" min="0" max="25" value="0"
                id="slider-{{ diff }}" class="bp-slider"
                oninput="updateSlider(this,'{{ diff }}')">
         <span class="slider-val" id="val-{{ diff }}">0</span>
       </div>
       {% endfor %}
     </div>
+
     <div class="total-bar">
       Нийт: <strong id="total-count">0</strong> даалгавар
       &nbsp;|&nbsp; Оноо: <strong id="total-score">0</strong>
-      <span id="guitsegdel-note" style="display:none; color:var(--green); font-size:.78rem; margin-left:.5rem">
-        (оноогүй үнэлгээ)
-      </span>
+      <span id="guitsegdel-note" style="display:none;color:var(--green);font-size:.78rem;margin-left:.5rem">(оноогүй)</span>
     </div>
 
-    <button class="btn btn-primary btn-full" onclick="generateExam()">✦ Шалгалт үүсгэх</button>
-  </div>
+    <button class="btn btn-primary btn-full" style="margin-top:1rem" onclick="generateExam()">
+      ✦ Шалгалт үүсгэх
+    </button>
 
-  <!-- ═══ RESULT PANEL ═══ -->
+  </div><!-- /bp-config -->
+
+  <!-- ══ БАРУУН: Үр дүн ══ -->
   <div class="bp-result" id="bp-result">
     <div class="empty-state tall">
       <div class="empty-icon">◈</div>
@@ -81,122 +78,89 @@
     </div>
   </div>
 
-</div>
+</div><!-- /blueprint-layout -->
 
 {% endblock %}
 {% block scripts %}
 <script>
 const EXAM_TYPES = {{ exam_types | tojson }};
 const GRADE_MAP  = {{ grade_exam_map | tojson }};
-const SUBJECTS   = {{ subjects | tojson }};
 
 let currentExamId = null;
 let currentGrade  = null;
 
 const urlParams = new URLSearchParams(location.search);
-const initExam  = urlParams.get('exam');
-
 window.onload = () => {
-  const firstExam = initExam || Object.keys(EXAM_TYPES)[0];
-  selectExamType(firstExam);
+  const init = urlParams.get('exam') || Object.keys(EXAM_TYPES)[0];
+  selectExamType(init);
 };
 
-/* ═══════════════════════════════════════════════
-   ШАЛГАЛТЫН ТӨРӨЛ / АНГИ СОНГОЛТ
-═══════════════════════════════════════════════ */
+/* ── Шалгалтын төрөл сонгох ── */
 function selectExamType(eid) {
+  if (!EXAM_TYPES[eid]) return;
   currentExamId = eid;
   document.querySelectorAll('.et-select-btn').forEach(b => b.classList.remove('active'));
-  const btn = document.getElementById('etbtn-' + eid);
-  if (btn) btn.classList.add('active');
+  document.getElementById('etbtn-' + eid)?.classList.add('active');
 
   const et = EXAM_TYPES[eid];
   const bp = et.blueprint;
 
-  document.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('active','dimmed'));
+  // Ангиудын тодруулалт
   for (let g = 1; g <= 12; g++) {
-    const b = document.getElementById('gbtn-' + g);
-    if (!b) continue;
-    if (!et.grades.includes(g)) b.classList.add('dimmed');
+    const btn = document.getElementById('gbtn-' + g);
+    if (!btn) continue;
+    btn.classList.toggle('dimmed', !et.grades.includes(g));
+    btn.classList.remove('active');
   }
 
-  const defaultGrade = et.grades[0];
-  selectGrade(defaultGrade);
-  setSliders(bp['Хялбар'] || 0, bp['Дунд'] || 0, bp['Хүнд'] || 0);
+  // Эхний ангийг сонгох
+  selectGrade(et.grades[0]);
+
+  // Блупринт автомат
+  setSliders(bp['Хялбар']||0, bp['Дунд']||0, bp['Хүнд']||0);
 
   document.getElementById('guitsegdel-note').style.display =
     eid === 'guitsegdel' ? 'inline' : 'none';
-
-  // Анги дэвших шалгалт → AI панел харуул
-  if (eid === 'devshih') {
-    showAiPanel();
-  } else {
-    document.getElementById('bp-result').innerHTML = `
-      <div class="empty-state tall">
-        <div class="empty-icon">◈</div>
-        <p>Шалгалтын төрөл, анги, хичээлээ сонгоод<br>"Шалгалт үүсгэх" дарна уу</p>
-      </div>`;
-  }
 }
 
+/* ── Анги сонгох ── */
 function selectGrade(g) {
   currentGrade = g;
   document.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('active'));
-  const btn = document.getElementById('gbtn-' + g);
-  if (btn) btn.classList.add('active');
+  document.getElementById('gbtn-' + g)?.classList.add('active');
 
-  const eid  = GRADE_MAP[g] || 'guitsegdel';
-  const et   = EXAM_TYPES[eid];
-  const info = document.getElementById('grade-exam-info');
-  info.innerHTML = `<span style="color:${et.color}">${et.icon} ${g}-р анги — ${et.name}</span>`;
+  const eid = GRADE_MAP[g] || 'guitsegdel';
+  const et  = EXAM_TYPES[eid];
+  document.getElementById('grade-exam-info').innerHTML =
+    `<span style="color:${et.color}">${et.icon} ${g}-р анги — ${et.name}</span>`;
 
-  if (currentExamId && !EXAM_TYPES[currentExamId].grades.includes(g)) {
+  if (currentExamId && !EXAM_TYPES[currentExamId]?.grades.includes(g)) {
     selectExamType(eid);
-    return;
   }
-
-  // AI панел нээлттэй байвал анги sync хийх
-  const aiGrade = document.getElementById('ai-grade');
-  if (aiGrade) aiGrade.value = g;
 }
 
-function syncAiSubject() {
-  const aiSubject = document.getElementById('ai-subject');
-  const bpSubject = document.getElementById('bp-subject');
-  if (aiSubject && bpSubject) aiSubject.value = bpSubject.value;
-}
-
-/* ═══════════════════════════════════════════════
-   SLIDER / TOTAL
-═══════════════════════════════════════════════ */
+/* ── Slider ── */
 function setSliders(h, d, hard) {
-  ['Хялбар','Дунд','Хүнд'].forEach((k,i) => {
-    const el = document.getElementById('slider-' + k);
-    el.value = [h,d,hard][i];
-    document.getElementById('val-' + k).textContent = [h,d,hard][i];
+  [['Хялбар',h],['Дунд',d],['Хүнд',hard]].forEach(([k,v]) => {
+    document.getElementById('slider-'+k).value = v;
+    document.getElementById('val-'+k).textContent = v;
   });
   updateTotal();
 }
-
 function updateSlider(el, key) {
-  document.getElementById('val-' + key).textContent = el.value;
+  document.getElementById('val-'+key).textContent = el.value;
   updateTotal();
 }
-
 function updateTotal() {
-  const counts = ['Хялбар','Дунд','Хүнд'].map(k => +document.getElementById('slider-'+k).value);
-  const total  = counts.reduce((a,b) => a+b, 0);
-  const score  = counts[0]*1 + counts[1]*2 + counts[2]*3;
-  document.getElementById('total-count').textContent = total;
-  document.getElementById('total-score').textContent = score;
+  const [h,d,n] = ['Хялбар','Дунд','Хүнд'].map(k => +document.getElementById('slider-'+k).value);
+  document.getElementById('total-count').textContent = h+d+n;
+  document.getElementById('total-score').textContent = h*1+d*2+n*3;
 }
 
-/* ═══════════════════════════════════════════════
-   МЭД. САНГААС ШАЛГАЛТ ҮҮСГЭХ
-═══════════════════════════════════════════════ */
+/* ── Шалгалт үүсгэх ── */
 async function generateExam() {
   if (!currentGrade) { alert('Анги сонгоно уу'); return; }
-  const subject   = document.getElementById('bp-subject').value;
+  const subject = document.getElementById('bp-subject').value;
   const blueprint = {
     'Хялбар': +document.getElementById('slider-Хялбар').value,
     'Дунд':   +document.getElementById('slider-Дунд').value,
@@ -207,30 +171,38 @@ async function generateExam() {
   panel.innerHTML = '<div class="loading"><div class="spinner"></div><p>Шалгалт үүсгэж байна...</p></div>';
 
   const res  = await fetch('/api/generate-exam', {
-    method:  'POST',
-    headers: {'Content-Type': 'application/json'},
-    body:    JSON.stringify({ grade: currentGrade, subject, exam_id: currentExamId, blueprint })
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ grade: currentGrade, subject, exam_id: currentExamId, blueprint })
   });
   const exam = await res.json();
+
+  if (exam.error) {
+    panel.innerHTML = `<div class="empty-state tall"><div class="empty-icon">⚠</div>
+      <p>${exam.error}</p>
+      <p style="font-size:.85rem;color:var(--muted);margin-top:.5rem">
+        Admin панелаас даалгавар нэмнэ үү → <a href="/admin/add">Admin</a></p></div>`;
+    return;
+  }
   renderExam(exam);
 }
 
+/* ── Харуулах ── */
 function renderExam(exam) {
   const panel = document.getElementById('bp-result');
   const et    = EXAM_TYPES[exam.exam_id] || {};
+  const isG   = exam.exam_id === 'guitsegdel';
+  const isE   = exam.exam_id === 'elselt';
 
   const diffCounts = {};
   exam.questions.forEach(q => { diffCounts[q.difficulty] = (diffCounts[q.difficulty]||0)+1; });
-
-  const isGuitsegdel = exam.exam_id === 'guitsegdel';
-  const isElselt     = exam.exam_id === 'elselt';
 
   panel.innerHTML = `
     <div class="exam-result">
       <div class="exam-header" style="border-left:3px solid ${et.color||'#f0a500'}">
         <div class="exam-meta">
-          <div class="exam-type-tag" style="background:${et.color}22;color:${et.color};border:1px solid ${et.color}44">
-            ${exam.exam_icon} ${exam.exam_type}
+          <div class="exam-type-tag" style="background:${et.color}22;color:${et.color};border:1px solid ${et.color}55">
+            ${et.icon||'📋'} ${exam.exam_type}
           </div>
           <h2>${exam.title}</h2>
           <div class="exam-badges">
@@ -241,69 +213,68 @@ function renderExam(exam) {
         </div>
         <div class="exam-summary">
           <div class="sum-item"><span>${exam.total_questions}</span><label>Даалгавар</label></div>
-          <div class="sum-item"><span style="color:${et.color}">${isGuitsegdel?'—':exam.total_score}</span><label>${isGuitsegdel?'Оноогүй':'Оноо'}</label></div>
+          <div class="sum-item">
+            <span style="color:${et.color||'var(--accent)'}">${isG ? '—' : exam.total_score}</span>
+            <label>${isG ? 'Оноогүй' : 'Оноо'}</label>
+          </div>
         </div>
       </div>
 
-      ${isGuitsegdel?`<div class="guitsegdel-banner">📝 Гүйцэтгэлийн үнэлгээ нь оноогоор дүгнэхгүй.</div>`:''}
-      ${isElselt?`<div class="elselt-banner">🎓 1 буруу хариулт = −0.2 оноо. Нийт 100 оноо.</div>`:''}
+      ${isG ? `<div class="info-banner green-banner">📝 Гүйцэтгэлийн үнэлгээ — оноогоор дүгнэхгүй. Багш ажиглалтын дэвтэр хөтөлж сурагч бүрийн хөгжлийг тодорхойлно.</div>` : ''}
+      ${isE ? `<div class="info-banner blue-banner">🎓 Элсэлтийн шалгалтын загвар — 1 буруу хариулт = −0.2 оноо. Нийт 100 оноо.</div>` : ''}
 
       <div class="blueprint-chart">
-        ${Object.entries(diffCounts).map(([d,c])=>`
+        ${Object.entries(diffCounts).map(([d,c]) => `
           <div class="chart-bar-row">
             <span class="diff-label diff-${d}">${d}</span>
             <div class="chart-bar-wrap">
               <div class="chart-bar diff-bg-${d}" style="width:${(c/exam.total_questions*100).toFixed(0)}%">${c}</div>
             </div>
-          </div>
-        `).join('')}
+          </div>`).join('')}
       </div>
 
       <div class="exam-questions">
-        ${exam.questions.map((q,i)=>`
+        ${exam.questions.map((q,i) => `
           <div class="eq-item">
             <div class="eq-num">${i+1}</div>
             <div class="eq-content">
               <div class="eq-tags">
                 <span class="q-diff diff-${q.difficulty}">${q.difficulty}</span>
                 <span class="q-bloom">${q.bloom}</span>
-                ${!isGuitsegdel?`<span class="q-score">${q.score}п</span>`:''}
+                ${!isG ? `<span class="q-score">${q.score}п</span>` : ''}
               </div>
               <p>${q.question}</p>
-              ${q.options?`<div class="q-options">${q.options.map(o=>`<span class="q-opt">${o}</span>`).join('')}</div>`:''}
+              ${q.options ? `<div class="q-options">${q.options.map(o=>`<span class="q-opt">${o}</span>`).join('')}</div>` : ''}
             </div>
-          </div>
-        `).join('')}
+          </div>`).join('')}
       </div>
 
       <div class="exam-actions">
-        <button class="btn btn-primary" onclick='downloadExam(${JSON.stringify(exam).replace(/"/g,"&quot;")})'>⬇ Татаж авах</button>
+        <button class="btn btn-primary" onclick='downloadExam(${JSON.stringify(exam).replace(/'/g,"\\'")})'> ⬇ Татаж авах</button>
         <button class="btn btn-outline" onclick="generateExam()">↻ Дахин үүсгэх</button>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
+/* ── Татаж авах ── */
 function downloadExam(exam) {
-  const isGuitsegdel = exam.exam_id === 'guitsegdel';
-  let text = `${'═'.repeat(60)}\n   ОРХОНТУУЛ ЕБС\n   ${exam.title}\n${'═'.repeat(60)}\n\n`;
-  text += `Шалгалтын төрөл: ${exam.exam_type}\n`;
-  text += `Нийт даалгавар:  ${exam.total_questions}\n`;
-  if (!isGuitsegdel) text += `Нийт оноо:       ${exam.total_score}\n`;
-  text += `Хугацаа:         ${exam.duration}\n`;
-  if (exam.note) text += `Тэмдэглэл:       ${exam.note}\n`;
-  text += `\n${'─'.repeat(60)}\n\n`;
+  const isG = exam.exam_id === 'guitsegdel';
+  let t = `${'═'.repeat(60)}\n   ОРХОНТУУЛ ЕБС\n   ${exam.title}\n${'═'.repeat(60)}\n\n`;
+  t += `Шалгалтын төрөл: ${exam.exam_type}\nНийт даалгавар:  ${exam.total_questions}\n`;
+  if (!isG) t += `Нийт оноо:       ${exam.total_score}\n`;
+  t += `Хугацаа:         ${exam.duration}\n`;
+  if (exam.note) t += `Тэмдэглэл:       ${exam.note}\n`;
+  t += `\n${'─'.repeat(60)}\n\n`;
   exam.questions.forEach((q,i) => {
-    const score = isGuitsegdel ? '' : ` (${q.score}п)`;
-    text += `${i+1}. [${q.difficulty} · ${q.bloom}]${score}\n${q.question}\n`;
-    if (q.options) q.options.forEach(o => text += `    ${o}\n`);
-    text += '\n';
+    t += `${i+1}. [${q.difficulty} · ${q.bloom}]${isG?'':` (${q.score}п)`}\n${q.question}\n`;
+    if (q.options) q.options.forEach(o => t += `    ${o}\n`);
+    t += '\n';
   });
-  if (!isGuitsegdel) {
-    text += `\n${'─'.repeat(60)}\nХАРИУЛТЫН ХУУДАС\n`;
-    exam.questions.forEach((q,i) => text += `${i+1}. ${q.answer||'—'}   `);
+  if (!isG) {
+    t += `\n${'─'.repeat(60)}\nХАРИУЛТЫН ХУУДАС\n`;
+    exam.questions.forEach((q,i) => t += `${i+1}. ${q.answer||'—'}   `);
   }
-  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+  const blob = new Blob([t], {type:'text/plain;charset=utf-8'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `${exam.exam_id}_${exam.grade}angi_${exam.subject}_${Date.now()}.txt`;
@@ -311,343 +282,5 @@ function downloadExam(exam) {
 }
 
 updateTotal();
-
-/* ═══════════════════════════════════════════════
-   AI ПАНЕЛ — bp-result дотор харуулах
-═══════════════════════════════════════════════ */
-function showAiPanel() {
-  const grade   = currentGrade || 6;
-  const subject = document.getElementById('bp-subject').value;
-  const panel   = document.getElementById('bp-result');
-
-  // Хичээлийн option-уудыг үүсгэх
-  let subjectOptions = '';
-  for (const key in SUBJECTS) {
-    for (const s of SUBJECTS[key]) {
-      subjectOptions += `<option value="${s}" ${s === subject ? 'selected' : ''}>${s}</option>`;
-    }
-  }
-
-  // Анги option-уудыг үүсгэх
-  let gradeOptions = '';
-  for (let g = 1; g <= 12; g++) {
-    gradeOptions += `<option value="${g}" ${g === grade ? 'selected' : ''}>${g}-р анги</option>`;
-  }
-
-  panel.innerHTML = `
-    <div class="ai-inline-panel">
-
-      <div class="ai-inline-header">
-        <span class="ai-badge">✦ AI</span>
-        <div>
-          <h2>AI Даалгавар Үүсгэгч</h2>
-          <p>Claude AI-аар анги дэвших шалгалтын даалгавар үүсгэнэ</p>
-        </div>
-      </div>
-
-      <div class="ai-config-grid">
-        <div class="ai-field">
-          <label>Анги</label>
-          <select id="ai-grade">${gradeOptions}</select>
-        </div>
-        <div class="ai-field">
-          <label>Хичээл</label>
-          <select id="ai-subject">${subjectOptions}</select>
-        </div>
-        <div class="ai-field">
-          <label>Даалгаврын тоо</label>
-          <select id="ai-count">
-            <option value="5">5 даалгавар</option>
-            <option value="10">10 даалгавар</option>
-            <option value="15">15 даалгавар</option>
-            <option value="20" selected>20 даалгавар</option>
-            <option value="25">25 даалгавар</option>
-            <option value="30">30 даалгавар</option>
-          </select>
-        </div>
-        <div class="ai-field">
-          <label>Хүндрэлийн түвшин</label>
-          <select id="ai-difficulty">
-            <option value="mixed">Холимог (автомат)</option>
-            <option value="Хялбар">Хялбар</option>
-            <option value="Дунд">Дунд</option>
-            <option value="Хүнд">Хүнд</option>
-          </select>
-        </div>
-        <div class="ai-field">
-          <label>Даалгаврын төрөл</label>
-          <select id="ai-qtype">
-            <option value="mixed">Холимог</option>
-            <option value="Нэг сонголт">Нэг сонголт</option>
-            <option value="Олон сонголт">Олон сонголт</option>
-            <option value="Нээлттэй">Нээлттэй</option>
-          </select>
-        </div>
-        <div class="ai-field ai-field-full">
-          <label>Сэдэв / Хамрах хүрээ <span style="opacity:.5;font-size:.8em">(заавал биш)</span></label>
-          <input type="text" id="ai-topic" placeholder="Жишээ: Тэгшитгэл, Геометр, Хоёр тоон тоо...">
-        </div>
-      </div>
-
-      <button class="btn btn-primary btn-full" id="ai-gen-btn" onclick="aiGenerate()" style="margin-top:1rem">
-        <span>✦</span> AI-аар даалгавар үүсгэх
-      </button>
-
-      <div class="ai-features" style="margin-top:.8rem;display:flex;gap:.6rem;flex-wrap:wrap;font-size:.8rem;opacity:.7">
-        <span>✓ Блумын шат автомат</span>
-        <span>✓ Зөв хариулт</span>
-        <span>✓ Оноо тооцоо</span>
-        <span>✓ Татаж авах</span>
-      </div>
-
-      <div id="ai-result" style="margin-top:1.2rem"></div>
-    </div>
-  `;
-}
-
-/* ═══════════════════════════════════════════════
-   AI GENERATE
-═══════════════════════════════════════════════ */
-async function aiGenerate() {
-  const gradeEl      = document.getElementById('ai-grade');
-  const subjectEl    = document.getElementById('ai-subject');
-  const countEl      = document.getElementById('ai-count');
-  const difficultyEl = document.getElementById('ai-difficulty');
-  const qtypeEl      = document.getElementById('ai-qtype');
-  const topicEl      = document.getElementById('ai-topic');
-
-  if (!gradeEl) return;
-
-  const grade      = gradeEl.value;
-  const subject    = subjectEl.value;
-  const count      = countEl.value;
-  const difficulty = difficultyEl.value;
-  const qtype      = qtypeEl.value;
-  const topic      = topicEl.value.trim();
-
-  const btn    = document.getElementById('ai-gen-btn');
-  const result = document.getElementById('ai-result');
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="ai-spinner"></span> AI үүсгэж байна...';
-
-  result.innerHTML = `
-    <div class="ai-loading">
-      <div class="ai-load-icon">✦</div>
-      <p>Claude AI даалгавар үүсгэж байна...</p>
-      <small>${grade}-р анги · ${subject} · ${count} даалгавар</small>
-    </div>
-  `;
-
-  const diffText  = difficulty === 'mixed'
-    ? 'Хялбар (1п), Дунд (2п), Хүнд (3п) гэсэн 3 түвшнийг ойролцоогоор тэнцүү хуваарилж холимог байдлаар ашигла'
-    : `Бүх даалгавар ${difficulty} түвшний байна`;
-  const qtypeText = qtype === 'mixed'
-    ? 'Нэг сонголт, Олон сонголт, Нээлттэй гэсэн төрлүүдийг холимог байдлаар ашигла'
-    : `Бүх даалгавар "${qtype}" төрлийн байна`;
-  const topicText = topic ? `Сэдэв/хамрах хүрээ: ${topic}. ` : '';
-
-  const prompt = `Та Монгол улсын ${grade}-р ангийн ${subject} хичээлийн АНГИ ДЭВШИХ ШАЛГАЛТЫН даалгавар үүсгэж байна.
-${topicText}${diffText}. ${qtypeText}.
-Монголын боловсролын стандарт болон Блумын таксономийн дагуу нийт ${count} даалгавар үүсгэ.
-Даалгавар бодитой, анги дэвших шалгалтад тохирсон байна.
-
-Зөвхөн цэвэр JSON форматаар хариул. Markdown, тайлбар, \`\`\` тэмдэгт огт хэрэггүй. Дараах бүтцийг яг дага:
-{
-  "exam_title": "...",
-  "grade": ${grade},
-  "subject": "${subject}",
-  "duration": "60 минут",
-  "total_score": 0,
-  "questions": [
-    {
-      "id": 1,
-      "q_type": "Нэг сонголт",
-      "difficulty": "Хялбар",
-      "bloom": "Мэдлэг",
-      "score": 1,
-      "topic": "...",
-      "question": "...",
-      "option_a": "...",
-      "option_b": "...",
-      "option_c": "...",
-      "option_d": "...",
-      "answer": "А"
-    }
-  ]
-}
-Нээлттэй даалгаварт option_a/b/c/d = null, answer = загвар хариулт.
-Олон сонголтод answer = "А,В" гэх мэт.
-Оноо: Хялбар=1, Дунд=2, Хүнд=3.`;
-
-  try {
-    const res = await fetch('/api/ai-generate', {
-      method:  'POST',
-      headers: {'Content-Type': 'application/json'},
-      body:    JSON.stringify({ prompt })
-    });
-
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-
-    const raw   = data.content || '';
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const exam  = JSON.parse(clean);
-
-    aiRenderResult(exam);
-
-  } catch(e) {
-    result.innerHTML = `
-      <div class="ai-error">
-        <strong>Алдаа гарлаа</strong>
-        <p>${e.message}</p>
-        <small>Дахин оролдоно уу.</small>
-      </div>
-    `;
-  }
-
-  btn.disabled = false;
-  btn.innerHTML = '<span>✦</span> AI-аар даалгавар үүсгэх';
-}
-
-/* ═══════════════════════════════════════════════
-   AI RESULT RENDER
-═══════════════════════════════════════════════ */
-function aiRenderResult(exam) {
-  const result     = document.getElementById('ai-result');
-  const totalScore = exam.total_score || exam.questions.reduce((s,q) => s+(q.score||1), 0);
-
-  const diffCounts = {};
-  exam.questions.forEach(q => { diffCounts[q.difficulty] = (diffCounts[q.difficulty]||0)+1; });
-
-  const diffBars = Object.entries(diffCounts).map(([d,c]) => `
-    <div class="ai-chart-row">
-      <span class="diff-label diff-${d}">${d}</span>
-      <div class="ai-chart-wrap">
-        <div class="ai-chart-fill diff-bg-${d}" style="width:${(c/exam.questions.length*100).toFixed(0)}%">${c}</div>
-      </div>
-    </div>
-  `).join('');
-
-  const questionsHtml = exam.questions.map((q,i) => {
-    const isOpen = q.q_type === 'Нээлттэй';
-    let optHtml = '';
-    if (!isOpen && q.option_a) {
-      optHtml = `<div class="ai-q-options">
-        <span class="ai-q-opt">А. ${q.option_a}</span>
-        <span class="ai-q-opt">Б. ${q.option_b}</span>
-        <span class="ai-q-opt">В. ${q.option_c}</span>
-        <span class="ai-q-opt">Г. ${q.option_d}</span>
-      </div>`;
-    } else if (isOpen) {
-      optHtml = `<div class="ai-open-note">Нээлттэй даалгавар — сурагч бүтэн хариулт бичнэ</div>`;
-    }
-    return `
-      <div class="ai-q-card">
-        <div class="ai-q-header">
-          <span class="ai-q-num">${i+1}</span>
-          <span class="q-diff diff-${q.difficulty}">${q.difficulty}</span>
-          <span class="q-bloom">${q.bloom}</span>
-          <span class="ai-q-type-tag">${q.q_type}</span>
-          ${q.topic ? `<span class="ai-q-topic">${q.topic}</span>` : ''}
-          <span class="ai-q-score-badge">${q.score}п</span>
-        </div>
-        <p class="ai-q-text">${q.question}</p>
-        ${optHtml}
-        <div class="ai-q-answer">
-          <span class="ai-answer-label">Хариулт:</span>
-          <span class="ai-answer-val">${q.answer}</span>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  result.innerHTML = `
-    <div class="ai-exam-result">
-      <div class="ai-result-header">
-        <div class="ai-result-title">
-          <span class="ai-result-badge">🎯 Анги дэвших шалгалт</span>
-          <h3>${exam.exam_title}</h3>
-        </div>
-        <div class="ai-result-meta">
-          <div class="ai-meta-item"><span>${exam.grade}-р анги</span><label>Анги</label></div>
-          <div class="ai-meta-item"><span>${exam.questions.length}</span><label>Даалгавар</label></div>
-          <div class="ai-meta-item"><span>${totalScore}</span><label>Нийт оноо</label></div>
-          <div class="ai-meta-item"><span>${exam.duration}</span><label>Хугацаа</label></div>
-        </div>
-      </div>
-
-      <div class="ai-diff-chart">${diffBars}</div>
-      <div class="ai-questions-list">${questionsHtml}</div>
-
-      <div class="ai-result-actions">
-        <button class="btn btn-primary" onclick="aiDownload(${JSON.stringify(exam).replace(/"/g,'&quot;')})">⬇ Татаж авах (.txt)</button>
-        <button class="btn btn-outline" onclick="aiSaveToDB(${JSON.stringify(exam).replace(/"/g,'&quot;')})">💾 Мэдээллийн санд хадгалах</button>
-        <button class="btn btn-outline" onclick="aiGenerate()">↻ Дахин үүсгэх</button>
-      </div>
-
-      <div id="ai-save-msg" style="display:none;margin-top:.8rem;padding:.6rem 1rem;background:var(--green,#22c55e)22;color:var(--green,#22c55e);border-radius:6px;font-size:.88rem"></div>
-    </div>
-  `;
-
-  window._lastAiExam = exam;
-}
-
-/* ═══════════════════════════════════════════════
-   AI DOWNLOAD / SAVE
-═══════════════════════════════════════════════ */
-function aiDownload(exam) {
-  let text = `${'═'.repeat(60)}\n   ОРХОНТУУЛ ЕБС — AI ҮҮСГЭСЭН ШАЛГАЛТ\n${'═'.repeat(60)}\n\n`;
-  text += `Гарчиг: ${exam.exam_title}\nАнги: ${exam.grade}-р анги\nХичээл: ${exam.subject}\n`;
-  text += `Хугацаа: ${exam.duration}\nНийт даалгавар: ${exam.questions.length}\nНийт оноо: ${exam.total_score}\n`;
-  text += `\n${'─'.repeat(60)}\n\n`;
-  exam.questions.forEach((q,i) => {
-    text += `${i+1}. [${q.difficulty} · ${q.bloom} · ${q.q_type} · ${q.score}п]\n`;
-    if (q.topic) text += `   Сэдэв: ${q.topic}\n`;
-    text += `${q.question}\n`;
-    if (q.option_a) {
-      text += `   А. ${q.option_a}\n   Б. ${q.option_b}\n   В. ${q.option_c}\n   Г. ${q.option_d}\n`;
-    }
-    text += `   → Хариулт: ${q.answer}\n\n`;
-  });
-  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
-  const a    = document.createElement('a');
-  a.href     = URL.createObjectURL(blob);
-  a.download = `AI_devshikh_${exam.grade}angi_${exam.subject}_${Date.now()}.txt`;
-  a.click();
-}
-
-async function aiSaveToDB(exam) {
-  const msg = document.getElementById('ai-save-msg');
-  msg.style.display = 'block';
-  msg.textContent = '⏳ Хадгалж байна...';
-
-  let saved = 0, failed = 0;
-  for (const q of exam.questions) {
-    try {
-      const res = await fetch('/api/save-question', {
-        method:  'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          grade: exam.grade, subject: exam.subject,
-          difficulty: q.difficulty, bloom: q.bloom, q_type: q.q_type,
-          question: q.question, option_a: q.option_a||null, option_b: q.option_b||null,
-          option_c: q.option_c||null, option_d: q.option_d||null,
-          answer: q.answer, score: q.score, topic: q.topic||''
-        })
-      });
-      const data = await res.json();
-      if (data.success) saved++; else failed++;
-    } catch(e) { failed++; }
-  }
-
-  if (saved > 0) {
-    msg.textContent = `✓ ${saved} даалгавар амжилттай хадгалагдлаа!${failed>0?' ('+failed+' алдаа)':''}`;
-    msg.style.color = 'var(--green,#22c55e)';
-  } else {
-    msg.textContent = `✗ Хадгалахад алдаа гарлаа.`;
-    msg.style.color = 'var(--danger,#ef4444)';
-  }
-}
 </script>
 {% endblock %}
