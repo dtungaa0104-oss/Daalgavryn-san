@@ -1,5 +1,441 @@
 {% extends "base.html" %}
 {% block title %}Блупринт — Шалгалт үүсгэх{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/green.css">
+<style>
+/* ══════════════════════════════════════════
+   BLUEPRINT ХУУДАСНЫ ӨНГӨ — ногоон систем
+══════════════════════════════════════════ */
+
+/* Layout */
+.blueprint-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 60px);
+}
+
+/* Зүүн тохиргооны панел */
+.bp-config {
+  background: #ffffff;
+  border-right: 2px solid #C0DD97;
+  padding: 24px 20px;
+  overflow-y: auto;
+  position: sticky;
+  top: 60px;
+  height: calc(100vh - 60px);
+}
+
+.panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #639922;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #C0DD97;
+}
+
+/* Шалгалтын төрөл товч */
+.exam-type-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.et-select-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1.5px solid #C0DD97;
+  border-radius: 10px;
+  background: #f6fbf0;
+  cursor: pointer;
+  transition: all .15s;
+  text-align: left;
+  font-family: inherit;
+}
+.et-select-btn:hover {
+  border-color: var(--et-color, #0F6E56);
+  background: #EAF3DE;
+}
+.et-select-btn.active {
+  border-color: var(--et-color, #0F6E56);
+  background: #fff;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--et-color, #0F6E56) 15%, transparent);
+}
+.etb-icon { font-size: 20px; flex-shrink: 0; }
+.etb-info strong { display: block; font-size: 13px; color: #173404; }
+.etb-info small  { font-size: 11px; color: #639922; }
+
+/* Ангийн товч */
+.grade-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.grade-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1.5px solid #C0DD97;
+  background: #EAF3DE;
+  color: #173404;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: inherit;
+}
+.grade-btn:hover  { border-color: var(--et-color, #0F6E56); background: #f0f7e8; }
+.grade-btn.active {
+  background: var(--et-color, #0F6E56);
+  color: #fff;
+  border-color: var(--et-color, #0F6E56);
+}
+.grade-btn.dimmed { opacity: 0.3; pointer-events: none; }
+
+.grade-exam-info {
+  font-size: 12px;
+  color: #3B6D11;
+  margin-bottom: 4px;
+  min-height: 20px;
+}
+
+/* Хичээл сонгох */
+.styled-select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid #C0DD97;
+  border-radius: 8px;
+  background: #f6fbf0;
+  color: #173404;
+  font-size: 13px;
+  font-family: inherit;
+  appearance: none;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+.styled-select:focus {
+  outline: none;
+  border-color: #0F6E56;
+  box-shadow: 0 0 0 3px rgba(15,110,86,0.12);
+}
+
+/* Slider */
+.blueprint-sliders { display: flex; flex-direction: column; gap: 10px; }
+.slider-row {
+  display: grid;
+  grid-template-columns: 70px 1fr 32px;
+  align-items: center;
+  gap: 10px;
+}
+.diff-label {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 99px;
+  text-align: center;
+}
+.diff-Хялбар { background: #EAF3DE; color: #27500A; border: 1px solid #C0DD97; }
+.diff-Дунд   { background: #E1F5EE; color: #085041; border: 1px solid #9FE1CB; }
+.diff-Хүнд   { background: #173404; color: #C0DD97; border: 1px solid #3B6D11; }
+
+.bp-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 5px;
+  border-radius: 3px;
+  background: #C0DD97;
+  outline: none;
+  cursor: pointer;
+}
+.bp-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #0F6E56;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.slider-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0F6E56;
+  text-align: center;
+}
+
+/* Total bar */
+.total-bar {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: #EAF3DE;
+  border: 1px solid #C0DD97;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #3B6D11;
+}
+.total-bar strong { color: #0F6E56; font-size: 16px; }
+
+/* Үүсгэх товч */
+.btn-full { width: 100%; }
+.btn.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #0F6E56, #27500A);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: inherit;
+}
+.btn.btn-primary:hover {
+  background: linear-gradient(135deg, #27500A, #0F6E56);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(15,110,86,0.3);
+}
+.btn.btn-outline {
+  padding: 10px 20px;
+  background: transparent;
+  color: #0F6E56;
+  border: 2px solid #0F6E56;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: inherit;
+}
+.btn.btn-outline:hover { background: #EAF3DE; }
+
+/* ══ БАРУУН: Үр дүн ══ */
+.bp-result {
+  background: #f0f7e8;
+  background-image:
+    radial-gradient(circle, #97C459 1px, transparent 1px),
+    radial-gradient(circle, #C0DD97 1px, transparent 1px);
+  background-size: 40px 40px, 20px 20px;
+  background-position: 0 0, 10px 10px;
+  padding: 28px;
+  overflow-y: auto;
+}
+
+/* Empty state */
+.empty-state.tall {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 300px;
+  text-align: center;
+  color: #639922;
+}
+.empty-icon { font-size: 52px; opacity: .35; margin-bottom: 16px; }
+
+/* Loading */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 16px;
+  color: #3B6D11;
+}
+.spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid #C0DD97;
+  border-top-color: #0F6E56;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Exam result */
+.exam-result {
+  background: #fff;
+  border: 1.5px solid #C0DD97;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(15,110,86,0.08);
+}
+.exam-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px 28px;
+  background: #f6fbf0;
+  border-bottom: 1.5px solid #C0DD97;
+  gap: 20px;
+}
+.exam-type-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 99px;
+  margin-bottom: 8px;
+}
+.exam-header h2 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #173404;
+  margin-bottom: 10px;
+}
+.exam-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.badge {
+  font-size: 11px;
+  background: #EAF3DE;
+  color: #3B6D11;
+  border: 1px solid #C0DD97;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+.badge-note { background: #FFF3CD; color: #856404; border-color: #FFD966; }
+
+.exam-summary {
+  display: flex;
+  gap: 20px;
+  flex-shrink: 0;
+}
+.sum-item {
+  text-align: center;
+  background: #fff;
+  border: 1px solid #C0DD97;
+  border-radius: 10px;
+  padding: 10px 18px;
+  min-width: 72px;
+}
+.sum-item span { display: block; font-size: 24px; font-weight: 800; color: #0F6E56; }
+.sum-item label { font-size: 11px; color: #639922; }
+
+/* Info banner */
+.info-banner {
+  padding: 12px 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.green-banner { background: #EAF3DE; color: #27500A; border-bottom: 1px solid #C0DD97; }
+.blue-banner  { background: #E1F5EE; color: #085041; border-bottom: 1px solid #9FE1CB; }
+
+/* Blueprint chart */
+.blueprint-chart {
+  padding: 16px 28px;
+  border-bottom: 1px solid #EAF3DE;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chart-bar-row { display: flex; align-items: center; gap: 12px; }
+.chart-bar-wrap { flex: 1; background: #EAF3DE; border-radius: 99px; height: 22px; overflow: hidden; }
+.chart-bar {
+  height: 100%;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 30px;
+  transition: width .4s ease;
+}
+.diff-bg-Хялбар { background: #639922; }
+.diff-bg-Дунд   { background: #0F6E56; }
+.diff-bg-Хүнд   { background: #173404; }
+
+/* Questions */
+.exam-questions { padding: 20px 28px; display: flex; flex-direction: column; gap: 12px; }
+.eq-item {
+  display: flex;
+  gap: 14px;
+  padding: 14px;
+  background: #f6fbf0;
+  border: 1px solid #EAF3DE;
+  border-radius: 10px;
+  transition: border-color .15s;
+}
+.eq-item:hover { border-color: #C0DD97; }
+.eq-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: #0F6E56;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.eq-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.q-diff {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+.q-bloom {
+  font-size: 10px;
+  background: #fff;
+  color: #639922;
+  border: 1px solid #C0DD97;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+.q-score {
+  font-size: 10px;
+  background: #EAF3DE;
+  color: #27500A;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-weight: 700;
+}
+.eq-content p { font-size: 13px; color: #173404; line-height: 1.6; }
+.q-options { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.q-opt {
+  font-size: 12px;
+  background: #fff;
+  border: 1px solid #C0DD97;
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: #3B6D11;
+}
+
+/* Actions */
+.exam-actions {
+  display: flex;
+  gap: 10px;
+  padding: 20px 28px;
+  border-top: 1.5px solid #EAF3DE;
+  background: #f6fbf0;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 
 <div class="blueprint-layout">
@@ -61,14 +497,14 @@
     <div class="total-bar">
       Нийт: <strong id="total-count">0</strong> даалгавар
       &nbsp;|&nbsp; Оноо: <strong id="total-score">0</strong>
-      <span id="guitsegdel-note" style="display:none;color:var(--green);font-size:.78rem;margin-left:.5rem">(оноогүй)</span>
+      <span id="guitsegdel-note" style="display:none;color:#0F6E56;font-size:.78rem;margin-left:.5rem">(оноогүй)</span>
     </div>
 
     <button class="btn btn-primary btn-full" style="margin-top:1rem" onclick="generateExam()">
       ✦ Шалгалт үүсгэх
     </button>
 
-  </div><!-- /bp-config -->
+  </div>
 
   <!-- ══ БАРУУН: Үр дүн ══ -->
   <div class="bp-result" id="bp-result">
@@ -78,7 +514,7 @@
     </div>
   </div>
 
-</div><!-- /blueprint-layout -->
+</div>
 
 {% endblock %}
 {% block scripts %}
@@ -95,51 +531,38 @@ window.onload = () => {
   selectExamType(init);
 };
 
-/* ── Шалгалтын төрөл сонгох ── */
 function selectExamType(eid) {
   if (!EXAM_TYPES[eid]) return;
   currentExamId = eid;
   document.querySelectorAll('.et-select-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('etbtn-' + eid)?.classList.add('active');
-
   const et = EXAM_TYPES[eid];
   const bp = et.blueprint;
-
-  // Ангиудын тодруулалт
   for (let g = 1; g <= 12; g++) {
     const btn = document.getElementById('gbtn-' + g);
     if (!btn) continue;
     btn.classList.toggle('dimmed', !et.grades.includes(g));
     btn.classList.remove('active');
   }
-
-  // Эхний ангийг сонгох
   selectGrade(et.grades[0]);
-
-  // Блупринт автомат
   setSliders(bp['Хялбар']||0, bp['Дунд']||0, bp['Хүнд']||0);
-
   document.getElementById('guitsegdel-note').style.display =
     eid === 'guitsegdel' ? 'inline' : 'none';
 }
 
-/* ── Анги сонгох ── */
 function selectGrade(g) {
   currentGrade = g;
   document.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('gbtn-' + g)?.classList.add('active');
-
   const eid = GRADE_MAP[g] || 'guitsegdel';
   const et  = EXAM_TYPES[eid];
   document.getElementById('grade-exam-info').innerHTML =
     `<span style="color:${et.color}">${et.icon} ${g}-р анги — ${et.name}</span>`;
-
   if (currentExamId && !EXAM_TYPES[currentExamId]?.grades.includes(g)) {
     selectExamType(eid);
   }
 }
 
-/* ── Slider ── */
 function setSliders(h, d, hard) {
   [['Хялбар',h],['Дунд',d],['Хүнд',hard]].forEach(([k,v]) => {
     document.getElementById('slider-'+k).value = v;
@@ -157,7 +580,6 @@ function updateTotal() {
   document.getElementById('total-score').textContent = h*1+d*2+n*3;
 }
 
-/* ── Шалгалт үүсгэх ── */
 async function generateExam() {
   if (!currentGrade) { alert('Анги сонгоно уу'); return; }
   const subject = document.getElementById('bp-subject').value;
@@ -166,40 +588,35 @@ async function generateExam() {
     'Дунд':   +document.getElementById('slider-Дунд').value,
     'Хүнд':   +document.getElementById('slider-Хүнд').value,
   };
-
   const panel = document.getElementById('bp-result');
   panel.innerHTML = '<div class="loading"><div class="spinner"></div><p>Шалгалт үүсгэж байна...</p></div>';
-
   const res  = await fetch('/api/generate-exam', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({ grade: currentGrade, subject, exam_id: currentExamId, blueprint })
   });
   const exam = await res.json();
-
   if (exam.error) {
     panel.innerHTML = `<div class="empty-state tall"><div class="empty-icon">⚠</div>
       <p>${exam.error}</p>
-      <p style="font-size:.85rem;color:var(--muted);margin-top:.5rem">
+      <p style="font-size:.85rem;color:#639922;margin-top:.5rem">
         Admin панелаас даалгавар нэмнэ үү → <a href="/admin/add">Admin</a></p></div>`;
     return;
   }
   renderExam(exam);
 }
 
-/* ── Харуулах ── */
 function renderExam(exam) {
   const panel = document.getElementById('bp-result');
   const et    = EXAM_TYPES[exam.exam_id] || {};
   const isG   = exam.exam_id === 'guitsegdel';
   const isE   = exam.exam_id === 'elselt';
-
   const diffCounts = {};
   exam.questions.forEach(q => { diffCounts[q.difficulty] = (diffCounts[q.difficulty]||0)+1; });
 
   panel.innerHTML = `
     <div class="exam-result">
-      <div class="exam-header" style="border-left:3px solid ${et.color||'#f0a500'}">
+      <div class="exam-header" style="border-left:3px solid ${et.color||'#0F6E56'}">
         <div class="exam-meta">
           <div class="exam-type-tag" style="background:${et.color}22;color:${et.color};border:1px solid ${et.color}55">
             ${et.icon||'📋'} ${exam.exam_type}
@@ -214,15 +631,13 @@ function renderExam(exam) {
         <div class="exam-summary">
           <div class="sum-item"><span>${exam.total_questions}</span><label>Даалгавар</label></div>
           <div class="sum-item">
-            <span style="color:${et.color||'var(--accent)'}">${isG ? '—' : exam.total_score}</span>
+            <span style="color:${et.color||'#0F6E56'}">${isG ? '—' : exam.total_score}</span>
             <label>${isG ? 'Оноогүй' : 'Оноо'}</label>
           </div>
         </div>
       </div>
-
       ${isG ? `<div class="info-banner green-banner">📝 Гүйцэтгэлийн үнэлгээ — оноогоор дүгнэхгүй. Багш ажиглалтын дэвтэр хөтөлж сурагч бүрийн хөгжлийг тодорхойлно.</div>` : ''}
       ${isE ? `<div class="info-banner blue-banner">🎓 Элсэлтийн шалгалтын загвар — 1 буруу хариулт = −0.2 оноо. Нийт 100 оноо.</div>` : ''}
-
       <div class="blueprint-chart">
         ${Object.entries(diffCounts).map(([d,c]) => `
           <div class="chart-bar-row">
@@ -232,7 +647,6 @@ function renderExam(exam) {
             </div>
           </div>`).join('')}
       </div>
-
       <div class="exam-questions">
         ${exam.questions.map((q,i) => `
           <div class="eq-item">
@@ -248,7 +662,6 @@ function renderExam(exam) {
             </div>
           </div>`).join('')}
       </div>
-
       <div class="exam-actions">
         <button class="btn btn-primary" onclick='downloadExam(${JSON.stringify(exam).replace(/'/g,"\\'")})'> ⬇ Татаж авах</button>
         <button class="btn btn-outline" onclick="generateExam()">↻ Дахин үүсгэх</button>
@@ -256,7 +669,6 @@ function renderExam(exam) {
     </div>`;
 }
 
-/* ── Татаж авах ── */
 function downloadExam(exam) {
   const isG = exam.exam_id === 'guitsegdel';
   let t = `${'═'.repeat(60)}\n   ОРХОНТУУЛ ЕБС\n   ${exam.title}\n${'═'.repeat(60)}\n\n`;
