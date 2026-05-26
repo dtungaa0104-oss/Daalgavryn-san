@@ -470,6 +470,7 @@
     <li><a href="/" {% if request.path == '/' %}class="active"{% endif %}>Нүүр</a></li>
     <li><a href="/questions" {% if request.path == '/questions' %}class="active"{% endif %}>Даалгавар</a></li>
     <li><a href="/blueprint" {% if request.path == '/blueprint' %}class="active"{% endif %}>Блупринт</a></li>
+    <li><a href="/teacher" {% if request.path == '/teacher' %}class="active"{% endif %}>👩‍🏫 Багш танд</a></li>
     <li><a href="/olympiad" {% if request.path == '/olympiad' %}class="active"{% endif %}>Олимпиад</a></li>
     <li><a href="/mongol-bichig" {% if request.path == '/mongol-bichig' %}class="active"{% endif %}>✍ Босго Шалгалт</a></li>
     <li><a href="/interactive" {% if request.path == '/interactive' %}class="active"{% endif %}>Интерактив</a></li>
@@ -503,5 +504,234 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
+
+<!-- ══ ЧАТБОТ ══ -->
+<style>
+#chat-btn {
+  position:fixed; bottom:24px; right:24px; z-index:1000;
+  width:56px; height:56px; border-radius:50%;
+  background:var(--teal-600); color:#fff;
+  border:none; cursor:pointer; font-size:1.5rem;
+  box-shadow:0 4px 16px rgba(15,110,86,.4);
+  display:flex; align-items:center; justify-content:center;
+  transition:all .2s;
+}
+#chat-btn:hover { background:var(--green-700); transform:scale(1.08); }
+#chat-btn .notif {
+  position:absolute; top:-2px; right:-2px;
+  width:14px; height:14px; border-radius:50%;
+  background:#E53935; border:2px solid #fff;
+  display:none;
+}
+
+#chat-window {
+  position:fixed; bottom:90px; right:24px; z-index:1000;
+  width:340px; max-height:520px;
+  background:#fff; border-radius:16px;
+  border:1.5px solid var(--green-100);
+  box-shadow:0 8px 32px rgba(0,0,0,.18);
+  display:none; flex-direction:column; overflow:hidden;
+}
+#chat-window.open { display:flex; }
+
+.chat-header {
+  background:var(--teal-600); padding:12px 16px;
+  display:flex; align-items:center; gap:10px;
+}
+.chat-avatar {
+  width:36px; height:36px; border-radius:50%;
+  background:rgba(255,255,255,.2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.1rem; flex-shrink:0;
+}
+.chat-header-info { flex:1; }
+.chat-header-info strong { color:#fff; font-size:.9rem; display:block; }
+.chat-header-info span  { color:rgba(255,255,255,.75); font-size:.72rem; }
+.chat-close { color:rgba(255,255,255,.8); background:none; border:none; cursor:pointer; font-size:1.1rem; padding:4px; }
+.chat-close:hover { color:#fff; }
+
+#chat-messages {
+  flex:1; overflow-y:auto; padding:12px;
+  display:flex; flex-direction:column; gap:8px;
+  min-height:200px; max-height:340px;
+}
+.chat-msg { display:flex; gap:6px; align-items:flex-end; }
+.chat-msg.user { flex-direction:row-reverse; }
+.msg-bubble {
+  max-width:82%; padding:8px 12px; border-radius:12px;
+  font-size:.85rem; line-height:1.5; word-break:break-word;
+}
+.chat-msg.bot  .msg-bubble { background:var(--green-50); color:var(--text-dark); border-radius:4px 12px 12px 12px; }
+.chat-msg.user .msg-bubble { background:var(--teal-600); color:#fff; border-radius:12px 4px 12px 12px; }
+.msg-avatar { width:26px; height:26px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.8rem; }
+.msg-avatar.bot  { background:var(--green-100); color:var(--teal-600); }
+.msg-avatar.user { background:var(--teal-600); color:#fff; }
+
+.chat-typing { display:flex; gap:4px; padding:8px 12px; }
+.chat-typing span { width:7px; height:7px; border-radius:50%; background:var(--green-200); animation:bounce .8s infinite; }
+.chat-typing span:nth-child(2) { animation-delay:.15s; }
+.chat-typing span:nth-child(3) { animation-delay:.3s; }
+@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+
+#chat-form {
+  padding:10px 12px; border-top:1.5px solid var(--green-50);
+  display:flex; gap:8px;
+}
+#chat-input {
+  flex:1; padding:8px 12px; border-radius:20px;
+  border:1.5px solid var(--green-100); font-size:.85rem;
+  background:var(--green-50); outline:none; resize:none;
+  font-family:inherit; max-height:80px;
+}
+#chat-input:focus { border-color:var(--teal-600); }
+#chat-send {
+  width:36px; height:36px; border-radius:50%;
+  background:var(--teal-600); color:#fff;
+  border:none; cursor:pointer; font-size:1rem;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; transition:all .15s;
+}
+#chat-send:hover { background:var(--green-700); }
+#chat-send:disabled { opacity:.5; cursor:default; }
+
+.quick-btns { display:flex; flex-wrap:wrap; gap:5px; padding:0 12px 8px; }
+.quick-btn {
+  font-size:.72rem; padding:3px 10px; border-radius:20px;
+  border:1px solid var(--green-200); background:#fff;
+  color:var(--teal-600); cursor:pointer; transition:all .15s;
+}
+.quick-btn:hover { background:var(--teal-600); color:#fff; border-color:var(--teal-600); }
+</style>
+
+<!-- Чатбот товч -->
+<button id="chat-btn" onclick="toggleChat()" title="Ухаалаг туслах">
+  <span id="chat-icon">💬</span>
+  <div class="notif" id="chat-notif"></div>
+</button>
+
+<!-- Чатбот цонх -->
+<div id="chat-window">
+  <div class="chat-header">
+    <div class="chat-avatar">🤖</div>
+    <div class="chat-header-info">
+      <strong>Ухаалаг Туслах</strong>
+      <span>Орхонтуул ЕБС · AI чатбот</span>
+    </div>
+    <button class="chat-close" onclick="toggleChat()">✕</button>
+  </div>
+
+  <div id="chat-messages">
+    <div class="chat-msg bot">
+      <div class="msg-avatar bot">🤖</div>
+      <div class="msg-bubble">Сайн байна уу! 👋 Би Орхонтуул ЕБС-ийн ухаалаг туслах. Хичээл, даалгавар, шалгалттай холбоотой асуултад хариулахад бэлэн байна!</div>
+    </div>
+  </div>
+
+  <div class="quick-btns" id="quick-btns">
+    <button class="quick-btn" onclick="quickSend('Математикийн бодлого бодоход туслаач')">📐 Математик</button>
+    <button class="quick-btn" onclick="quickSend('Шалгалтад бэлтгэх зөвлөгөө өгөөч')">📝 Шалгалт</button>
+    <button class="quick-btn" onclick="quickSend('Физикийн томъёог тайлбарлаач')">⚡ Физик</button>
+    <button class="quick-btn" onclick="quickSend('Монгол хэлний дүрэм тайлбарлаач')">📖 Монгол хэл</button>
+  </div>
+
+  <div id="chat-form">
+    <textarea id="chat-input" placeholder="Асуулт бичнэ үү..." rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
+      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+    <button id="chat-send" onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<script>
+let chatHistory = [];
+let chatOpen = false;
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chat-window').classList.toggle('open', chatOpen);
+  document.getElementById('chat-icon').textContent = chatOpen ? '✕' : '💬';
+  document.getElementById('chat-notif').style.display = 'none';
+  if (chatOpen) document.getElementById('chat-input').focus();
+}
+
+function quickSend(text) {
+  document.getElementById('quick-btns').style.display = 'none';
+  document.getElementById('chat-input').value = text;
+  sendChat();
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  input.value = ''; input.style.height = 'auto';
+  document.getElementById('chat-send').disabled = true;
+  document.getElementById('quick-btns').style.display = 'none';
+
+  addMsg('user', text);
+  chatHistory.push({role:'user', content:text});
+
+  // Typing indicator
+  const typing = document.createElement('div');
+  typing.className = 'chat-msg bot'; typing.id = 'typing';
+  typing.innerHTML = '<div class="msg-avatar bot">🤖</div><div class="chat-typing"><span></span><span></span><span></span></div>';
+  document.getElementById('chat-messages').appendChild(typing);
+  scrollChat();
+
+  try {
+    const res  = await fetch('/api/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({messages: chatHistory})
+    });
+    const data = await res.json();
+    document.getElementById('typing')?.remove();
+
+    if (data.error) {
+      addMsg('bot', '❌ ' + (data.error.includes('API') ? 'API тохируулаагүй байна.' : data.error));
+    } else {
+      addMsg('bot', data.reply);
+      chatHistory.push({role:'assistant', content:data.reply});
+      // 10-аас дээш мессеж болбол хуучныг арилга
+      if (chatHistory.length > 20) chatHistory = chatHistory.slice(-16);
+    }
+  } catch(e) {
+    document.getElementById('typing')?.remove();
+    addMsg('bot', '❌ Холболтын алдаа. Дахин оролдоно уу.');
+  }
+  document.getElementById('chat-send').disabled = false;
+}
+
+function addMsg(role, text) {
+  const msgs = document.getElementById('chat-messages');
+  const div  = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  const av   = role==='bot' ? '<div class="msg-avatar bot">🤖</div>' : '<div class="msg-avatar user">👤</div>';
+  // Markdown-г энгийн болгох
+  const html = text
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/
+/g,'<br>');
+  div.innerHTML = role==='bot'
+    ? `${av}<div class="msg-bubble">${html}</div>`
+    : `<div class="msg-bubble">${html}</div>${av}`;
+  msgs.appendChild(div);
+  scrollChat();
+}
+
+function scrollChat() {
+  const msgs = document.getElementById('chat-messages');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// Хуудас нээгдэхэд 3 секундын дараа анхааруулга
+setTimeout(()=>{
+  if(!chatOpen) {
+    document.getElementById('chat-notif').style.display='block';
+  }
+}, 3000);
+</script>
+
 </body>
 </html>
