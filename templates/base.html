@@ -7,10 +7,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Mongolian&family=Rajdhani:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/green.css') }}" />
-  {% block head %}{% endblock %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ai-generator.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css') }}" />
 </head>
 <body>
+
 <nav class="navbar">
   <div class="nav-brand">
     <span class="brand-icon">◈</span>
@@ -23,15 +24,20 @@
     <li><a href="/" {% if request.path == '/' %}class="active"{% endif %}>Нүүр</a></li>
     <li><a href="/questions" {% if request.path == '/questions' %}class="active"{% endif %}>Даалгавар</a></li>
     <li><a href="/blueprint" {% if request.path == '/blueprint' %}class="active"{% endif %}>Блупринт</a></li>
+    <li><a href="/olympiad" {% if request.path == '/olympiad' %}class="active"{% endif %}>Олимпиад</a></li>
+    <li><a href="/interactive" {% if request.path == '/interactive' %}class="active"{% endif %}>Интерактив</a></li>
   </ul>
   <div class="nav-badge">1–12-р анги</div>
 </nav>
+
 <main>
   {% block content %}{% endblock %}
 </main>
+
 <footer>
   <p>© 2025 Орхонтуул ЕБС &nbsp;·&nbsp; Даалгаврын сан &nbsp;·&nbsp; Боловсруулсан: МУ-ын боловсролын стандартын дагуу</p>
 </footer>
+
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% block scripts %}{% endblock %}
 </body>
