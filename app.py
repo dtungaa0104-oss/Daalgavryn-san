@@ -159,22 +159,77 @@ def api_questions():
 def generate_exam():
     data=request.json; grade=data.get("grade",9); subject=data.get("subject","Математик")
     exam_id=data.get("exam_id","devshih"); blueprint=data.get("blueprint",{})
+    use_ai=data.get("use_ai", True)   # default: AI-аар нөхнө
     et=EXAM_TYPES.get(exam_id,EXAM_TYPES["devshih"]); bp=et["blueprint"]
-    conn=get_db(); selected=[]
+    conn=get_db(); selected=[]; ai_generated=0
+
     for lvl in LEVELS:
         cnt=int(blueprint.get(lvl, bp.get(lvl,0)))
         if cnt<=0: continue
         rows=conn.execute(
             "SELECT * FROM questions WHERE grade=? AND subject=? AND level=? ORDER BY RANDOM() LIMIT ?",
             (grade,subject,lvl,cnt)).fetchall()
-        selected.extend([row_to_dict(r) for r in rows])
+        db_qs = [row_to_dict(r) for r in rows]
+        selected.extend(db_qs)
+        need = cnt - len(db_qs)
+
+        # DB хүрэлцэхгүй → AI-аар нөхнө
+        if need > 0 and use_ai:
+            api_key=os.environ.get("ANTHROPIC_API_KEY","")
+            if api_key:
+                try:
+                    import anthropic, json as _json
+                    score=LEVEL_SCORE.get(lvl,1)
+                    prompt=f"""Та Монгол боловсролын {grade}-р ангийн {subject} хичээлийн багш.
+Блупринтийн түвшин: {lvl}
+{need} даалгавар зохио. Зөвхөн JSON array буцаа, тайлбаргүй.
+Формат: [{{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","answer":"А"}}]
+Монгол хэлээр."""
+                    client=anthropic.Anthropic(api_key=api_key)
+                    msg=client.messages.create(model="claude-sonnet-4-20250514",max_tokens=3000,
+                        messages=[{"role":"user","content":prompt}])
+                    raw=msg.content[0].text.strip()
+                    raw=re.sub(r'^```json\s*','',raw); raw=re.sub(r'^```\s*','',raw); raw=re.sub(r'\s*```$','',raw).strip()
+                    ai_qs=_json.loads(raw)
+                    if not isinstance(ai_qs,list): ai_qs=[ai_qs]
+                    for idx,q in enumerate(ai_qs[:need]):
+                        q_code=f"Q{grade}-{subject[:2]}-AI-{datetime.now().strftime('%f')}-{idx}"
+                        try:
+                            conn.execute("""INSERT INTO questions(q_code,grade,subject,level,bloom,q_type,
+                                question,option_a,option_b,option_c,option_d,answer,score,topic)
+                                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                                (q_code,grade,subject,lvl,'Мэдлэг','Нэг сонголт',q.get('question',''),
+                                 q.get('option_a'),q.get('option_b'),q.get('option_c'),q.get('option_d'),
+                                 q.get('answer','А'),score,''))
+                            conn.commit()
+                            # Хадгалсан даалгаварыг дахин уншиж selected-д нэмнэ
+                            saved=conn.execute("SELECT * FROM questions WHERE q_code=?",(q_code,)).fetchone()
+                            if saved:
+                                selected.append(row_to_dict(saved))
+                                ai_generated+=1
+                        except: pass
+                except Exception as e:
+                    pass  # AI алдаа гарвал DB-ийн байгаагаар явна
+
     conn.close()
     if not selected:
-        return jsonify({"error":f"{grade}-р ангийн '{subject}' даалгавар байхгүй. Admin → Нэмэх"})
+        api_key=os.environ.get("ANTHROPIC_API_KEY","")
+        if not api_key:
+            return jsonify({"error":f"{grade}-р ангийн '{subject}' даалгавар байхгүй. ANTHROPIC_API_KEY тохируулж AI-аар үүсгэх боломжтой."})
+        return jsonify({"error":f"{grade}-р ангийн '{subject}' даалгавар үүсгэж чадсангүй. Дахин оролдоно уу."})
+
+    msg_parts=[]
+    db_count=len(selected)-ai_generated
+    if db_count>0: msg_parts.append(f"DB: {db_count}")
+    if ai_generated>0: msg_parts.append(f"AI: {ai_generated}")
+
     return jsonify({"exam_id":exam_id,"exam_type":et["name"],"exam_icon":et["icon"],
         "title":f"{grade}-р ангийн {subject} — {et['name']}","grade":grade,"subject":subject,
         "total_questions":len(selected),"total_score":sum(q["score"] for q in selected),
-        "duration":bp["duration"],"note":bp.get("note",""),"questions":selected})
+        "duration":bp["duration"],"note":bp.get("note",""),
+        "ai_generated":ai_generated,
+        "source_note":" · ".join(msg_parts) if msg_parts else "",
+        "questions":selected})
 
 @app.route("/api/stats")
 def stats():
