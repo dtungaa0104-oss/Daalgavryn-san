@@ -1,10 +1,39 @@
 {% extends "base.html" %}
 {% block title %}Олимпиадын даалгавар — Орхонтуул ЕБС{% endblock %}
 {% block content %}
+<style>
+.oly-stage-btns { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+.stage-btn {
+  padding:6px 16px; border-radius:99px; font-size:12px; font-weight:700;
+  border:2px solid; cursor:pointer; transition:all .15s; background:#fff;
+}
+.stage-btn.s-school  { color:#2E7D32; border-color:#A5D6A7; }
+.stage-btn.s-aimag   { color:#1565C0; border-color:#90CAF9; }
+.stage-btn.s-uls     { color:#E65100; border-color:#FFCC02; }
+.stage-btn.s-inter   { color:#6A1B9A; border-color:#CE93D8; }
+.stage-btn.s-all     { color:var(--teal-600); border-color:var(--green-200); }
+.stage-btn.active    { color:#fff !important; }
+.stage-btn.s-all.active   { background:var(--teal-600); border-color:var(--teal-600); }
+.stage-btn.s-school.active{ background:#2E7D32; border-color:#2E7D32; }
+.stage-btn.s-aimag.active { background:#1565C0; border-color:#1565C0; }
+.stage-btn.s-uls.active   { background:#E65100; border-color:#E65100; }
+.stage-btn.s-inter.active { background:#6A1B9A; border-color:#6A1B9A; }
+
+.oly-empty {
+  grid-column:1/-1; text-align:center; padding:3rem;
+  color:var(--text-muted);
+}
+.oly-empty-icon { font-size:3rem; margin-bottom:1rem; opacity:.4; }
+.oly-add-hint {
+  display:inline-flex; align-items:center; gap:6px; margin-top:1rem;
+  background:var(--green-50); border:1.5px solid var(--green-100);
+  border-radius:8px; padding:8px 16px; font-size:13px; color:var(--teal-600); font-weight:600;
+}
+</style>
 
 <div class="page-header">
   <h1>🏅 Олимпиадын <span>Даалгавар</span></h1>
-  <p>Улсын болон аймгийн олимпиадын даалгаварууд — хичээл, анги, шатаар хайна</p>
+  <p>Admin панелаас "Олимпиад" төрлөөр оруулсан даалгаварууд энд харагдана</p>
 </div>
 
 <div class="filter-panel">
@@ -12,36 +41,37 @@
     <div class="filter-group">
       <label>Анги</label>
       <select id="f-grade">
+        <option value="">Бүх анги</option>
         {% for g in range(1,13) %}<option value="{{ g }}">{{ g }}-р анги</option>{% endfor %}
       </select>
     </div>
     <div class="filter-group">
       <label>Хичээл</label>
       <select id="f-subject">
+        <option value="">Бүх хичээл</option>
         {% for key, subjs in subjects.items() %}
           {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
         {% endfor %}
       </select>
     </div>
     <div class="filter-group">
-      <label>Олимпиадын шат</label>
-      <select id="f-stage">
-        <option value="all">Бүгд</option>
-        <option value="Сургуулийн">Сургуулийн шат</option>
-        <option value="Аймгийн">Аймгийн шат</option>
-        <option value="Улсын">Улсын шат</option>
-        <option value="Олон улсын">Олон улсын шат</option>
-      </select>
-    </div>
-    <div class="filter-group">
       <label>Тоо</label>
       <select id="f-count">
-        <option value="10">10</option>
         <option value="20" selected>20</option>
         <option value="30">30</option>
+        <option value="50">50</option>
       </select>
     </div>
     <button class="btn btn-primary" onclick="loadOlympiad()">Хайх</button>
+  </div>
+
+  <!-- Шатны шүүлтүүр -->
+  <div class="oly-stage-btns" style="margin-top:.8rem">
+    <button class="stage-btn s-all active"   onclick="filterStage(this,'all')">Бүгд</button>
+    <button class="stage-btn s-school" onclick="filterStage(this,'Сургуулийн')">🏫 Сургуулийн шат</button>
+    <button class="stage-btn s-aimag"  onclick="filterStage(this,'Аймгийн')">🏙 Аймгийн шат</button>
+    <button class="stage-btn s-uls"    onclick="filterStage(this,'Улсын')">🏆 Улсын шат</button>
+    <button class="stage-btn s-inter"  onclick="filterStage(this,'Олон улсын')">🌐 Олон улсын шат</button>
   </div>
 </div>
 
@@ -53,10 +83,11 @@
   </div>
 </div>
 
-<div class="questions-grid" id="olympiad-container">
-  <div class="empty-state" style="grid-column:1/-1">
-    <div class="empty-icon">🏅</div>
+<div class="questions-grid" id="oly-container">
+  <div class="oly-empty">
+    <div class="oly-empty-icon">🏅</div>
     <p>Шүүлтүүрээ тохируулаад "Хайх" товчийг дарна уу</p>
+    <a href="/admin/add" class="oly-add-hint">➕ Admin → Даалгавар нэмэх → "Олимпиад" сонгох →</a>
   </div>
 </div>
 
@@ -65,70 +96,116 @@
 <script>
 let allQuestions = [];
 let selected = new Set();
+let currentStage = 'all';
+
+const STAGE_COLORS = {
+  'Сургуулийн': '#2E7D32', 'Аймгийн': '#1565C0',
+  'Улсын': '#E65100', 'Олон улсын': '#6A1B9A'
+};
+const STAGES = ['Сургуулийн','Аймгийн','Улсын','Олон улсын'];
 
 async function loadOlympiad() {
   const grade   = document.getElementById('f-grade').value;
   const subject = document.getElementById('f-subject').value;
   const count   = document.getElementById('f-count').value;
-  const stage   = document.getElementById('f-stage').value;
-
-  const container = document.getElementById('olympiad-container');
+  const container = document.getElementById('oly-container');
   container.innerHTML = '<div class="loading" style="grid-column:1/-1"><div class="spinner"></div><p>Татаж байна...</p></div>';
 
-  const res  = await fetch(`/api/questions?grade=${grade}&subject=${encodeURIComponent(subject)}&count=${count}&bloom=all&level=all`);
+  // q_type=Олимпиад гэж шүүнэ
+  let url = `/api/questions?q_type=Олимпиад&count=${count}&level=all&bloom=all`;
+  if (grade)   url += `&grade=${grade}`;
+  if (subject) url += `&subject=${encodeURIComponent(subject)}`;
+
+  const res  = await fetch(url);
   const data = await res.json();
   allQuestions = data.questions;
   selected.clear();
-  renderOlympiad(allQuestions, stage);
+  render(allQuestions);
 }
 
-function renderOlympiad(questions, stage) {
-  const container = document.getElementById('olympiad-container');
-  const bar       = document.getElementById('results-bar');
-  const stages    = ['Сургуулийн','Аймгийн','Улсын','Олон улсын'];
+function filterStage(btn, stage) {
+  currentStage = stage;
+  document.querySelectorAll('.stage-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render(allQuestions);
+}
 
-  if (!questions.length) {
-    container.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">○</div><p>Даалгавар олдсонгүй</p></div>';
+function render(questions) {
+  const container = document.getElementById('oly-container');
+  const bar = document.getElementById('results-bar');
+
+  // Шатаар шүүх — topic талбарт шатыг хадгалдаг гэж үзнэ
+  let filtered = questions;
+  if (currentStage !== 'all') {
+    filtered = questions.filter(q =>
+      (q.topic||'').includes(currentStage) ||
+      (q.q_code||'').includes(currentStage)
+    );
+    // Хэрэв topic-д шат байхгүй бол дугаарлан хуваарилна
+    if (!filtered.length && currentStage !== 'all') {
+      const idx = STAGES.indexOf(currentStage);
+      filtered = questions.filter((_,i) => i % 4 === idx);
+    }
+  }
+
+  if (!filtered.length) {
+    container.innerHTML = `<div class="oly-empty">
+      <div class="oly-empty-icon">○</div>
+      <p>${allQuestions.length ? currentStage+' шатны даалгавар олдсонгүй' : 'Олимпиадын даалгавар байхгүй байна'}</p>
+      <a href="/admin/add" class="oly-add-hint">➕ Admin-аас нэмэх →</a>
+    </div>`;
     bar.style.display = 'none';
     return;
   }
 
   bar.style.display = 'flex';
-  document.getElementById('result-count').textContent = `${questions.length} даалгавар`;
+  document.getElementById('result-count').textContent = `${filtered.length} даалгавар`;
 
-  container.innerHTML = questions.map((q, i) => {
-    const s = stage !== 'all' ? stage : stages[Math.min(Math.floor(i/5), 3)];
-    const stageColor = s==='Улсын'?'#C62828':s==='Аймгийн'?'#1565C0':s==='Олон улсын'?'#6A1B9A':'#2E7D32';
+  container.innerHTML = filtered.map((q,i) => {
+    const stageIdx = i % 4;
+    const stage = (q.topic && STAGES.some(s=>q.topic.includes(s)))
+      ? STAGES.find(s=>q.topic.includes(s))
+      : STAGES[stageIdx];
+    const color = STAGE_COLORS[stage] || '#2E7D32';
+    const lvlCss = (q.level||'').replace(/ /g,'');
+    const isSel = selected.has(String(q.id));
     return `
-    <div class="question-card ${selected.has(q.id)?'selected':''}" id="card-${q.id}" onclick="toggleSelect('${q.id}')">
+    <div class="question-card ${isSel?'selected':''}" id="card-${q.id}" onclick="toggleSelect('${q.id}')">
       <div class="card-header">
         <span class="q-id">${q.q_code||q.id}</span>
-        <span style="font-size:.7rem;padding:2px 8px;border-radius:20px;font-weight:600;
-          background:${stageColor}18;color:${stageColor};border:1px solid ${stageColor}44">${s} шат</span>
-        <span class="q-level level-${(q.level||'').replace(/ /g,'')}">${q.level||''}</span>
+        <span style="font-size:.7rem;padding:2px 8px;border-radius:20px;font-weight:700;
+          background:${color}18;color:${color};border:1px solid ${color}44">${stage} шат</span>
+        <span class="q-level level-${lvlCss}">${q.level||''}</span>
         <span class="q-score">${q.score}п</span>
       </div>
       <div class="card-body">
         <p class="q-text">${i+1}. ${q.question}</p>
-        ${q.options ? `<div class="q-options">${q.options.map(o=>`<span class="q-opt">${o}</span>`).join('')}</div>` : ''}
+        ${q.options?`<div class="q-options">${q.options.map(o=>`<span class="q-opt">${o}</span>`).join('')}</div>`:''}
       </div>
       <div class="card-footer">
         <span class="q-type">${q.q_type||''}</span>
         <span class="q-topic">${q.topic||''}</span>
-        <div class="check-icon">${selected.has(q.id)?'✓':''}</div>
+        <div class="check-icon">${isSel?'✓':''}</div>
       </div>
     </div>`;
   }).join('');
 }
 
 function toggleSelect(id) {
-  if (selected.has(id)) selected.delete(id);
-  else selected.add(id);
-  document.getElementById('card-'+id)?.classList.toggle('selected');
-  const ci = document.querySelector(`#card-${id} .check-icon`);
-  if (ci) ci.textContent = selected.has(id) ? '✓' : '';
+  const sid = String(id);
+  if (selected.has(sid)) selected.delete(sid);
+  else selected.add(sid);
+  const card = document.getElementById('card-'+id);
+  if (card) {
+    card.classList.toggle('selected');
+    const ci = card.querySelector('.check-icon');
+    if (ci) ci.textContent = selected.has(sid)?'✓':'';
+  }
 }
-function selectAll() { allQuestions.forEach(q => selected.add(String(q.id))); renderOlympiad(allQuestions, document.getElementById('f-stage').value); }
+function selectAll() {
+  allQuestions.forEach(q => selected.add(String(q.id)));
+  render(allQuestions);
+}
 function downloadSelected() {
   const qs = allQuestions.filter(q => selected.has(String(q.id)));
   if (!qs.length) { alert('Даалгавар сонгоно уу'); return; }

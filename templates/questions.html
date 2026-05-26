@@ -1,12 +1,60 @@
 {% extends "base.html" %}
-{% block title %}Даалгавар хайх — Орхонтуул ЕБС{% endblock %}
+{% block title %}Даалгавар — Орхонтуул ЕБС{% endblock %}
 {% block content %}
+<style>
+/* ── Хэрэгслийн мөр ── */
+.toolbar {
+  background:#fff; border-bottom:2px solid var(--green-50);
+  padding:.7rem 2rem; display:flex; gap:.6rem; flex-wrap:wrap; align-items:center;
+}
+.toolbar-sep { width:1px; height:28px; background:var(--green-100); margin:0 .3rem; }
+
+/* ── AI панел ── */
+.ai-panel {
+  background: linear-gradient(135deg,#E8F5E9,#E1F5EE);
+  border-bottom:2px solid var(--green-100);
+  padding:1.2rem 2rem; display:none;
+}
+.ai-panel.open { display:block; }
+.ai-panel-inner { max-width:780px; display:flex; flex-direction:column; gap:.8rem; }
+.ai-panel h3 { font-size:.9rem; font-weight:800; color:var(--teal-600); margin-bottom:.2rem; }
+.ai-row { display:flex; gap:.8rem; flex-wrap:wrap; align-items:flex-end; }
+
+/* ── Файл upload панел ── */
+.upload-panel {
+  background: linear-gradient(135deg,#FFF8E1,#E8F5E9);
+  border-bottom:2px solid var(--green-100);
+  padding:1.2rem 2rem; display:none;
+}
+.upload-panel.open { display:block; }
+.upload-panel-inner { max-width:700px; }
+.upload-panel h3 { font-size:.9rem; font-weight:800; color:var(--teal-600); margin-bottom:.8rem; }
+.mini-drop {
+  border:2px dashed var(--green-200); border-radius:10px; padding:1.2rem;
+  text-align:center; cursor:pointer; transition:all .15s; background:#fff;
+}
+.mini-drop:hover,.mini-drop.drag-over { border-color:var(--teal-600); background:var(--teal-50); }
+.mini-drop.has-file { border-color:#43A047; background:#E8F5E9; }
+.upload-row { display:flex; gap:.8rem; flex-wrap:wrap; align-items:flex-end; margin-bottom:.8rem; }
+.upload-result { margin-top:.8rem; padding:.7rem 1rem; border-radius:8px; font-size:.85rem; }
+.upload-ok  { background:#E8F5E9; border:1px solid #A5D6A7; color:#2E7D32; }
+.upload-err { background:#FFEBEE; border:1px solid #FFCDD2; color:#C62828; }
+
+/* ── AI үр дүн ── */
+.ai-result-bar {
+  background:#fff; border-bottom:2px solid var(--green-50);
+  padding:.7rem 2rem; display:none; align-items:center; gap:1rem; flex-wrap:wrap;
+}
+.ai-result-bar.show { display:flex; }
+.ai-badge { background:var(--teal-600); color:#fff; font-size:.75rem; font-weight:700; padding:3px 10px; border-radius:20px; }
+</style>
 
 <div class="page-header">
-  <h1>Даалгаврын <span class="accent">Сан</span></h1>
-  <p>Анги, хичээл, хүндрэлийн түвшин, Блумын шатаар шүүж хайна</p>
+  <h1>Даалгаврын <span>Сан</span></h1>
+  <p>Анги, хичээл, блупринтийн түвшнээр хайх · AI-аар үүсгэх · Файлаар нэмэх</p>
 </div>
 
+<!-- ── Шүүлтүүр ── -->
 <div class="filter-panel">
   <div class="filter-row">
     <div class="filter-group">
@@ -24,10 +72,10 @@
       </select>
     </div>
     <div class="filter-group">
-      <label>Хүндрэл</label>
-      <select id="f-difficulty">
+      <label>Түвшин</label>
+      <select id="f-level">
         <option value="all">Бүгд</option>
-        {% for d in difficulties %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
+        {% for l in levels %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
       </select>
     </div>
     <div class="filter-group">
@@ -50,18 +98,137 @@
   </div>
 </div>
 
+<!-- ── Хэрэгслийн мөр ── -->
+<div class="toolbar">
+  <button class="btn btn-sm btn-primary" onclick="togglePanel('ai')">
+    🤖 AI-аар даалгавар үүсгэх
+  </button>
+  <div class="toolbar-sep"></div>
+  <button class="btn btn-sm btn-outline" onclick="togglePanel('upload')">
+    📂 Файлаар нэмэх
+  </button>
+</div>
+
+<!-- ── AI панел ── -->
+<div class="ai-panel" id="ai-panel">
+  <div class="ai-panel-inner">
+    <h3>🤖 Claude AI-аар даалгавар үүсгэх — DB-д шууд хадгална</h3>
+    <div class="ai-row">
+      <div class="field-group">
+        <label>Анги</label>
+        <select id="ai-grade">
+          {% for g in range(1,13) %}<option value="{{ g }}" {% if g==9 %}selected{% endif %}>{{ g }}-р анги</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Хичээл</label>
+        <select id="ai-subject">
+          {% for key, subjs in subjects.items() %}
+            {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Түвшин</label>
+        <select id="ai-level">
+          {% for l in levels %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Блумын шат</label>
+        <select id="ai-bloom">
+          {% for b in blooms %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Тоо</label>
+        <select id="ai-qcount">
+          <option value="3">3</option>
+          <option value="5" selected>5</option>
+          <option value="10">10</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+        </select>
+      </div>
+    </div>
+    <div class="ai-row">
+      <div class="field-group" style="flex:1;min-width:220px">
+        <label>Сэдэв / Хамрах хүрээ (заавал биш)</label>
+        <input type="text" id="ai-topic" placeholder="Жишээ: Тэгшитгэл, Хүчлийн шинж чанар...">
+      </div>
+      <button class="btn btn-primary" id="ai-gen-btn" onclick="runAI()">
+        ✦ Үүсгэх
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="togglePanel('ai')">✕</button>
+    </div>
+    <div id="ai-panel-note" style="font-size:.75rem;color:var(--text-muted)">
+      ✓ Зөв хариулттай &nbsp;·&nbsp; ✓ Оноо тооцоо &nbsp;·&nbsp; ✓ DB-д хадгалж хайлтанд гарна
+    </div>
+  </div>
+</div>
+
+<!-- ── Файл upload панел ── -->
+<div class="upload-panel" id="upload-panel">
+  <div class="upload-panel-inner">
+    <h3>📂 PDF / Word / TXT файлаар даалгавар нэмэх</h3>
+    <div class="upload-row">
+      <div class="field-group">
+        <label>Анги</label>
+        <select id="up-grade">
+          {% for g in range(1,13) %}<option value="{{ g }}" {% if g==9 %}selected{% endif %}>{{ g }}-р анги</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Хичээл</label>
+        <select id="up-subject">
+          {% for key, subjs in subjects.items() %}
+            {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Үндсэн түвшин</label>
+        <select id="up-level">
+          {% for l in levels %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="mini-drop" id="mini-drop" onclick="document.getElementById('up-file').click()">
+      <div style="font-size:1.8rem;margin-bottom:.4rem">📂</div>
+      <p style="font-size:.88rem;color:var(--text-dark);margin-bottom:.2rem">PDF, Word (.docx), эсвэл .txt файлаа энд чирнэ үү</p>
+      <p style="font-size:.75rem;color:var(--text-muted)" id="up-filename">эсвэл дарж сонгоно</p>
+    </div>
+    <input type="file" id="up-file" accept=".pdf,.docx,.doc,.txt" style="display:none">
+    <div style="display:flex;gap:.6rem;margin-top:.8rem;align-items:center">
+      <button class="btn btn-primary btn-sm" onclick="runUpload()">⬆ Оруулах</button>
+      <button class="btn btn-outline btn-sm" onclick="togglePanel('upload')">✕ Хаах</button>
+    </div>
+    <div id="upload-result"></div>
+  </div>
+</div>
+
+<!-- AI үр дүн мэдэгдэл -->
+<div class="ai-result-bar" id="ai-result-bar">
+  <span class="ai-badge" id="ai-badge-text">0 үүсгэлээ</span>
+  <span style="font-size:.85rem;color:var(--text-mid)" id="ai-result-msg"></span>
+  <button class="btn btn-sm btn-outline" onclick="loadQuestions()" style="margin-left:auto">Хайлтанд харах →</button>
+  <button class="btn btn-sm" onclick="document.getElementById('ai-result-bar').classList.remove('show')">✕</button>
+</div>
+
+<!-- Results bar -->
 <div class="results-bar" id="results-bar" style="display:none">
   <span id="result-count"></span>
   <div class="bar-actions">
     <button class="btn btn-sm btn-outline" onclick="selectAll()">Бүгдийг сонгох</button>
-    <button class="btn btn-sm" onclick="downloadSelected()">⬇ Татах</button>
+    <button class="btn btn-sm btn-primary" onclick="downloadSelected()">⬇ Татах</button>
   </div>
 </div>
 
 <div class="questions-grid" id="questions-container">
-  <div class="empty-state">
+  <div class="empty-state" style="grid-column:1/-1">
     <div class="empty-icon">◈</div>
-    <p>Шүүлтүүрээ тохируулаад "Хайх" товчийг дарна уу</p>
+    <p>Шүүлтүүрээ тохируулаад "Хайх" товчийг дарна уу<br>
+    <span style="font-size:.82rem;color:var(--text-muted)">эсвэл AI-аар үүсгэж, файлаар нэмнэ</span></p>
   </div>
 </div>
 
@@ -71,17 +238,99 @@
 let allQuestions = [];
 let selected = new Set();
 
+// ── Панел нээх/хаах ──
+function togglePanel(type) {
+  const panels = { ai:'ai-panel', upload:'upload-panel' };
+  Object.entries(panels).forEach(([k,id]) => {
+    const el = document.getElementById(id);
+    if (k === type) el.classList.toggle('open');
+    else el.classList.remove('open');
+  });
+}
+
+// ── Drag & drop upload ──
+const drop = document.getElementById('mini-drop');
+const fileInp = document.getElementById('up-file');
+let uploadFile = null;
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag-over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
+drop.addEventListener('drop', e => {
+  e.preventDefault(); drop.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) setUpFile(e.dataTransfer.files[0]);
+});
+fileInp.addEventListener('change', () => { if (fileInp.files[0]) setUpFile(fileInp.files[0]); });
+function setUpFile(f) {
+  uploadFile = f;
+  document.getElementById('up-filename').textContent = '✓ ' + f.name;
+  drop.classList.add('has-file');
+}
+
+// ── Файл upload ──
+async function runUpload() {
+  if (!uploadFile) { alert('Файл сонгоно уу'); return; }
+  const fd = new FormData();
+  fd.append('file', uploadFile);
+  fd.append('grade',         document.getElementById('up-grade').value);
+  fd.append('subject',       document.getElementById('up-subject').value);
+  fd.append('default_level', document.getElementById('up-level').value);
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '⏳...';
+  const res  = await fetch('/admin/import', { method:'POST', body:fd });
+  const data = await res.json();
+  btn.disabled = false; btn.textContent = '⬆ Оруулах';
+  const box = document.getElementById('upload-result');
+  if (data.error) {
+    box.innerHTML = `<div class="upload-result upload-err">❌ ${data.error}</div>`;
+  } else {
+    box.innerHTML = `<div class="upload-result upload-ok">✅ ${data.saved} даалгавар хадгаллаа${data.skipped?' ('+data.skipped+' алгасав)':''}</div>`;
+    setTimeout(() => loadQuestions(), 800);
+  }
+}
+
+// ── AI үүсгэгч ──
+async function runAI() {
+  const btn = document.getElementById('ai-gen-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> AI бодож байна...';
+  const fd = new FormData();
+  fd.append('grade',   document.getElementById('ai-grade').value);
+  fd.append('subject', document.getElementById('ai-subject').value);
+  fd.append('level',   document.getElementById('ai-level').value);
+  fd.append('bloom',   document.getElementById('ai-bloom').value);
+  fd.append('q_type',  'Нэг сонголт');
+  fd.append('count',   document.getElementById('ai-qcount').value);
+  fd.append('topic',   document.getElementById('ai-topic').value);
+  const res  = await fetch('/admin/ai-generate', { method:'POST', body:fd });
+  const data = await res.json();
+  btn.disabled = false; btn.innerHTML = '✦ Үүсгэх';
+  if (data.error) {
+    document.getElementById('ai-panel-note').innerHTML =
+      `<span style="color:#C62828">❌ ${data.error}</span>`;
+    return;
+  }
+  // Амжилттай
+  document.getElementById('ai-result-bar').classList.add('show');
+  document.getElementById('ai-badge-text').textContent = data.saved + ' даалгавар үүслээ';
+  document.getElementById('ai-result-msg').textContent =
+    document.getElementById('ai-subject').options[document.getElementById('ai-subject').selectedIndex].text +
+    ' · ' + document.getElementById('ai-grade').options[document.getElementById('ai-grade').selectedIndex].text;
+  // Шүүлтүүрийг тохируулаад дахин хайх
+  document.getElementById('f-grade').value   = document.getElementById('ai-grade').value;
+  document.getElementById('f-subject').value = document.getElementById('ai-subject').value;
+  document.getElementById('f-level').value   = document.getElementById('ai-level').value;
+  loadQuestions();
+  togglePanel('ai');
+}
+
+// ── Хайх ──
 async function loadQuestions() {
-  const grade = document.getElementById('f-grade').value;
+  const grade   = document.getElementById('f-grade').value;
   const subject = document.getElementById('f-subject').value;
-  const difficulty = document.getElementById('f-difficulty').value;
-  const bloom = document.getElementById('f-bloom').value;
-  const count = document.getElementById('f-count').value;
-
+  const level   = document.getElementById('f-level').value;
+  const bloom   = document.getElementById('f-bloom').value;
+  const count   = document.getElementById('f-count').value;
   const container = document.getElementById('questions-container');
-  container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Татаж байна...</p></div>';
-
-  const res = await fetch(`/api/questions?grade=${grade}&subject=${encodeURIComponent(subject)}&difficulty=${encodeURIComponent(difficulty)}&bloom=${encodeURIComponent(bloom)}&count=${count}`);
+  container.innerHTML = '<div class="loading" style="grid-column:1/-1"><div class="spinner"></div><p>Татаж байна...</p></div>';
+  const res  = await fetch(`/api/questions?grade=${grade}&subject=${encodeURIComponent(subject)}&level=${encodeURIComponent(level)}&bloom=${encodeURIComponent(bloom)}&count=${count}`);
   const data = await res.json();
   allQuestions = data.questions;
   selected.clear();
@@ -91,72 +340,60 @@ async function loadQuestions() {
 function renderQuestions(questions) {
   const container = document.getElementById('questions-container');
   const bar = document.getElementById('results-bar');
-
-  if (questions.length === 0) {
-    container.innerHTML = '<div class="empty-state"><div class="empty-icon">○</div><p>Таарах даалгавар олдсонгүй</p></div>';
-    bar.style.display = 'none';
-    return;
+  if (!questions.length) {
+    container.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">○</div><p>Таарах даалгавар олдсонгүй</p></div>';
+    bar.style.display = 'none'; return;
   }
-
   bar.style.display = 'flex';
   document.getElementById('result-count').textContent = `${questions.length} даалгавар олдлоо`;
-
-  container.innerHTML = questions.map((q, i) => `
-    <div class="question-card ${selected.has(q.id) ? 'selected' : ''}" id="card-${q.id}" onclick="toggleSelect('${q.id}')">
+  container.innerHTML = questions.map((q, i) => {
+    const lvlCss = (q.level||'').replace(/ /g,'');
+    const isSel  = selected.has(String(q.id));
+    return `
+    <div class="question-card ${isSel?'selected':''}" id="card-${q.id}" onclick="toggleSelect('${q.id}')">
       <div class="card-header">
-        <span class="q-id">${q.id}</span>
-        <span class="q-diff diff-${q.difficulty}">${q.difficulty}</span>
-        <span class="q-bloom">${q.bloom}</span>
+        <span class="q-id">${q.q_code||q.id}</span>
+        <span class="q-level level-${lvlCss}">${q.level||''}</span>
+        <span class="q-bloom">${q.bloom||''}</span>
         <span class="q-score">${q.score} оноо</span>
       </div>
       <div class="card-body">
         <p class="q-text">${i+1}. ${q.question}</p>
-        ${q.options ? `<div class="q-options">${q.options.map(o => `<span class="q-opt">${o}</span>`).join('')}</div>` : ''}
+        ${q.options?`<div class="q-options">${q.options.map(o=>`<span class="q-opt">${o}</span>`).join('')}</div>`:''}
       </div>
       <div class="card-footer">
-        <span class="q-type">${q.type}</span>
-        <span class="q-topic">${q.topic}</span>
-        <div class="check-icon">${selected.has(q.id) ? '✓' : ''}</div>
+        <span class="q-type">${q.q_type||''}</span>
+        <span class="q-topic">${q.topic||''}</span>
+        <div class="check-icon">${isSel?'✓':''}</div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function toggleSelect(id) {
-  if (selected.has(id)) selected.delete(id);
-  else selected.add(id);
-  const card = document.getElementById(`card-${id}`);
-  card.classList.toggle('selected');
-  card.querySelector('.check-icon').textContent = selected.has(id) ? '✓' : '';
+  const sid = String(id);
+  if (selected.has(sid)) selected.delete(sid); else selected.add(sid);
+  document.getElementById('card-'+id)?.classList.toggle('selected');
+  const ci = document.querySelector(`#card-${id} .check-icon`);
+  if (ci) ci.textContent = selected.has(sid)?'✓':'';
 }
-
-function selectAll() {
-  allQuestions.forEach(q => selected.add(q.id));
-  renderQuestions(allQuestions);
-}
-
+function selectAll() { allQuestions.forEach(q=>selected.add(String(q.id))); renderQuestions(allQuestions); }
 function downloadSelected() {
-  const qs = allQuestions.filter(q => selected.has(q.id));
-  if (qs.length === 0) { alert('Даалгавар сонгоно уу'); return; }
-  
-  let text = `ОРХОНТУУЛ ЕБС — ДААЛГАВРЫН САН\n${'='.repeat(50)}\n\n`;
-  qs.forEach((q, i) => {
-    text += `${i+1}. [${q.difficulty}] [${q.bloom}] ${q.question}\n`;
-    if (q.options) q.options.forEach(o => text += `   ${o}\n`);
-    text += `   Хариулт: ${q.answer}  |  Оноо: ${q.score}\n\n`;
+  const qs = allQuestions.filter(q=>selected.has(String(q.id)));
+  if (!qs.length) { alert('Даалгавар сонгоно уу'); return; }
+  let t = `ОРХОНТУУЛ ЕБС — ДААЛГАВРЫН САН\n${'='.repeat(50)}\n\n`;
+  qs.forEach((q,i) => {
+    t += `${i+1}. [${q.level}] [${q.bloom}] ${q.question}\n`;
+    if (q.options) q.options.forEach(o=>t+=`   ${o}\n`);
+    t += `   Хариулт: ${q.answer||'—'}  |  Оноо: ${q.score}\n\n`;
   });
-
-  const blob = new Blob([text], {type: 'text/plain;charset=utf-8'});
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  a.href = URL.createObjectURL(new Blob([t],{type:'text/plain;charset=utf-8'}));
   a.download = `daalgavar_${Date.now()}.txt`;
   a.click();
 }
-
-// Auto-load on page load if grade param exists
 window.onload = () => {
-  const params = new URLSearchParams(location.search);
-  if (params.get('grade')) loadQuestions();
+  if (new URLSearchParams(location.search).get('grade')) loadQuestions();
 };
 </script>
 {% endblock %}

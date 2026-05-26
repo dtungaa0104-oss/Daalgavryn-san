@@ -1,255 +1,347 @@
 {% extends "base.html" %}
-{% block title %}Интерактив даалгавар — Орхонтуул ЕБС{% endblock %}
+{% block title %}Интерактив Даалгавар — Орхонтуул ЕБС{% endblock %}
 {% block content %}
-
-<div class="page-header">
-  <h1>⚡ Интерактив <span>Даалгавар</span></h1>
-  <p>Дасгал хийж оноо авна — хариулт шалгагдана, явц хадгалагдана</p>
-</div>
-
-<!-- Тохиргоо + оноо -->
-<div class="filter-panel">
-  <div class="filter-row">
-    <div class="filter-group">
-      <label>Анги</label>
-      <select id="ia-grade">
-        {% for g in range(1,13) %}<option value="{{ g }}" {% if g==9 %}selected{% endif %}>{{ g }}-р анги</option>{% endfor %}
-      </select>
-    </div>
-    <div class="filter-group">
-      <label>Хичээл</label>
-      <select id="ia-subject">
-        {% for key, subjs in subjects.items() %}
-          {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
-        {% endfor %}
-      </select>
-    </div>
-    <div class="filter-group">
-      <label>Тоо</label>
-      <select id="ia-count">
-        <option value="5">5</option>
-        <option value="10" selected>10</option>
-        <option value="15">15</option>
-        <option value="20">20</option>
-      </select>
-    </div>
-    <button class="btn btn-primary" onclick="startQuiz()">▶ Эхлэх</button>
-    <div class="score-display" id="score-display" style="display:none">
-      <span class="score-label">Оноо:</span>
-      <span class="score-val" id="score-val">0</span>
-      <span class="score-total" id="score-total"></span>
-    </div>
-  </div>
-</div>
-
-<!-- Явцын мөр -->
-<div id="progress-wrap" style="display:none;padding:0 2rem;background:#fff;border-bottom:2px solid var(--green-50)">
-  <div style="display:flex;align-items:center;gap:1rem;padding:.6rem 0">
-    <span id="progress-text" style="font-size:.82rem;color:var(--text-muted);white-space:nowrap"></span>
-    <div style="flex:1;background:var(--green-100);border-radius:99px;height:8px;overflow:hidden">
-      <div id="progress-bar" style="height:100%;background:var(--teal-600);border-radius:99px;transition:width .4s;width:0%"></div>
-    </div>
-    <span id="progress-pct" style="font-size:.82rem;font-weight:700;color:var(--teal-600);white-space:nowrap">0%</span>
-  </div>
-</div>
-
-<!-- Гол агуулга -->
-<div style="padding:1.5rem 2rem;max-width:800px;margin:0 auto" id="quiz-area">
-  <div class="empty-state">
-    <div class="empty-icon">⚡</div>
-    <p>Анги, хичээлээ сонгоод "Эхлэх" товчийг дарна уу</p>
-  </div>
-</div>
-
 <style>
-.score-display { display:flex;align-items:center;gap:.5rem;background:var(--green-50);border:1.5px solid var(--green-100);border-radius:8px;padding:.4rem 1rem;margin-left:.5rem; }
-.score-label   { font-size:.8rem;color:var(--text-muted); }
-.score-val     { font-size:1.4rem;font-weight:800;color:var(--teal-600);line-height:1; }
-.score-total   { font-size:.8rem;color:var(--text-muted); }
-
-.quiz-card {
-  background:#fff;border:2px solid var(--green-100);border-radius:14px;
-  padding:1.5rem;margin-bottom:1rem;transition:border-color .2s;
+/* ── Tab систем ── */
+.ia-tabs { display:flex; background:var(--teal-600); border-bottom:3px solid var(--green-200); }
+.ia-tab  {
+  padding:14px 28px; color:rgba(255,255,255,.7); font-size:14px; font-weight:600;
+  cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-3px;
+  transition:all .15s;
 }
-.quiz-q-num  { font-size:.75rem;color:var(--text-muted);font-family:monospace;margin-bottom:.5rem; }
-.quiz-q-text { font-size:1rem;font-weight:600;color:var(--text-dark);margin-bottom:1rem;line-height:1.5; }
-.quiz-opts   { display:flex;flex-direction:column;gap:.5rem; }
-.quiz-opt    {
-  display:flex;align-items:center;gap:.8rem;
-  padding:.7rem 1rem;border-radius:8px;
-  border:1.5px solid var(--green-100);background:var(--green-50);
-  cursor:pointer;transition:all .15s;font-size:.9rem;color:var(--text-dark);
+.ia-tab:hover  { color:#fff; background:rgba(255,255,255,.08); }
+.ia-tab.active { color:#fff; border-bottom-color:var(--green-100); background:rgba(255,255,255,.12); }
+.ia-panel { display:none; }
+.ia-panel.active { display:block; }
+
+/* ── Сайтуудын карт ── */
+.site-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; padding:28px 32px; }
+.site-card {
+  background:#fff; border-radius:14px; border:2px solid var(--green-100);
+  padding:20px; text-decoration:none; color:var(--text-dark);
+  display:flex; flex-direction:column; gap:10px; transition:all .2s;
+  position:relative; overflow:hidden;
 }
-.quiz-opt:hover:not(.disabled) { border-color:var(--teal-600);background:var(--teal-50); }
-.quiz-opt.correct  { border-color:#43A047;background:#E8F5E9;color:#2E7D32;font-weight:600; }
-.quiz-opt.wrong    { border-color:#E53935;background:#FFEBEE;color:#C62828; }
-.quiz-opt.show-correct { border-color:#43A047;background:#E8F5E9;opacity:.7; }
-.quiz-opt.disabled { cursor:default; }
-.opt-letter  { width:26px;height:26px;border-radius:50%;border:1.5px solid var(--green-200);
-  display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;
-  flex-shrink:0;color:var(--teal-600); }
-.quiz-opt.correct .opt-letter  { background:#43A047;border-color:#43A047;color:#fff; }
-.quiz-opt.wrong   .opt-letter  { background:#E53935;border-color:#E53935;color:#fff; }
-.quiz-opt.show-correct .opt-letter { background:#43A047;border-color:#43A047;color:#fff; }
-
-.quiz-feedback { margin-top:.8rem;padding:.7rem 1rem;border-radius:8px;font-size:.88rem;font-weight:600; }
-.feedback-correct { background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7; }
-.feedback-wrong   { background:#FFEBEE;color:#C62828;border:1px solid #FFCDD2; }
-
-.quiz-open-input { width:100%;padding:.7rem 1rem;border:1.5px solid var(--green-100);border-radius:8px;font-size:.9rem;background:var(--green-50);color:var(--text-dark);outline:none; }
-.quiz-open-input:focus { border-color:var(--teal-600); }
-.quiz-check-btn { margin-top:.5rem; }
-
-.result-card {
-  background:#fff;border:2px solid var(--green-100);border-radius:16px;
-  padding:2.5rem;text-align:center;
+.site-card::before { content:''; position:absolute; top:0;left:0;right:0; height:4px; background:var(--sc-color,var(--teal-600)); }
+.site-card:hover { border-color:var(--sc-color,var(--teal-600)); transform:translateY(-3px); box-shadow:0 8px 24px rgba(15,110,86,.12); }
+.sc-header   { display:flex; align-items:center; gap:12px; }
+.sc-icon     { width:48px; height:48px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:24px; background:var(--green-50); flex-shrink:0; }
+.sc-title    { font-size:15px; font-weight:800; color:var(--text-dark); }
+.sc-url      { font-size:11px; color:var(--text-muted); font-family:monospace; }
+.sc-desc     { font-size:13px; color:var(--text-muted); line-height:1.5; flex:1; }
+.sc-tags     { display:flex; gap:5px; flex-wrap:wrap; }
+.sc-tag      { font-size:11px; padding:2px 8px; border-radius:20px; background:var(--green-50); color:var(--text-mid); border:1px solid var(--green-100); }
+.sc-lang     { font-size:11px; font-weight:700; padding:2px 10px; border-radius:20px; }
+.sc-lang.mn  { background:#E8F5E9; color:#2E7D32; border:1px solid #A5D6A7; }
+.sc-lang.en  { background:#E3F2FD; color:#1565C0; border:1px solid #90CAF9; }
+.sc-lang.both{ background:#FFF8E1; color:#E65100; border:1px solid #FFCC02; }
+.sc-open     { font-size:12px; font-weight:700; color:var(--teal-600); margin-top:auto; }
+.site-section-title {
+  padding:20px 32px 0;
+  font-size:11px; font-weight:700; letter-spacing:2px; color:var(--text-muted); text-transform:uppercase;
 }
-.result-icon  { font-size:3.5rem;margin-bottom:1rem; }
-.result-score { font-size:3rem;font-weight:800;color:var(--teal-600);margin-bottom:.3rem; }
-.result-msg   { font-size:1.1rem;color:var(--text-mid);margin-bottom:1.5rem; }
-.result-breakdown { display:flex;justify-content:center;gap:2rem;margin-bottom:1.5rem; }
-.rb-item { text-align:center; }
-.rb-num  { font-size:1.5rem;font-weight:800; }
-.rb-lbl  { font-size:.75rem;color:var(--text-muted); }
+
+/* ── AI үүсгэгч ── */
+.ai-gen-wrap  { max-width:760px; margin:0 auto; padding:28px 32px; }
+.ai-gen-form  { background:#fff; border:2px solid var(--green-100); border-radius:14px; padding:24px; margin-bottom:20px; }
+.ai-gen-form h3 { font-size:1rem; font-weight:800; color:var(--text-dark); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.ai-result-wrap { background:#fff; border:2px solid var(--green-200); border-radius:14px; padding:20px; }
+.ai-q-item  { padding:14px; border-bottom:1px solid var(--green-50); }
+.ai-q-item:last-child { border-bottom:none; }
+.ai-q-num-text { display:flex; gap:10px; align-items:flex-start; margin-bottom:8px; }
+.ai-q-n     { width:26px;height:26px;border-radius:50%;background:var(--teal-600);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;margin-top:2px; }
+.ai-q-q     { font-size:.95rem; color:var(--text-dark); font-weight:500; line-height:1.5; }
+.ai-q-opts  { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:8px 0 8px 36px; }
+.ai-q-opt   { font-size:.82rem; padding:5px 10px; background:var(--green-50); border:1px solid var(--green-100); border-radius:6px; color:var(--text-mid); }
+.ai-q-opt.correct-opt { background:#E8F5E9; border-color:#A5D6A7; color:#2E7D32; font-weight:600; }
+.ai-q-ans   { font-size:.78rem; color:#2E7D32; font-weight:700; margin-left:36px; font-family:monospace; }
+.ai-actions { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+.ai-saving-note { font-size:.78rem; color:var(--text-muted); margin-top:8px; }
 </style>
+
+<!-- Tab цэс -->
+<div class="ia-tabs">
+  <div class="ia-tab active" onclick="showTab('sites')">🌐 Сурах бичгийн сайтууд</div>
+  <div class="ia-tab" onclick="showTab('ai')">🤖 AI Даалгавар үүсгэгч</div>
+</div>
+
+<!-- ══ ТАБ 1: САЙТУУД ══ -->
+<div class="ia-panel active" id="panel-sites">
+
+  <div class="site-section-title">🇲🇳 Монгол хэлний сайтууд</div>
+  <div class="site-grid">
+
+    <a href="https://econtent.edu.mn" target="_blank" class="site-card" style="--sc-color:#1B5E20">
+      <div class="sc-header">
+        <div class="sc-icon">📗</div>
+        <div><div class="sc-title">eContent</div><div class="sc-url">econtent.edu.mn</div></div>
+      </div>
+      <p class="sc-desc">МУ-ын Боловсролын яамны нээлттэй сурах бичиг. 1–12-р ангийн бүх хичээлийн сурах бичиг PDF хэлбэрээр нээлттэй.</p>
+      <div class="sc-tags"><span class="sc-tag">📚 Сурах бичиг</span><span class="sc-tag">1–12-р анги</span><span class="sc-tag">Нээлттэй</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="sc-lang mn">Монгол</span>
+        <span class="sc-open">Нээх →</span>
+      </div>
+    </a>
+
+    <a href="https://e-surguuli.mn" target="_blank" class="site-card" style="--sc-color:#0F6E56">
+      <div class="sc-header">
+        <div class="sc-icon">🖥</div>
+        <div><div class="sc-title">E-Surguuli</div><div class="sc-url">e-surguuli.mn</div></div>
+      </div>
+      <p class="sc-desc">Монголын онлайн сургалтын платформ. Видео хичээл, дасгал даалгавар, тест.</p>
+      <div class="sc-tags"><span class="sc-tag">📹 Видео хичээл</span><span class="sc-tag">Тест</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="sc-lang mn">Монгол</span>
+        <span class="sc-open">Нээх →</span>
+      </div>
+    </a>
+
+    <a href="https://www.esis.edu.mn" target="_blank" class="site-card" style="--sc-color:#1A237E">
+      <div class="sc-header">
+        <div class="sc-icon">🏫</div>
+        <div><div class="sc-title">ESIS</div><div class="sc-url">esis.edu.mn</div></div>
+      </div>
+      <p class="sc-desc">Боловсролын мэдээллийн нэгдсэн систем. Сурагчийн дэвтэр, дүн мэдээлэл.</p>
+      <div class="sc-tags"><span class="sc-tag">📋 Дүнгийн систем</span><span class="sc-tag">Сурагчийн мэдээлэл</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="sc-lang mn">Монгол</span>
+        <span class="sc-open">Нээх →</span>
+      </div>
+    </a>
+
+    <a href="https://lms.num.edu.mn" target="_blank" class="site-card" style="--sc-color:#B71C1C">
+      <div class="sc-header">
+        <div class="sc-icon">🎓</div>
+        <div><div class="sc-title">NUM LMS</div><div class="sc-url">lms.num.edu.mn</div></div>
+      </div>
+      <p class="sc-desc">МУИС-ийн сурлагын удирдлагын систем. ЭЕШ-д бэлтгэх материалууд.</p>
+      <div class="sc-tags"><span class="sc-tag">🎓 ЭЕШ бэлтгэл</span><span class="sc-tag">Материал</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="sc-lang mn">Монгол</span>
+        <span class="sc-open">Нээх →</span>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="site-section-title" style="margin-top:8px">🌍 Олон улсын сайтууд</div>
+  <div class="site-grid">
+
+    <a href="https://mn.khanacademy.org" target="_blank" class="site-card" style="--sc-color:#14BF96">
+      <div class="sc-header">
+        <div class="sc-icon">🟢</div>
+        <div><div class="sc-title">Khan Academy MN</div><div class="sc-url">mn.khanacademy.org</div></div>
+      </div>
+      <p class="sc-desc">Дэлхийд алдартай үнэгүй боловсролын платформ. Математик, шинжлэх ухаан, програмчлал — монгол хэлтэй.</p>
+      <div class="sc-tags"><span class="sc-tag">📐 Математик</span><span class="sc-tag">🔬 Шинжлэх ухаан</span><span class="sc-tag">Үнэгүй</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="sc-lang mn">Монгол</span>
+        <span class="sc-open">Нээх →</span>
+      </div>
+    </a>
+
+    <a href="https://www.geogebra.org" target="_blank" class="site-card" style="--sc-color:#9C27B0">
+      <div class="sc-header">
+        <div class="sc-icon">📐</div>
+        <div><div class="sc-title">GeoGebra</div><div class="sc-url">geogebra.org</div></div>
+      </div>
+      <p class="sc-desc">Математикийн интерактив програм. Геометр, алгебр, тригонометр, статистик. Дэлхийд 100 сая хэрэглэгчтэй.</p>
+      <div class="sc-tags"><span class="sc-tag">📐 Геометр</span><span class="sc-tag">📊 Статистик</span><span class="sc-tag">Интерактив</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="sc-lang both">МN / EN</span>
+        <span class="sc-open">Нээх →</span>
+      </div>
+    </a>
+
+    <a href="https://quizlet.com" target="_blank" class="site-card" style="--sc-color:#4257B2">
+      <div class="sc-header">
+        <div class="sc-icon">🃏</div>
+        <div><div class="sc-title">Quizlet</div><div class="sc-url">quizlet.com</div></div>
+      </div>
+      <p class="sc-desc">Флаш карт болон тестийн платформ. Өөрийн дасгал, тест хийх боломжтой. Олон монгол хэрэглэгчтэй.</p>
+      <div class="sc-tags"><span class="sc-tag">🃏 Флаш карт</span><span class="sc-tag">📝 Тест</span><span class="sc-tag">Нэгтгэл</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="sc-lang en">English</span>
+        <span class="sc-open">Нээх →</span>
+      </div>
+    </a>
+
+    <a href="https://www.desmos.com/calculator" target="_blank" class="site-card" style="--sc-color:#E53935">
+      <div class="sc-header">
+        <div class="sc-icon">📈</div>
+        <div><div class="sc-title">Desmos</div><div class="sc-url">desmos.com</div></div>
+      </div>
+      <p class="sc-desc">Дэлхийн хамгийн сайн онлайн графикийн тооцоолуур. Функцийн граф зурах, тэгшитгэл шийдэх.</p>
+      <div class="sc-tags"><span class="sc-tag">📈 Граф</span><span class="sc-tag">🔢 Тооцоолуур</span><span class="sc-tag">Үнэгүй</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="sc-lang en">English</span>
+        <span class="sc-open">Нээх →</span>
+      </div>
+    </a>
+
+    <a href="https://brilliant.org" target="_blank" class="site-card" style="--sc-color:#F57C00">
+      <div class="sc-header">
+        <div class="sc-icon">💡</div>
+        <div><div class="sc-title">Brilliant</div><div class="sc-url">brilliant.org</div></div>
+      </div>
+      <p class="sc-desc">Математик, физик, програмчлалын гүнзгий ойлголт. Олимпиадад бэлтгэхэд тохиромжтой.</p>
+      <div class="sc-tags"><span class="sc-tag">🏅 Олимпиад</span><span class="sc-tag">🔬 Физик</span><span class="sc-tag">💻 CS</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="sc-lang en">English</span>
+        <span class="sc-open">Нээх →</span>
+      </div>
+    </a>
+
+    <a href="https://www.wolframalpha.com" target="_blank" class="site-card" style="--sc-color:#DD1100">
+      <div class="sc-header">
+        <div class="sc-icon">🔴</div>
+        <div><div class="sc-title">Wolfram Alpha</div><div class="sc-url">wolframalpha.com</div></div>
+      </div>
+      <p class="sc-desc">Аливаа математикийн бодлогыг шийдэж, алхам алхмаар тайлбарлана. Тооцоо, интеграл, матриц.</p>
+      <div class="sc-tags"><span class="sc-tag">🔢 Бодлого</span><span class="sc-tag">📊 Шийдэл</span><span class="sc-tag">Тайлбар</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="sc-lang en">English</span>
+        <span class="sc-open">Нээх →</span>
+      </div>
+    </a>
+
+  </div>
+</div>
+
+<!-- ══ ТАБ 2: AI ДААЛГАВАР ҮҮСГЭГЧ ══ -->
+<div class="ia-panel" id="panel-ai">
+  <div class="ai-gen-wrap">
+    <div class="ai-gen-form">
+      <h3>🤖 Claude AI-аар даалгавар үүсгэх</h3>
+      <div class="form-grid">
+        <div class="field-group">
+          <label>Анги <span class="req">*</span></label>
+          <select id="ai-grade">
+            {% for g in range(1,13) %}<option value="{{ g }}" {% if g==9 %}selected{% endif %}>{{ g }}-р анги</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Хичээл <span class="req">*</span></label>
+          <select id="ai-subject">
+            {% for key, subjs in subjects.items() %}
+              {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Түвшин</label>
+          <select id="ai-level">
+            {% for l in levels %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Тоо</label>
+          <select id="ai-count">
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group" style="margin-top:.8rem">
+        <label>Сэдэв / Хамрах хүрээ</label>
+        <input type="text" id="ai-topic" placeholder="Жишээ: Тэгшитгэл, Геометр, Амьтны аймаг...">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:1rem;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" id="ai-gen-btn" onclick="generateAI()">
+          ✦ Даалгавар үүсгэх
+        </button>
+        <div style="font-size:.78rem;color:var(--text-muted)">
+          ✓ Блумын шат автомат &nbsp; ✓ Зөв хариулт &nbsp; ✓ Оноо тооцоо
+        </div>
+      </div>
+      <div class="ai-saving-note" id="api-note" style="display:none;color:#C62828">
+        ⚠ ANTHROPIC_API_KEY тохируулаагүй байна. Render → Environment-д нэмнэ үү.
+      </div>
+    </div>
+
+    <div id="ai-result" style="display:none"></div>
+  </div>
+</div>
 
 {% endblock %}
 {% block scripts %}
 <script>
-let questions = [];
-let currentIdx = 0;
-let score = 0;
-let answered = 0;
+function showTab(tab) {
+  document.querySelectorAll('.ia-tab').forEach((t,i) => t.classList.toggle('active', ['sites','ai'][i]===tab));
+  document.querySelectorAll('.ia-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+}
 
-async function startQuiz() {
-  const grade   = document.getElementById('ia-grade').value;
-  const subject = document.getElementById('ia-subject').value;
-  const count   = document.getElementById('ia-count').value;
-  const area    = document.getElementById('quiz-area');
+async function generateAI() {
+  const btn     = document.getElementById('ai-gen-btn');
+  const result  = document.getElementById('ai-result');
+  const grade   = document.getElementById('ai-grade').value;
+  const subject = document.getElementById('ai-subject').value;
+  const level   = document.getElementById('ai-level').value;
+  const count   = document.getElementById('ai-count').value;
+  const topic   = document.getElementById('ai-topic').value;
 
-  area.innerHTML = '<div class="loading"><div class="spinner"></div><p>Даалгавар татаж байна...</p></div>';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-sm"></span> AI бодож байна...';
+  result.style.display = 'none';
 
-  const res  = await fetch(`/api/questions?grade=${grade}&subject=${encodeURIComponent(subject)}&count=${count}&level=all&bloom=all`);
+  const fd = new FormData();
+  fd.append('grade',   grade);
+  fd.append('subject', subject);
+  fd.append('level',   level);
+  fd.append('bloom',   'Мэдлэг');
+  fd.append('q_type',  'Нэг сонголт');
+  fd.append('count',   count);
+  fd.append('topic',   topic);
+
+  const res  = await fetch('/admin/ai-generate', { method:'POST', body:fd });
   const data = await res.json();
-  questions = data.questions;
 
-  if (!questions.length) {
-    area.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠</div><p>Даалгавар байхгүй байна. Admin-аас нэмнэ үү.</p></div>';
+  btn.disabled = false;
+  btn.innerHTML = '✦ Даалгавар үүсгэх';
+
+  result.style.display = 'block';
+
+  if (data.error) {
+    if (data.error.includes('API_KEY')) document.getElementById('api-note').style.display = 'block';
+    result.innerHTML = `<div class="result-error">❌ ${data.error}</div>`;
     return;
   }
 
-  currentIdx = 0; score = 0; answered = 0;
-  document.getElementById('score-display').style.display = 'flex';
-  document.getElementById('score-val').textContent = '0';
-  document.getElementById('score-total').textContent = `/ ${questions.reduce((s,q)=>s+q.score,0)}`;
-  document.getElementById('progress-wrap').style.display = 'block';
-  renderQuestion();
-}
-
-function updateProgress() {
-  const pct = Math.round(answered / questions.length * 100);
-  document.getElementById('progress-bar').style.width = pct + '%';
-  document.getElementById('progress-pct').textContent  = pct + '%';
-  document.getElementById('progress-text').textContent = `${answered} / ${questions.length} даалгавар`;
-}
-
-function renderQuestion() {
-  updateProgress();
-  if (currentIdx >= questions.length) { showResult(); return; }
-  const q   = questions[currentIdx];
-  const area = document.getElementById('quiz-area');
-  const lvlCss = (q.level||'').replace(/ /g,'');
-
-  let optsHtml = '';
-  if (q.options && q.options.length) {
-    const letters = ['А','Б','В','Г'];
-    optsHtml = `<div class="quiz-opts">
-      ${q.options.map((o,i) => `
-        <div class="quiz-opt" id="opt-${i}" onclick="checkAnswer(${i},'${letters[i]}','${q.answer||'А'}',${q.score})">
-          <span class="opt-letter">${letters[i]}</span>
-          <span>${o.replace(/^[АБВГабвг]\.\s*/,'')}</span>
-        </div>`).join('')}
-    </div>`;
-  } else {
-    optsHtml = `<div>
-      <input type="text" class="quiz-open-input" id="open-ans" placeholder="Хариултаа бичнэ үү..." onkeydown="if(event.key==='Enter')checkOpen('${q.answer||''}',${q.score})">
-      <button class="btn btn-primary btn-sm quiz-check-btn" onclick="checkOpen('${q.answer||''}',${q.score})">Шалгах</button>
-    </div>`;
-  }
-
-  area.innerHTML = `
-    <div class="quiz-card" id="quiz-card">
-      <div class="quiz-q-num">
-        Даалгавар ${currentIdx+1} / ${questions.length} &nbsp;·&nbsp;
-        <span class="q-level level-${lvlCss}">${q.level||''}</span>
-        &nbsp;·&nbsp; ${q.score}п
-      </div>
-      <div class="quiz-q-text">${q.question}</div>
-      ${optsHtml}
-      <div id="feedback"></div>
-    </div>
-    ${currentIdx < questions.length-1
-      ? `<button class="btn btn-outline" id="next-btn" style="display:none;margin-top:.5rem" onclick="nextQ()">Дараагийнх →</button>`
-      : `<button class="btn btn-primary" id="next-btn" style="display:none;margin-top:.5rem" onclick="nextQ()">Дүн харах ✓</button>`
-    }`;
-}
-
-function checkAnswer(idx, letter, correct, pts) {
-  document.querySelectorAll('.quiz-opt').forEach(o => o.classList.add('disabled'));
   const letters = ['А','Б','В','Г'];
-  const isCorrect = letter === correct;
-  const correctIdx = letters.indexOf(correct);
-
-  document.getElementById('opt-'+idx).classList.add(isCorrect ? 'correct' : 'wrong');
-  if (!isCorrect && correctIdx >= 0) document.getElementById('opt-'+correctIdx).classList.add('show-correct');
-
-  document.getElementById('feedback').innerHTML = `<div class="quiz-feedback ${isCorrect?'feedback-correct':'feedback-wrong'}">
-    ${isCorrect ? '✓ Зөв! +'+pts+' оноо' : '✗ Буруу. Зөв хариулт: '+correct}
-  </div>`;
-
-  if (isCorrect) { score += pts; document.getElementById('score-val').textContent = score; }
-  answered++;
-  document.getElementById('next-btn').style.display = 'inline-flex';
-  updateProgress();
-}
-
-function checkOpen(correct, pts) {
-  const val = document.getElementById('open-ans')?.value.trim();
-  if (!val) return;
-  document.getElementById('open-ans').disabled = true;
-  document.querySelector('.quiz-check-btn').disabled = true;
-  const isCorrect = val.toLowerCase() === (correct||'').toLowerCase();
-  document.getElementById('feedback').innerHTML = `<div class="quiz-feedback ${isCorrect?'feedback-correct':'feedback-wrong'}">
-    ${isCorrect ? '✓ Зөв! +'+pts+' оноо' : '✗ Зөв хариулт: '+correct}
-  </div>`;
-  if (isCorrect) { score += pts; document.getElementById('score-val').textContent = score; }
-  answered++;
-  document.getElementById('next-btn').style.display = 'inline-flex';
-  updateProgress();
-}
-
-function nextQ() { currentIdx++; renderQuestion(); }
-
-function showResult() {
-  const total = questions.reduce((s,q)=>s+q.score,0);
-  const pct   = Math.round(score/total*100);
-  const icon  = pct>=80?'🏆':pct>=60?'👍':pct>=40?'📚':'💪';
-  const msg   = pct>=80?'Гайхалтай! Маш сайн хариулсан!':pct>=60?'Сайн! Үргэлжлүүлэн суралц.':pct>=40?'Дунд зэрэг. Дахин давтаарай.':'Дахин оролдоорой!';
-
-  document.getElementById('quiz-area').innerHTML = `
-    <div class="result-card">
-      <div class="result-icon">${icon}</div>
-      <div class="result-score">${score} <span style="font-size:1.5rem;color:var(--text-muted)">/ ${total}</span></div>
-      <div class="result-msg">${msg}</div>
-      <div class="result-breakdown">
-        <div class="rb-item"><div class="rb-num" style="color:#43A047">${questions.filter((_,i)=>i<answered).length}</div><div class="rb-lbl">Нийт</div></div>
-        <div class="rb-item"><div class="rb-num" style="color:#1565C0">${pct}%</div><div class="rb-lbl">Хувь</div></div>
-        <div class="rb-item"><div class="rb-num" style="color:var(--teal-600)">${score}</div><div class="rb-lbl">Оноо</div></div>
+  const qs = (data.questions||[]).map((q,i) => {
+    const opts = q.option_a ? `
+      <div class="ai-q-opts">
+        ${['option_a','option_b','option_c','option_d'].map((k,j)=>
+          q[k]?`<div class="ai-q-opt ${q.answer===letters[j]?'correct-opt':''}">${letters[j]}. ${q[k]}</div>`:''
+        ).join('')}
       </div>
-      <button class="btn btn-primary" onclick="startQuiz()">↻ Дахин оролдох</button>
+      <div class="ai-q-ans">✓ Зөв хариулт: ${q.answer}</div>` : '';
+    return `<div class="ai-q-item">
+      <div class="ai-q-num-text">
+        <div class="ai-q-n">${i+1}</div>
+        <div class="ai-q-q">${q.question}</div>
+      </div>
+      ${opts}
     </div>`;
-  document.getElementById('progress-bar').style.width = '100%';
-  document.getElementById('progress-pct').textContent = '100%';
+  }).join('');
+
+  result.innerHTML = `
+    <div class="ai-result-wrap">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="font-size:1rem;font-weight:800;color:var(--text-dark)">
+          ✅ ${data.saved} даалгавар үүсгэж хадгаллаа
+        </h3>
+        <a href="/admin/list" class="btn btn-sm btn-outline">Жагсаалт харах →</a>
+      </div>
+      ${qs}
+      <div class="ai-actions">
+        <button class="btn btn-primary" onclick="generateAI()">↻ Дахин үүсгэх</button>
+        <a href="/olympiad" class="btn btn-outline">Олимпиад хэсэгт харах</a>
+      </div>
+    </div>`;
 }
 </script>
 {% endblock %}

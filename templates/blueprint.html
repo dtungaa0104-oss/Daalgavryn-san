@@ -65,6 +65,15 @@
     <button class="btn btn-primary btn-full" style="margin-top:1rem" onclick="generateExam()">
       ✦ Шалгалт үүсгэх
     </button>
+
+    <div style="margin-top:.5rem;padding-top:.8rem;border-top:1.5px solid var(--green-100)">
+      <p style="font-size:.72rem;color:var(--text-muted);margin-bottom:.5rem">
+        Даалгавар хүрэлцэхгүй үед AI-аар нэмж үүсгэнэ:
+      </p>
+      <button class="btn btn-outline btn-full btn-sm" onclick="generateWithAI()">
+        🤖 AI-аар даалгавар нэмж үүсгэх
+      </button>
+    </div>
   </div>
 
   <!-- ══ БАРУУН: Үр дүн ══ -->
@@ -249,5 +258,58 @@ function downloadExam(exam) {
   a.click();
 }
 updateTotal();
+
+// ── AI-аар даалгавар нэмж үүсгэх ──
+async function generateWithAI() {
+  if (!currentGrade) { alert('Анги сонгоно уу'); return; }
+  const subject = document.getElementById('bp-subject').value;
+  const panel = document.getElementById('bp-result');
+
+  // Блупринтийн тохиргооноос нийт тоог тодорхойлох
+  const blueprint = {};
+  LEVELS.forEach(k => blueprint[k] = +document.getElementById('slider-'+k).value);
+  const total = Object.values(blueprint).reduce((a,b)=>a+b,0);
+  if (total === 0) { alert('Блупринтийн slider-г тохируулна уу'); return; }
+
+  panel.innerHTML = '<div class="loading"><div class="spinner"></div><p>AI даалгавар үүсгэж байна...</p></div>';
+
+  // Түвшин тус бүрд AI-аар даалгавар үүсгэх
+  let totalSaved = 0;
+  for (const [lvl, cnt] of Object.entries(blueprint)) {
+    if (cnt <= 0) continue;
+    const fd = new FormData();
+    fd.append('grade',   currentGrade);
+    fd.append('subject', subject);
+    fd.append('level',   lvl);
+    fd.append('bloom',   'Мэдлэг');
+    fd.append('q_type',  'Нэг сонголт');
+    fd.append('count',   cnt);
+    fd.append('topic',   '');
+    try {
+      const res  = await fetch('/admin/ai-generate', { method:'POST', body:fd });
+      const data = await res.json();
+      if (data.saved) totalSaved += data.saved;
+      if (data.error && data.error.includes('API_KEY')) {
+        panel.innerHTML = `<div class="empty-state tall"><div class="empty-icon">⚠</div>
+          <p>ANTHROPIC_API_KEY тохируулаагүй байна.</p>
+          <p style="font-size:.82rem;color:var(--text-muted);margin-top:.5rem">
+            Render → Environment → <code>ANTHROPIC_API_KEY</code> нэмнэ үү</p></div>`;
+        return;
+      }
+    } catch(e) { console.error(e); }
+  }
+
+  if (totalSaved > 0) {
+    panel.innerHTML = `<div style="padding:1.5rem;text-align:center">
+      <div style="font-size:3rem;margin-bottom:.5rem">✅</div>
+      <div style="font-size:1.5rem;font-weight:800;color:var(--teal-600);margin-bottom:.5rem">${totalSaved} даалгавар үүслээ</div>
+      <p style="color:var(--text-muted);margin-bottom:1rem">DB-д хадгалагдлаа. Одоо шалгалт үүсгэж болно.</p>
+      <button class="btn btn-primary" onclick="generateExam()">✦ Шалгалт үүсгэх</button>
+    </div>`;
+  } else {
+    panel.innerHTML = `<div class="empty-state tall"><div class="empty-icon">⚠</div>
+      <p>Даалгавар үүсгэж чадсангүй. API түлхүүр болон тохиргоогоо шалгана уу.</p></div>`;
+  }
+}
 </script>
 {% endblock %}

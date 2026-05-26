@@ -60,7 +60,7 @@ SUBJECTS = {
 # Блупринтийн түвшин — Мэдлэг ойлголт / Чадвар / Хэрэглээ
 LEVELS     = ["Мэдлэг ойлголт","Чадвар","Хэрэглээ"]
 BLOOM      = ["Мэдлэг","Ойлголт","Хэрэглээ","Шинжилгээ","Үнэлгээ","Бүтээл"]
-Q_TYPES    = ["Нэг сонголт","Олон сонголт","Нээлттэй","Гүйцэтгэлийн"]
+Q_TYPES    = ["Нэг сонголт","Олон сонголт","Нээлттэй","Гүйцэтгэлийн","Олимпиад"]
 ADMIN_PW   = os.environ.get("ADMIN_PASSWORD","orkhontul2025")
 
 # Түвшин → оноо
@@ -143,12 +143,14 @@ def api_questions():
     subject = request.args.get("subject","")
     level   = request.args.get("level","all")
     bloom   = request.args.get("bloom","all")
+    q_type  = request.args.get("q_type","all")
     count   = int(request.args.get("count",20))
     conn=get_db(); sql,params="SELECT * FROM questions WHERE 1=1",[]
-    if grade:         sql+=" AND grade=?";   params.append(int(grade))
-    if subject:       sql+=" AND subject=?"; params.append(subject)
-    if level!="all":  sql+=" AND level=?";   params.append(level)
-    if bloom!="all":  sql+=" AND bloom=?";   params.append(bloom)
+    if grade:          sql+=" AND grade=?";   params.append(int(grade))
+    if subject:        sql+=" AND subject=?"; params.append(subject)
+    if level!="all":   sql+=" AND level=?";   params.append(level)
+    if bloom!="all":   sql+=" AND bloom=?";   params.append(bloom)
+    if q_type!="all":  sql+=" AND q_type=?";  params.append(q_type)
     sql+=" ORDER BY RANDOM() LIMIT ?"; params.append(count)
     rows=conn.execute(sql,params).fetchall(); conn.close()
     return jsonify({"questions":[row_to_dict(r) for r in rows],"total":len(rows)})
