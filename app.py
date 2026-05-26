@@ -161,6 +161,13 @@ OLYMPIAD_MATERIALS = [
      "title":"2024 Мэдээлэл зүйн улсын олимпиад",
      "desc":"2024 оны мэдээлэл зүй, програмчлалын улсын олимпиадын даалгавар",
      "icon":"💻","color":"#00BCD4","file_url":"","answer_url":"","has_answer":False},
+    {"id":19, "subject":"Математик", "year":"2024",
+ "level":"Аймгийн шат", "level_key":"aimag",
+ "title":"2024 Математик — Аймгийн шат",
+ "desc":"...", "icon":"📐", "color":"#2196F3",
+ "file_url":"https://drive.google.com/...",
+ "answer_url":"https://drive.google.com/...",
+ "has_answer": True}
 ]
 
 OLYMPIAD_SUBJECTS = sorted(list(set(m["subject"] for m in OLYMPIAD_MATERIALS)))
