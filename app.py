@@ -440,3 +440,59 @@ def admin_ai_generate():
 if __name__=="__main__":
     port=int(os.environ.get("PORT",5000))
     app.run(host="0.0.0.0",port=port)
+
+# ══ БАГШ ТАНД ══════════════════════════════════════════════
+@app.route("/teacher")
+def teacher_page():
+    return render_template("teacher.html",
+        subjects=SUBJECTS, all_subjects=ALL_SUBJECTS,
+        levels=LEVELS, blooms=BLOOM)
+
+@app.route("/api/teacher-ai", methods=["POST"])
+def teacher_ai():
+    import anthropic, json as _json
+    data    = request.json
+    prompt  = data.get("prompt","")
+    api_key = os.environ.get("ANTHROPIC_API_KEY","")
+    if not api_key:
+        return jsonify({"error":"ANTHROPIC_API_KEY тохируулаагүй. Render → Environment-д нэмнэ үү."}), 400
+    if not prompt:
+        return jsonify({"error":"Prompt хоосон байна"}), 400
+    try:
+        client  = anthropic.Anthropic(api_key=api_key)
+        msg     = client.messages.create(
+            model="claude-sonnet-4-5", max_tokens=3000,
+            messages=[{"role":"user","content": prompt}])
+        result  = msg.content[0].text.strip()
+        return jsonify({"result": result})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ══ ЧАТБОТ ════════════════════════════════════════════════
+@app.route("/api/chat", methods=["POST"])
+def chatbot():
+    import anthropic
+    data     = request.json
+    messages = data.get("messages", [])
+    api_key  = os.environ.get("ANTHROPIC_API_KEY","")
+    if not api_key:
+        return jsonify({"error":"API тохируулаагүй"}), 400
+    if not messages:
+        return jsonify({"error":"Мессеж хоосон"}), 400
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        msg = client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=1000,
+            system="""Та Орхонтуул ЕБС-ийн ухаалаг туслах чатбот.
+Сурагч, багш нарт дараах чиглэлээр туслана:
+- Математик, физик, хими, биологи, монгол хэл болон бусад хичээлийн тайлбар
+- Даалгавар бодоход тусламж (хариулт шууд өгөхгүй, зааварчилгаа өгнө)
+- Шалгалтад бэлтгэх зөвлөгөө
+- Ерөнхий боловсролын асуултанд хариулах
+Монгол хэлээр товч, тод хариулна. Найрсаг, урамшуулах өнгө аяс хадгална.""",
+            messages=messages
+        )
+        return jsonify({"reply": msg.content[0].text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
