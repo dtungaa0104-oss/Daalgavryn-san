@@ -134,7 +134,7 @@
         ✦ Жилийн төлөвлөгөө гаргах
       </button>
       <div class="ai-out" id="plan-out"></div>
-      <div id="plan-actions" style="display:none;margin-top:.8rem;display:flex;gap:.6rem">
+      <div id="plan-actions" style="display:none;margin-top:.8rem;gap:.6rem">
         <button class="btn btn-sm btn-outline" onclick="printOut('plan-out','Жилийн төлөвлөгөө')">🖨 Хэвлэх</button>
         <button class="btn btn-sm btn-outline" onclick="dlOut('plan-out','plan')">⬇ Татах</button>
       </div>
@@ -212,7 +212,7 @@
         ✦ Ээлжит хичээл боловсруулах
       </button>
       <div class="ai-out" id="les-out"></div>
-      <div id="les-actions" style="display:none;margin-top:.8rem;display:flex;gap:.6rem">
+      <div id="les-actions" style="display:none;margin-top:.8rem;gap:.6rem">
         <button class="btn btn-sm btn-outline" onclick="printOut('les-out','Ээлжит хичээлийн хөтөлбөр')">🖨 Хэвлэх</button>
         <button class="btn btn-sm btn-outline" onclick="dlOut('les-out','lesson')">⬇ Татах</button>
       </div>
@@ -332,27 +332,38 @@ function showTab(tab) {
 async function callAI(prompt, outId, btnId, actionsId) {
   const btn = document.getElementById(btnId);
   const out = document.getElementById(outId);
-  btn.disabled=true; btn.innerHTML='<span class="spinner-sm"></span> AI боловсруулж байна...';
-  out.className='ai-out show'; out.textContent='⏳ Боловсруулж байна...';
+  if (!btn || !out) return;
 
-  const fd=new FormData();
-  fd.append('grade','9'); fd.append('subject','Ерөнхий');
-  fd.append('level','Чадвар'); fd.append('bloom','Мэдлэг');
-  fd.append('q_type','Нээлттэй'); fd.append('count','1');
-  fd.append('topic', prompt);
+  const origLabel = btn.getAttribute('data-label') || btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-sm"></span> AI боловсруулж байна...';
+  out.className = 'ai-out show';
+  out.textContent = '⏳ Боловсруулж байна... (10-30 секунд)';
 
   try {
-    const res = await fetch('/api/teacher-ai', {method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({prompt})});
+    const res = await fetch('/api/teacher-ai', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({prompt: prompt})
+    });
+
     const data = await res.json();
-    btn.disabled=false; btn.innerHTML=btn.innerHTML.replace('<span class="spinner-sm"></span> AI боловсруулж байна...', btn.getAttribute('data-label')||'✦ Үүсгэх');
-    if (data.error) { out.textContent='❌ '+data.error; return; }
+    btn.disabled = false;
+    btn.textContent = origLabel;
+
+    if (data.error) {
+      out.textContent = '❌ ' + data.error;
+      return;
+    }
     out.textContent = data.result;
-    if (actionsId) document.getElementById(actionsId).style.display='flex';
+    if (actionsId) {
+      const actEl = document.getElementById(actionsId);
+      if (actEl) actEl.style.display = 'flex';
+    }
   } catch(e) {
-    btn.disabled=false;
-    out.textContent='❌ Холболтын алдаа.';
+    btn.disabled = false;
+    btn.textContent = origLabel;
+    out.textContent = '❌ Холболтын алдаа. Интернет болон API тохиргоогоо шалгана уу.';
   }
 }
 
