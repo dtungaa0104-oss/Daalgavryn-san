@@ -341,10 +341,13 @@ async function callAI(prompt, outId, btnId, actionsId) {
   out.textContent = '⏳ Боловсруулж байна... (10-30 секунд)';
 
   try {
-    const res = await fetch('/api/teacher-ai', {
+    // /api/chat ашиглана — teacher-ai болон chat хоёулаа ижил anthropic API
+    const res = await fetch('/api/chat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({prompt: prompt})
+      body: JSON.stringify({
+        messages: [{role: 'user', content: prompt}]
+      })
     });
 
     const data = await res.json();
@@ -355,7 +358,7 @@ async function callAI(prompt, outId, btnId, actionsId) {
       out.textContent = '❌ ' + data.error;
       return;
     }
-    out.textContent = data.result;
+    out.textContent = data.reply || data.reply || data.result;
     if (actionsId) {
       const actEl = document.getElementById(actionsId);
       if (actEl) actEl.style.display = 'flex';
@@ -481,14 +484,14 @@ async function genGame() {
     prompt=`${subject} хичээлийн ${topic||'үндсэн'} сэдвийн 5 сорилын асуулт. Зөвхөн JSON: [{"q":"...","opts":["А...","Б...","В...","Г..."],"ans":0},...] Монгол.`;
   }
 
-  const res = await fetch('/api/teacher-ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+  const res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
   const data = await res.json();
   btn.disabled=false; btn.textContent='▶ Тоглоом үүсгэх';
 
   if (data.error) { alert('❌ '+data.error); return; }
 
   try {
-    const raw = data.result.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+    const raw = (data.reply || data.result || '').replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
     const parsed = JSON.parse(raw);
     renderGame(type, parsed, subject, topic);
   } catch(e) {
