@@ -413,3 +413,38 @@ def admin_ai_generate():
 if __name__=="__main__":
     port=int(os.environ.get("PORT",5000))
     app.run(host="0.0.0.0",port=port)
+
+# ══ МОНГОЛ ХЭЛ БИЧГИЙН ШАЛГАЛТ ════════════════════════════
+@app.route("/mongol-bichig")
+def mongol_bichig_page():
+    # Монгол бичгийн шалгалтын өмнөх жилийн даалгаварууд
+    conn = get_db()
+    years = conn.execute(
+        "SELECT DISTINCT topic FROM questions WHERE subject='Монгол хэл бичгийн босго шалгалт' ORDER BY topic DESC"
+    ).fetchall()
+    recent = conn.execute(
+        "SELECT * FROM questions WHERE subject='Монгол хэл бичгийн босго шалгалт' ORDER BY id DESC LIMIT 20"
+    ).fetchall()
+    total = conn.execute(
+        "SELECT COUNT(*) FROM questions WHERE subject='Монгол хэл бичгийн босго шалгалт'"
+    ).fetchone()[0]
+    conn.close()
+    return render_template("mongol_bichig.html",
+        years=[r['topic'] for r in years],
+        recent=recent,
+        total=total,
+        levels=LEVELS,
+        blooms=BLOOM)
+
+@app.route("/api/update-topic")
+def update_topic():
+    subject = request.args.get("subject","")
+    topic   = request.args.get("topic","")
+    if not subject or not topic:
+        return jsonify({"ok": False})
+    conn = get_db()
+    conn.execute(
+        "UPDATE questions SET topic=? WHERE subject=? AND (topic IS NULL OR topic='')",
+        (topic, subject))
+    conn.commit(); conn.close()
+    return jsonify({"ok": True})

@@ -1,0 +1,529 @@
+{% extends "base.html" %}
+{% block title %}Монгол Хэл Бичгийн Босго Шалгалт — Орхонтуул ЕБС{% endblock %}
+{% block content %}
+<style>
+/* ── Tab ── */
+.mb-tabs { display:flex; background:var(--teal-600); border-bottom:3px solid var(--green-200); }
+.mb-tab  {
+  padding:13px 26px; color:rgba(255,255,255,.7); font-size:14px; font-weight:600;
+  cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-3px; transition:all .15s;
+}
+.mb-tab:hover  { color:#fff; background:rgba(255,255,255,.08); }
+.mb-tab.active { color:#fff; border-bottom-color:var(--green-100); background:rgba(255,255,255,.12); }
+.mb-panel      { display:none; }
+.mb-panel.active { display:block; }
+
+/* ── Үнэлгээний төвийн сайтуудын карт ── */
+.eval-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:16px; padding:28px 32px;
+}
+.eval-card {
+  background:#fff; border-radius:14px; border:2px solid var(--green-100);
+  padding:20px; display:flex; flex-direction:column; gap:10px;
+  text-decoration:none; color:var(--text-dark); transition:all .2s; position:relative; overflow:hidden;
+}
+.eval-card::before { content:''; position:absolute; top:0;left:0;right:0; height:4px; background:var(--ec-color,var(--teal-600)); }
+.eval-card:hover   { border-color:var(--ec-color,var(--teal-600)); transform:translateY(-2px); box-shadow:0 6px 20px rgba(15,110,86,.12); }
+.ec-header  { display:flex; align-items:center; gap:12px; }
+.ec-icon    { width:46px; height:46px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.ec-title   { font-size:15px; font-weight:800; color:var(--text-dark); }
+.ec-url     { font-size:11px; color:var(--text-muted); font-family:monospace; }
+.ec-desc    { font-size:13px; color:var(--text-muted); line-height:1.5; flex:1; }
+.ec-tags    { display:flex; gap:5px; flex-wrap:wrap; }
+.ec-tag     { font-size:11px; padding:2px 8px; border-radius:20px; background:var(--green-50); color:var(--text-mid); border:1px solid var(--green-100); }
+.ec-open    { font-size:12px; font-weight:700; color:var(--teal-600); }
+.eval-section-title {
+  padding:20px 32px 4px;
+  font-size:11px; font-weight:700; letter-spacing:2px; color:var(--text-muted); text-transform:uppercase;
+}
+
+/* ── Жилийн tag ── */
+.year-btns  { display:flex; gap:8px; flex-wrap:wrap; padding:1rem 2rem; background:var(--white); border-bottom:2px solid var(--green-50); }
+.year-btn   {
+  padding:5px 16px; border-radius:99px; font-size:12px; font-weight:700;
+  border:2px solid var(--green-200); background:#fff; color:var(--teal-600);
+  cursor:pointer; transition:all .15s;
+}
+.year-btn.active { background:var(--teal-600); color:#fff; border-color:var(--teal-600); }
+.year-btn:hover:not(.active) { border-color:var(--teal-600); }
+
+/* ── Upload товч ── */
+.upload-bar {
+  background:linear-gradient(135deg,#E8F5E9,#E1F5EE);
+  border-bottom:2px solid var(--green-100);
+  padding:.8rem 2rem; display:none; align-items:center; gap:1rem; flex-wrap:wrap;
+}
+.upload-bar.open { display:flex; }
+
+/* ── AI панел ── */
+.ai-bar {
+  background:linear-gradient(135deg,#E3F2FD,#E8F5E9);
+  border-bottom:2px solid var(--green-100);
+  padding:.8rem 2rem; display:none; align-items:center; gap:.8rem; flex-wrap:wrap;
+}
+.ai-bar.open { display:flex; }
+</style>
+
+<!-- Header -->
+<div class="page-header">
+  <h1>✍ Монгол Хэл Бичгийн <span>Босго Шалгалт</span></h1>
+  <p>Өмнөх жилийн даалгаварууд · Үнэлгээний төвийн сайтууд · AI-аар даалгавар үүсгэх</p>
+</div>
+
+<!-- Tabs -->
+<div class="mb-tabs">
+  <div class="mb-tab active" onclick="showTab('daalgavar')">📝 Өмнөх жилийн даалгавар</div>
+  <div class="mb-tab" onclick="showTab('sites')">🌐 Үнэлгээний төвүүд</div>
+  <div class="mb-tab" onclick="showTab('ai')">🤖 AI Даалгавар үүсгэх</div>
+</div>
+
+<!-- ══ TAB 1: ДААЛГАВАР ══ -->
+<div class="mb-panel active" id="panel-daalgavar">
+
+  <!-- Хэрэгслийн мөр -->
+  <div style="background:#fff;border-bottom:2px solid var(--green-50);padding:.7rem 2rem;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center">
+    <button class="btn btn-sm btn-outline" onclick="toggleUpload()">📂 Файлаар нэмэх</button>
+    <div style="width:1px;height:24px;background:var(--green-100)"></div>
+    <span style="font-size:.8rem;color:var(--text-muted)">Нийт: <strong id="total-count">{{ total }}</strong> даалгавар</span>
+  </div>
+
+  <!-- Upload панел -->
+  <div class="upload-bar" id="upload-bar">
+    <div class="field-group">
+      <label style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;font-weight:700">Жил</label>
+      <input type="text" id="up-year" placeholder="2024" style="width:80px;background:var(--green-50);border:1.5px solid var(--green-100);padding:6px 8px;border-radius:6px;font-size:.88rem">
+    </div>
+    <div class="field-group">
+      <label style="font-size:.7rem;color:var(--text-muted);text-transform:uppercase;font-weight:700">Түвшин</label>
+      <select id="up-level" style="background:var(--green-50);border:1.5px solid var(--green-100);padding:6px 8px;border-radius:6px;font-size:.88rem">
+        {% for l in levels %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <div id="up-drop" onclick="document.getElementById('up-file').click()"
+        style="border:2px dashed var(--green-200);border-radius:8px;padding:8px 16px;cursor:pointer;background:#fff;font-size:.82rem;color:var(--text-mid);transition:all .15s"
+        ondragover="event.preventDefault();this.style.borderColor='var(--teal-600)'"
+        ondragleave="this.style.borderColor='var(--green-200)'"
+        ondrop="handleDrop(event)">
+        📂 <span id="up-fname">PDF / Word / TXT файл чирнэ үү</span>
+      </div>
+      <input type="file" id="up-file" accept=".pdf,.docx,.doc,.txt" style="display:none" onchange="setFile(this.files[0])">
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="doUpload()">⬆ Оруулах</button>
+    <button class="btn btn-outline btn-sm" onclick="toggleUpload()">✕</button>
+    <div id="up-result" style="font-size:.82rem"></div>
+  </div>
+
+  <!-- Жилийн шүүлтүүр -->
+  {% if years %}
+  <div class="year-btns">
+    <button class="year-btn active" onclick="filterYear(this,'all')">Бүгд</button>
+    {% for y in years %}
+    <button class="year-btn" onclick="filterYear(this,'{{ y }}')">{{ y }}</button>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Даалгаврын grid -->
+  <div class="filter-panel" style="padding:.8rem 2rem">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Түвшин</label>
+        <select id="f-level">
+          <option value="all">Бүгд</option>
+          {% for l in levels %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Тоо</label>
+        <select id="f-count">
+          <option value="20" selected>20</option>
+          <option value="30">30</option>
+          <option value="50">50</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="loadMB()">Хайх</button>
+    </div>
+  </div>
+
+  <div class="results-bar" id="mb-results-bar" style="display:none">
+    <span id="mb-count"></span>
+    <div class="bar-actions">
+      <button class="btn btn-sm btn-outline" onclick="selectAll()">Бүгдийг сонгох</button>
+      <button class="btn btn-sm btn-primary" onclick="downloadSelected()">⬇ Татах</button>
+    </div>
+  </div>
+
+  <div class="questions-grid" id="mb-container">
+    {% if recent %}
+      <!-- JS-аар дүүргэгдэнэ -->
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">📝</div>
+        <p>Жил эсвэл түвшин сонгоод "Хайх" дарна уу</p>
+      </div>
+    {% else %}
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">✍</div>
+        <p>Одоохондоо даалгавар байхгүй байна</p>
+        <p style="font-size:.82rem;color:var(--text-muted);margin-top:.5rem">
+          "Файлаар нэмэх" товч дарж PDF/Word оруулна уу
+        </p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ══ TAB 2: ҮНЭЛГЭЭНИЙ ТӨВҮҮД ══ -->
+<div class="mb-panel" id="panel-sites">
+
+  <div class="eval-section-title">🇲🇳 Монголын үнэлгээний байгууллагууд</div>
+  <div class="eval-grid">
+
+    <a href="https://eec.mn" target="_blank" class="eval-card" style="--ec-color:#1B5E20">
+      <div class="ec-header">
+        <div class="ec-icon" style="background:#E8F5E9">🏛</div>
+        <div><div class="ec-title">Боловсролын үнэлгээний төв</div><div class="ec-url">eec.mn</div></div>
+      </div>
+      <p class="ec-desc">МУ-ын Боловсролын үнэлгээний төв (БҮТ). Улсын шалгалт, ЭЕШ-ийн бүх мэдээлэл, өмнөх жилийн даалгаварууд.</p>
+      <div class="ec-tags">
+        <span class="ec-tag">🏆 Улсын шалгалт</span>
+        <span class="ec-tag">🎓 ЭЕШ</span>
+        <span class="ec-tag">📊 Дүн мэдээлэл</span>
+      </div>
+      <span class="ec-open">Нээх →</span>
+    </a>
+
+    <a href="https://www.esis.edu.mn" target="_blank" class="eval-card" style="--ec-color:#0D47A1">
+      <div class="ec-header">
+        <div class="ec-icon" style="background:#E3F2FD">🖥</div>
+        <div><div class="ec-title">ESIS — Боловсролын мэдээллийн систем</div><div class="ec-url">esis.edu.mn</div></div>
+      </div>
+      <p class="ec-desc">Сурагчийн дүн, дэвших шалгалтын мэдээлэл, сургуулийн тайлан. Эцэг эх, сурагч, багш нэвтэрч мэдээлэл авна.</p>
+      <div class="ec-tags">
+        <span class="ec-tag">📋 Дүн мэдээлэл</span>
+        <span class="ec-tag">👨‍👩‍👧 Эцэг эх</span>
+        <span class="ec-tag">🏫 Сургууль</span>
+      </div>
+      <span class="ec-open">Нээх →</span>
+    </a>
+
+    <a href="https://mecs.gov.mn" target="_blank" class="eval-card" style="--ec-color:#4A148C">
+      <div class="ec-header">
+        <div class="ec-icon" style="background:#F3E5F5">🏢</div>
+        <div><div class="ec-title">Боловсролын яам</div><div class="ec-url">mecs.gov.mn</div></div>
+      </div>
+      <p class="ec-desc">МУ-ын Боловсрол, шинжлэх ухааны яам. Боловсролын бодлого, стандарт, журам дүрэм.</p>
+      <div class="ec-tags">
+        <span class="ec-tag">📜 Бодлого</span>
+        <span class="ec-tag">📐 Стандарт</span>
+        <span class="ec-tag">📢 Мэдэгдэл</span>
+      </div>
+      <span class="ec-open">Нээх →</span>
+    </a>
+
+    <a href="https://econtent.edu.mn" target="_blank" class="eval-card" style="--ec-color:#1B5E20">
+      <div class="ec-header">
+        <div class="ec-icon" style="background:#E8F5E9">📗</div>
+        <div><div class="ec-title">eContent — Нээлттэй сурах бичиг</div><div class="ec-url">econtent.edu.mn</div></div>
+      </div>
+      <p class="ec-desc">1–12-р ангийн бүх хичээлийн сурах бичиг PDF хэлбэрээр нээлттэй. Монгол хэл бичгийн материалуудыг татаж авна.</p>
+      <div class="ec-tags">
+        <span class="ec-tag">📚 Сурах бичиг</span>
+        <span class="ec-tag">✍ Монгол бичиг</span>
+        <span class="ec-tag">Үнэгүй</span>
+      </div>
+      <span class="ec-open">Нээх →</span>
+    </a>
+
+    <a href="https://bagsh.mn" target="_blank" class="eval-card" style="--ec-color:#E65100">
+      <div class="ec-header">
+        <div class="ec-icon" style="background:#FFF3E0">👩‍🏫</div>
+        <div><div class="ec-title">Bagsh.mn — Багшийн портал</div><div class="ec-url">bagsh.mn</div></div>
+      </div>
+      <p class="ec-desc">Монгол багш нарын нэгдсэн платформ. Хичээлийн материал, туршлага солилцоо, мэдлэг дээшлүүлэх.</p>
+      <div class="ec-tags">
+        <span class="ec-tag">👩‍🏫 Багшийн материал</span>
+        <span class="ec-tag">📝 Хичээлийн төлөвлөгөө</span>
+      </div>
+      <span class="ec-open">Нээх →</span>
+    </a>
+
+    <a href="https://www.nso.mn" target="_blank" class="eval-card" style="--ec-color:#37474F">
+      <div class="ec-header">
+        <div class="ec-icon" style="background:#ECEFF1">📊</div>
+        <div><div class="ec-title">Үндэсний статистикийн хороо</div><div class="ec-url">nso.mn</div></div>
+      </div>
+      <p class="ec-desc">Боловсролын статистик мэдээлэл. Сурагчийн тоо, сургуулийн тоо, шалгалтын дүнгийн статистик.</p>
+      <div class="ec-tags">
+        <span class="ec-tag">📈 Статистик</span>
+        <span class="ec-tag">📋 Тайлан</span>
+      </div>
+      <span class="ec-open">Нээх →</span>
+    </a>
+
+  </div>
+
+  <div class="eval-section-title" style="margin-top:8px">✍ Монгол хэл бичгийн тусгай эх сурвалжууд</div>
+  <div class="eval-grid">
+
+    <a href="https://mongoltoli.mn" target="_blank" class="eval-card" style="--ec-color:#880E4F">
+      <div class="ec-header">
+        <div class="ec-icon" style="background:#FCE4EC">📖</div>
+        <div><div class="ec-title">Монгол Толь</div><div class="ec-url">mongoltoli.mn</div></div>
+      </div>
+      <p class="ec-desc">Монгол хэлний тайлбар толь. Үгийн утга, зөв бичих дүрэм, дэлгэрэнгүй тайлбар.</p>
+      <div class="ec-tags">
+        <span class="ec-tag">📖 Тайлбар толь</span>
+        <span class="ec-tag">✍ Зөв бичих дүрэм</span>
+      </div>
+      <span class="ec-open">Нээх →</span>
+    </a>
+
+    <a href="https://www.mongolchinese.mn" target="_blank" class="eval-card" style="--ec-color:#B71C1C">
+      <div class="ec-header">
+        <div class="ec-icon" style="background:#FFEBEE">🔤</div>
+        <div><div class="ec-title">Монгол бичгийн нөөц</div><div class="ec-url">mongolchinese.mn</div></div>
+      </div>
+      <p class="ec-desc">Монгол бичгийн үсэг, дүрэм, дасгал материалууд. Уламжлалт монгол бичгийг сурах хэрэгсэл.</p>
+      <div class="ec-tags">
+        <span class="ec-tag">✍ Монгол бичиг</span>
+        <span class="ec-tag">📝 Дасгал</span>
+      </div>
+      <span class="ec-open">Нээх →</span>
+    </a>
+
+  </div>
+</div>
+
+<!-- ══ TAB 3: AI ҮҮСГЭГЧ ══ -->
+<div class="mb-panel" id="panel-ai">
+  <div style="max-width:720px;margin:0 auto;padding:28px 32px">
+    <div style="background:#fff;border:2px solid var(--green-100);border-radius:14px;padding:22px">
+      <h3 style="font-size:1rem;font-weight:800;color:var(--text-dark);margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        🤖 Claude AI-аар Монгол хэл бичгийн даалгавар үүсгэх
+      </h3>
+      <div class="form-grid">
+        <div class="field-group">
+          <label>Анги <span class="req">*</span></label>
+          <select id="ai-grade">
+            {% for g in range(1,13) %}<option value="{{ g }}" {% if g==9 %}selected{% endif %}>{{ g }}-р анги</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Түвшин</label>
+          <select id="ai-level">
+            {% for l in levels %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Блумын шат</label>
+          <select id="ai-bloom">
+            {% for b in blooms %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Тоо</label>
+          <select id="ai-count">
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group" style="margin-top:.8rem">
+        <label>Сэдэв / Хамрах хүрээ</label>
+        <input type="text" id="ai-topic"
+          placeholder="Жишээ: Зөв бичих дүрэм, Найруулга, Монгол бичиг, Утга зохиол...">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:1rem;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" id="ai-btn" onclick="runAI()">✦ Даалгавар үүсгэх</button>
+        <span style="font-size:.75rem;color:var(--text-muted)">✓ Монгол хэл бичгийн хичээлд зориулсан · ✓ DB-д хадгалагдана</span>
+      </div>
+    </div>
+    <div id="ai-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+let allQ = [], selected = new Set(), currentYear = 'all';
+
+function showTab(tab) {
+  document.querySelectorAll('.mb-tab').forEach((t,i)=>t.classList.toggle('active',['daalgavar','sites','ai'][i]===tab));
+  document.querySelectorAll('.mb-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+}
+
+function toggleUpload() {
+  document.getElementById('upload-bar').classList.toggle('open');
+}
+
+function filterYear(btn, year) {
+  currentYear = year;
+  document.querySelectorAll('.year-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadMB();
+}
+
+// ── Файл upload ──
+let uploadFile = null;
+function setFile(f) {
+  uploadFile = f;
+  document.getElementById('up-fname').textContent = '✓ ' + f.name;
+  document.getElementById('up-drop').style.borderColor = '#43A047';
+}
+function handleDrop(e) {
+  e.preventDefault();
+  if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+}
+async function doUpload() {
+  if (!uploadFile) { alert('Файл сонгоно уу'); return; }
+  const year = document.getElementById('up-year').value || new Date().getFullYear().toString();
+  const level = document.getElementById('up-level').value;
+  const fd = new FormData();
+  fd.append('file', uploadFile);
+  fd.append('grade', '12');
+  fd.append('subject', 'Монгол хэл бичгийн босго шалгалт');
+  fd.append('default_level', level);
+  // topic талбарт жилийг хадгалах — app.py file_importer-д topic=year болгоно
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '⏳...';
+  // Эхлээд import хийнэ, дараа нь topic=year болгож update хийнэ
+  const res = await fetch('/admin/import', { method:'POST', body:fd });
+  const data = await res.json();
+  btn.disabled = false; btn.textContent = '⬆ Оруулах';
+  const box = document.getElementById('up-result');
+  if (data.error) {
+    box.innerHTML = `<span style="color:#C62828">❌ ${data.error}</span>`;
+  } else {
+    // Жилийг topic-д хадгалах
+    await fetch(`/api/update-topic?subject=${encodeURIComponent('Монгол хэл бичгийн босго шалгалт')}&topic=${encodeURIComponent(year)}`);
+    box.innerHTML = `<span style="color:#2E7D32">✅ ${data.saved} даалгавар (${year} он) хадгаллаа</span>`;
+    document.getElementById('total-count').textContent = parseInt(document.getElementById('total-count').textContent) + data.saved;
+    setTimeout(()=>loadMB(), 600);
+  }
+}
+
+// ── Хайх ──
+async function loadMB() {
+  const level = document.getElementById('f-level').value;
+  const count = document.getElementById('f-count').value;
+  const container = document.getElementById('mb-container');
+  container.innerHTML = '<div class="loading" style="grid-column:1/-1"><div class="spinner"></div><p>Татаж байна...</p></div>';
+  let url = `/api/questions?subject=${encodeURIComponent('Монгол хэл бичгийн босго шалгалт')}&count=${count}&bloom=all`;
+  if (level !== 'all') url += `&level=${encodeURIComponent(level)}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  allQ = data.questions;
+  // Жилээр шүүх
+  const filtered = currentYear === 'all' ? allQ : allQ.filter(q=>(q.topic||'').includes(currentYear));
+  selected.clear();
+  renderQ(filtered);
+}
+
+function renderQ(questions) {
+  const container = document.getElementById('mb-container');
+  const bar = document.getElementById('mb-results-bar');
+  if (!questions.length) {
+    container.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-icon">✍</div>
+      <p>Даалгавар байхгүй байна</p>
+      <p style="font-size:.8rem;color:var(--text-muted);margin-top:.4rem">
+        "Файлаар нэмэх" эсвэл "AI Үүсгэх" ашиглана уу</p>
+    </div>`;
+    bar.style.display = 'none'; return;
+  }
+  bar.style.display = 'flex';
+  document.getElementById('mb-count').textContent = `${questions.length} даалгавар`;
+  container.innerHTML = questions.map((q,i) => {
+    const lvlCss = (q.level||'').replace(/ /g,'');
+    const isSel  = selected.has(String(q.id));
+    return `
+    <div class="question-card ${isSel?'selected':''}" id="card-${q.id}" onclick="toggleSel('${q.id}')">
+      <div class="card-header">
+        <span class="q-id">${q.q_code||q.id}</span>
+        <span class="q-level level-${lvlCss}">${q.level||''}</span>
+        <span class="q-bloom">${q.bloom||''}</span>
+        ${q.topic?`<span style="font-size:.7rem;padding:2px 8px;border-radius:20px;background:#FFF8E1;color:#E65100;border:1px solid #FFE082">${q.topic}</span>`:''}
+        <span class="q-score">${q.score}п</span>
+      </div>
+      <p class="q-text" style="padding:.5rem 0">${i+1}. ${q.question}</p>
+      ${q.options?`<div class="q-options">${q.options.map(o=>`<span class="q-opt">${o}</span>`).join('')}</div>`:''}
+      <div class="card-footer">
+        <span class="q-type">${q.q_type||''}</span>
+        <div class="check-icon">${isSel?'✓':''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleSel(id) {
+  const sid = String(id);
+  if (selected.has(sid)) selected.delete(sid); else selected.add(sid);
+  document.getElementById('card-'+id)?.classList.toggle('selected');
+  const ci = document.querySelector(`#card-${id} .check-icon`);
+  if (ci) ci.textContent = selected.has(sid)?'✓':'';
+}
+function selectAll() { allQ.forEach(q=>selected.add(String(q.id))); renderQ(allQ); }
+function downloadSelected() {
+  const qs = allQ.filter(q=>selected.has(String(q.id)));
+  if (!qs.length) { alert('Даалгавар сонгоно уу'); return; }
+  let t = `ОРХОНТУУЛ ЕБС — МОНГОЛ ХЭЛ БИЧГИЙН ШАЛГАЛТ\n${'='.repeat(50)}\n\n`;
+  qs.forEach((q,i) => {
+    t += `${i+1}. [${q.level}] ${q.topic?'('+q.topic+')':''}\n${q.question}\n`;
+    if (q.options) q.options.forEach(o=>t+=`   ${o}\n`);
+    t += `   Хариулт: ${q.answer||'—'}  Оноо: ${q.score}\n\n`;
+  });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([t],{type:'text/plain;charset=utf-8'}));
+  a.download = `mongol_bichig_${Date.now()}.txt`;
+  a.click();
+}
+
+// ── AI ──
+async function runAI() {
+  const btn = document.getElementById('ai-btn');
+  const result = document.getElementById('ai-result');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> AI бодож байна...';
+  const fd = new FormData();
+  fd.append('grade',   document.getElementById('ai-grade').value);
+  fd.append('subject', 'Монгол хэл бичгийн босго шалгалт');
+  fd.append('level',   document.getElementById('ai-level').value);
+  fd.append('bloom',   document.getElementById('ai-bloom').value);
+  fd.append('q_type',  'Нэг сонголт');
+  fd.append('count',   document.getElementById('ai-count').value);
+  fd.append('topic',   document.getElementById('ai-topic').value || new Date().getFullYear().toString());
+  const res  = await fetch('/admin/ai-generate', { method:'POST', body:fd });
+  const data = await res.json();
+  btn.disabled = false; btn.innerHTML = '✦ Даалгавар үүсгэх';
+  if (data.error) {
+    result.innerHTML = `<div class="result-error">❌ ${data.error}</div>`;
+    return;
+  }
+  const letters = ['А','Б','В','Г'];
+  result.innerHTML = `
+    <div class="result-success">
+      <div class="result-nums">
+        <div class="rn-item"><span>${data.saved}</span><label>Хадгаллаа</label></div>
+      </div>
+      ${(data.questions||[]).map((q,i)=>`
+        <div class="ai-q-item" style="padding:.7rem;border-bottom:1px solid var(--green-50)">
+          <p style="font-size:.9rem;font-weight:500;margin-bottom:.4rem">${i+1}. ${q.question}</p>
+          ${q.option_a?`<div style="display:flex;flex-wrap:wrap;gap:.4rem">
+            ${['option_a','option_b','option_c','option_d'].map((k,j)=>
+              q[k]?`<span style="font-size:.8rem;padding:3px 10px;border-radius:6px;
+                background:${q.answer===letters[j]?'#E8F5E9':'var(--green-50)'};
+                border:1px solid ${q.answer===letters[j]?'#A5D6A7':'var(--green-100)'};
+                color:${q.answer===letters[j]?'#2E7D32':'var(--text-mid)'};
+                font-weight:${q.answer===letters[j]?'700':'400'}">
+                ${letters[j]}. ${q[k]}</span>`:''
+            ).join('')}
+          </div>`:''}
+        </div>`).join('')}
+      <button class="btn btn-outline btn-sm" style="margin-top:1rem" onclick="loadMB()">Хайлтанд харах →</button>
+    </div>`;
+}
+</script>
+{% endblock %}
