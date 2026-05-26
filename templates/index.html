@@ -1,62 +1,268 @@
 {% extends "base.html" %}
 {% block title %}Орхонтуул ЕБС — Нүүр хуудас{% endblock %}
+
 {% block content %}
+<style>
+/* ══ НҮҮР ХУУДАСНЫ ТУСГАЙ STYLE ══════════════════════ */
 
+/* Hero */
+.hero {
+  background: var(--teal-600);
+  position: relative; overflow: hidden;
+  padding: 56px 32px 48px; text-align: center;
+}
+.hero::before {
+  content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='70'%3E%3Cpolygon points='40,3 76,22 76,60 40,79 4,60 4,22' fill='none' stroke='rgba(151,196,89,0.2)' stroke-width='1'/%3E%3C/svg%3E");
+  background-size:80px 70px;
+}
+.hero-inner { position:relative; z-index:2; max-width:640px; margin:0 auto; }
+.hero-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
+  color:#d4efb8; font-size:11px; font-weight:700; letter-spacing:1.5px;
+  padding:5px 16px; border-radius:99px; margin-bottom:18px; text-transform:uppercase;
+}
+.hero h1 {
+  font-size:clamp(2.2rem,6vw,3.8rem); font-weight:900; color:#fff;
+  line-height:1.05; margin-bottom:12px; letter-spacing:-1px;
+}
+.hero h1 span { color:var(--green-100); }
+.hero p {
+  font-size:15px; color:rgba(255,255,255,.78);
+  max-width:480px; margin:0 auto 28px; line-height:1.6;
+}
+.hero-btns { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:40px; }
+.btn-hero-primary {
+  background:#fff; color:var(--teal-600);
+  padding:11px 26px; border-radius:8px; font-size:14px; font-weight:700;
+  text-decoration:none; transition:all .2s;
+}
+.btn-hero-primary:hover { background:var(--green-50); transform:translateY(-1px); }
+.btn-hero-ghost {
+  background:rgba(255,255,255,.12); color:#fff;
+  padding:11px 26px; border-radius:8px; font-size:14px; font-weight:600;
+  text-decoration:none; border:1px solid rgba(255,255,255,.3); transition:all .2s;
+}
+.btn-hero-ghost:hover { background:rgba(255,255,255,.22); }
+
+/* Stats */
+.hero-stats { display:flex; gap:1px; background:rgba(255,255,255,.15); border-radius:12px; overflow:hidden; max-width:480px; margin:0 auto; }
+.stat-card  { flex:1; background:rgba(0,0,0,.12); padding:14px 10px; text-align:center; }
+.stat-num   { display:block; font-size:1.7rem; font-weight:900; color:#fff; line-height:1; }
+.stat-label { display:block; font-size:10px; color:rgba(255,255,255,.65); margin-top:3px; text-transform:uppercase; letter-spacing:.06em; }
+
+/* Section */
+.home-section { padding:44px 32px; }
+.home-section.alt { background:#fff; border-top:2px solid var(--green-50); border-bottom:2px solid var(--green-50); }
+.section-head { text-align:center; margin-bottom:28px; }
+.section-title { font-size:11px; font-weight:700; letter-spacing:2px; color:var(--text-muted); text-transform:uppercase; }
+.section-h2 { font-size:1.5rem; font-weight:800; color:var(--text-dark); margin-top:6px; }
+.section-h2 span { color:var(--teal-600); }
+.section-sub { font-size:13px; color:var(--text-muted); margin-top:4px; }
+
+/* Exam cards */
+.exam-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
+.exam-card {
+  background:#fff; border-radius:14px; padding:22px 18px;
+  border:2px solid var(--green-50); text-decoration:none; color:var(--text-dark);
+  display:block; transition:all .2s; position:relative; overflow:hidden;
+}
+.exam-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:var(--et-color,var(--teal-600)); }
+.exam-card:hover { border-color:var(--green-100); transform:translateY(-3px); box-shadow:0 8px 24px rgba(15,110,86,.12); }
+.ec-icon  { font-size:26px; margin-bottom:8px; display:block; }
+.ec-name  { font-size:15px; font-weight:800; color:var(--text-dark); margin-bottom:6px; }
+.ec-grades{
+  display:inline-flex; flex-wrap:wrap; gap:4px; margin-bottom:10px;
+}
+.ec-grade-pill {
+  font-size:10px; background:var(--green-50); color:var(--teal-600);
+  padding:2px 8px; border-radius:99px; font-weight:600; border:1px solid var(--green-100);
+}
+.ec-meta  { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+.ec-tag   { font-size:11px; background:#f0f7e8; color:var(--text-mid); padding:3px 8px; border-radius:5px; border:1px solid var(--green-100); }
+.ec-note  { font-size:11px; color:var(--text-muted); padding-top:8px; border-top:1px dashed var(--green-100); margin-bottom:10px; }
+.ec-link  { font-size:12px; font-weight:700; color:var(--teal-600); }
+
+/* Extra cards */
+.extra-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+.extra-card {
+  background:#fff; border-radius:14px; padding:22px 18px;
+  border:2px solid var(--green-100); text-decoration:none; color:var(--text-dark);
+  display:flex; flex-direction:column; gap:8px; transition:all .2s;
+}
+.extra-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(15,110,86,.12); }
+.olympiad-card    { border-color:#A5D6A7; }
+.olympiad-card:hover { border-color:#43A047; }
+.interactive-card { border-color:#80CBC4; }
+.interactive-card:hover { border-color:var(--teal-600); }
+.extra-icon { font-size:2rem; line-height:1; }
+.extra-card h3 { font-size:1.05rem; font-weight:800; color:var(--text-dark); }
+.extra-card p  { font-size:13px; color:var(--text-muted); line-height:1.5; flex:1; }
+.extra-tags { display:flex; gap:5px; flex-wrap:wrap; }
+.extra-tags span { font-size:11px; padding:2px 8px; border-radius:20px; background:var(--green-50); color:var(--text-mid); border:1px solid var(--green-100); }
+.extra-link { font-size:12px; font-weight:700; color:var(--teal-600); }
+
+/* Grade grid */
+.grade-grid { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+.grade-box  {
+  display:flex; flex-direction:column; align-items:center;
+  width:72px; padding:10px 8px; border-radius:10px; text-decoration:none;
+  border:2px solid; transition:all .15s;
+  background:color-mix(in srgb, var(--et-color) 10%, #fff);
+  border-color:color-mix(in srgb, var(--et-color) 30%, #fff);
+  color:var(--text-dark);
+}
+.grade-box:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.1); }
+.grade-num   { font-size:18px; font-weight:900; line-height:1; color:var(--et-color); }
+.grade-label { font-size:9px; color:var(--text-muted); margin-top:2px; }
+.grade-type-badge { font-size:9px; margin-top:3px; text-align:center; color:var(--et-color); font-weight:600; line-height:1.2; }
+
+/* Ticker */
+.ticker-wrap { background:var(--green-700); border-top:2px solid var(--green-600); border-bottom:2px solid var(--green-600); overflow:hidden; white-space:nowrap; height:40px; display:flex; align-items:center; }
+.ticker-label { flex-shrink:0; background:var(--green-200); color:var(--green-800); font-size:11px; font-weight:800; letter-spacing:1.5px; padding:0 18px; height:100%; display:flex; align-items:center; text-transform:uppercase; }
+.ticker-track { display:flex; align-items:center; animation:ticker-scroll 32s linear infinite; will-change:transform; }
+.ticker-track:hover { animation-play-state:paused; }
+@keyframes ticker-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+.ticker-item { display:inline-flex; align-items:center; gap:8px; padding:0 32px; font-size:13px; font-weight:600; color:var(--green-50); white-space:nowrap; }
+.ticker-item a { color:var(--green-100); text-decoration:none; transition:color .15s; }
+.ticker-item a:hover { color:#fff; text-decoration:underline; }
+.ticker-sep { color:var(--green-400); font-size:16px; flex-shrink:0; }
+</style>
+
+<!-- ══ HERO ══ -->
 <section class="hero">
-  <div class="hero-bg"></div>
-  <div class="hero-content">
-    <div class="hero-label">БҮРЭН ДУНД БОЛОВСРОЛЫН</div>
-    <h1 class="hero-title">ДААЛГАВРЫН <br><span class="accent">САН</span></h1>
-    <p class="hero-desc">1–12-р ангийн бүх хичээлийн даалгавар. Улсын болон бусад шалгалтыг блупринтийн дагуу автоматаар үүсгэнэ.</p>
-    <div class="hero-actions">
-      <a href="/questions" class="btn btn-primary">Даалгавар хайх</a>
-      <a href="/blueprint" class="btn btn-outline">Шалгалт үүсгэх</a>
+  <div class="hero-inner">
+    <div class="hero-badge">⬡ 1–12-Р АНГИ · БҮРЭН ДУНД БОЛОВСРОЛ</div>
+    <h1>ДААЛГАВРЫН<br><span>САН</span></h1>
+    <p>1–12-р ангийн бүх хичээлийн даалгавар. Улсын болон бусад шалгалтыг блупринтийн дагуу автоматаар үүсгэнэ.</p>
+    <div class="hero-btns">
+      <a href="/questions" class="btn-hero-primary">Даалгавар хайх</a>
+      <a href="/blueprint" class="btn-hero-ghost">Шалгалт үүсгэх</a>
     </div>
-  </div>
-  <div class="hero-stats">
-    <div class="stat-card"><span class="stat-num" data-target="4820">0</span><span class="stat-label">Нийт даалгавар</span></div>
-    <div class="stat-card"><span class="stat-num" data-target="12">0</span><span class="stat-label">Анги</span></div>
-    <div class="stat-card"><span class="stat-num" data-target="10">0</span><span class="stat-label">Хичээл</span></div>
-    <div class="stat-card"><span class="stat-num" data-target="4">0</span><span class="stat-label">Шалгалтын төрөл</span></div>
+    <div class="hero-stats">
+      <div class="stat-card"><span class="stat-num" id="stat-q">0</span><span class="stat-label">Даалгавар</span></div>
+      <div class="stat-card"><span class="stat-num">12</span><span class="stat-label">Анги</span></div>
+      <div class="stat-card"><span class="stat-num" id="stat-s">0</span><span class="stat-label">Хичээл</span></div>
+      <div class="stat-card"><span class="stat-num">4</span><span class="stat-label">Шалгалт</span></div>
+    </div>
   </div>
 </section>
 
-<!-- Шалгалтын төрлүүд -->
-<section class="exam-types-section">
-  <h2 class="section-title">Шалгалтын <span class="accent">төрлүүд</span></h2>
-  <p class="section-sub">Монгол ЕБС-ийн шалгалтын системийн дагуу</p>
-  <div class="exam-type-cards">
+<!-- ══ ГҮЙДЭГ ТЕКСТ ══ -->
+<div class="ticker-wrap">
+  <div class="ticker-label">⬡ МЭДЭЭ</div>
+  <div class="ticker-track">
+    <span class="ticker-item"><span>📚</span><a href="/questions">Даалгаврын сан</a> — бүгдийг нэг дороос хайж олоорой</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item"><span>🏆</span><a href="/blueprint?exam=ulsiin">Улсын шалгалт</a> — 5, 9, 12-р анги</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item"><span>📋</span><a href="/blueprint?exam=devshih">Анги дэвших шалгалт</a> — 3, 4, 6, 7, 8, 10, 11-р анги</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item"><span>📝</span><a href="/blueprint?exam=guitsegdel">Гүйцэтгэлийн үнэлгээ</a> — 2–11-р анги</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item"><span>🎓</span><a href="/blueprint?exam=elselt">Элсэлтийн шалгалт</a> — 12-р анги</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item"><span>🏅</span><a href="/olympiad">Олимпиадын даалгавар</a> — сургуулийн, аймгийн, улсын шат</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item"><span>⚡</span><a href="/interactive">Интерактив дасгал</a> — хариулт шалгаж оноо авна</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item"><span>📚</span><a href="/questions">Даалгаврын сан</a> — бүгдийг нэг дороос хайж олоорой</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item"><span>🏆</span><a href="/blueprint?exam=ulsiin">Улсын шалгалт</a> — 5, 9, 12-р анги</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item"><span>📋</span><a href="/blueprint?exam=devshih">Анги дэвших шалгалт</a> — 3, 4, 6, 7, 8, 10, 11-р анги</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item"><span>📝</span><a href="/blueprint?exam=guitsegdel">Гүйцэтгэлийн үнэлгээ</a> — 2–11-р анги</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item"><span>🎓</span><a href="/blueprint?exam=elselt">Элсэлтийн шалгалт</a> — 12-р анги</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item"><span>🏅</span><a href="/olympiad">Олимпиадын даалгавар</a> — сургуулийн, аймгийн, улсын шат</span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item"><span>⚡</span><a href="/interactive">Интерактив дасгал</a> — хариулт шалгаж оноо авна</span>
+    <span class="ticker-sep">◆</span>
+  </div>
+</div>
 
-    {% for eid, et in exam_types.items() %}
-    <div class="et-card" style="--et-color: {{ et.color }}">
-      <div class="et-top">
-        <span class="et-icon">{{ et.icon }}</span>
-        <div class="et-grades">
-          {% for g in et.grades %}<span class="et-grade-pill">{{ g }}-р анги</span>{% endfor %}
-        </div>
+<!-- ══ ШАЛГАЛТЫН ТӨРЛҮҮД ══ -->
+<div class="home-section">
+  <div class="section-head">
+    <div class="section-title">Шалгалтын төрлүүд</div>
+    <h2 class="section-h2">Монгол ЕБС-ийн <span>стандарт шалгалтууд</span></h2>
+  </div>
+  <div class="exam-grid">
+
+    <a href="/blueprint?exam=ulsiin" class="exam-card" style="--et-color:#f0a500">
+      <span class="ec-icon">🏆</span>
+      <div class="ec-name">Улсын шалгалт</div>
+      <div class="ec-grades">
+        <span class="ec-grade-pill">5-р анги</span>
+        <span class="ec-grade-pill">9-р анги</span>
+        <span class="ec-grade-pill">12-р анги</span>
       </div>
-      <h3 class="et-name">{{ et.name }}</h3>
-      <p class="et-desc">{{ et.desc }}</p>
-      <div class="et-meta">
-        <span>⏱ {{ et.blueprint.duration }}</span>
-        <span>📊 {{ et.blueprint.total }} даалгавар</span>
-        <span>🎯 {{ et.blueprint.score }} оноо</span>
+      <div class="ec-meta">
+        <span class="ec-tag">⏱ 90 минут</span>
+        <span class="ec-tag">📊 40 даалгавар</span>
+        <span class="ec-tag">🎯 72 оноо</span>
       </div>
-      {% if et.blueprint.note %}
-      <div class="et-note">{{ et.blueprint.note }}</div>
-      {% endif %}
-      <a href="/blueprint?exam={{ eid }}" class="btn btn-sm et-btn">Шалгалт үүсгэх →</a>
-    </div>
-    {% endfor %}
+      <div class="ec-link">Шалгалт үүсгэх →</div>
+    </a>
+
+    <a href="/blueprint?exam=devshih" class="exam-card" style="--et-color:#3b82f6">
+      <span class="ec-icon">📋</span>
+      <div class="ec-name">Анги дэвших шалгалт</div>
+      <div class="ec-grades">
+        <span class="ec-grade-pill">3, 4-р</span>
+        <span class="ec-grade-pill">6, 7, 8-р</span>
+        <span class="ec-grade-pill">10, 11-р анги</span>
+      </div>
+      <div class="ec-meta">
+        <span class="ec-tag">⏱ 60 минут</span>
+        <span class="ec-tag">📊 25 даалгавар</span>
+        <span class="ec-tag">🎯 49 оноо</span>
+      </div>
+      <div class="ec-link">Шалгалт үүсгэх →</div>
+    </a>
+
+    <a href="/blueprint?exam=guitsegdel" class="exam-card" style="--et-color:#22c55e">
+      <span class="ec-icon">📝</span>
+      <div class="ec-name">Гүйцэтгэлийн үнэлгээ</div>
+      <div class="ec-grades">
+        <span class="ec-grade-pill">2–11-р анги</span>
+      </div>
+      <div class="ec-meta">
+        <span class="ec-tag">⏱ 30 минут</span>
+        <span class="ec-tag">📊 10 даалгавар</span>
+      </div>
+      <div class="ec-note">Оноогүй — ажиглалтаар дүгнэнэ</div>
+      <div class="ec-link">Шалгалт үүсгэх →</div>
+    </a>
+
+    <a href="/blueprint?exam=elselt" class="exam-card" style="--et-color:#a855f7">
+      <span class="ec-icon">🎓</span>
+      <div class="ec-name">Элсэлтийн шалгалт</div>
+      <div class="ec-grades">
+        <span class="ec-grade-pill">12-р анги</span>
+      </div>
+      <div class="ec-meta">
+        <span class="ec-tag">⏱ 90 минут</span>
+        <span class="ec-tag">📊 40 даалгавар</span>
+        <span class="ec-tag">🎯 100 оноо</span>
+      </div>
+      <div class="ec-note">1 буруу = −0.2 оноо</div>
+      <div class="ec-link">Шалгалт үүсгэх →</div>
+    </a>
 
   </div>
-</section>
+</div>
 
-<!-- Олимпиад & Интерактив -->
-<section class="extra-section">
-  <h2 class="section-title">Нэмэлт <span class="accent">боломжууд</span></h2>
-  <p class="section-sub">Олимпиад болон интерактив дасгалын хэсгүүд</p>
-  <div class="extra-cards">
+<!-- ══ НЭМЭЛТ БОЛОМЖУУД ══ -->
+<div class="home-section alt">
+  <div class="section-head">
+    <div class="section-title">Нэмэлт хэсгүүд</div>
+    <h2 class="section-h2">Олимпиад & <span>Интерактив дасгал</span></h2>
+  </div>
+  <div class="extra-grid">
     <a href="/olympiad" class="extra-card olympiad-card">
       <span class="extra-icon">🏅</span>
       <h3>Олимпиадын даалгавар</h3>
@@ -80,35 +286,44 @@
       <span class="extra-link">Дасгал хийх →</span>
     </a>
   </div>
-</section>
+</div>
 
-<!-- Ангиар хайх -->
-<section class="grade-nav">
-  <h2 class="section-title">Ангиар <span class="accent">хайх</span></h2>
+<!-- ══ АНГИАР ХАЙХ ══ -->
+<div class="home-section">
+  <div class="section-head">
+    <div class="section-title">Ангиар хайх</div>
+    <h2 class="section-h2">Анги сонгоод <span>хайх</span></h2>
+  </div>
   <div class="grade-grid">
     {% for g in range(1, 13) %}
     {% set et = exam_types[grade_exam_map.get(g, 'guitsegdel')] %}
-    <a href="/questions?grade={{ g }}" class="grade-box" style="--et-color: {{ et.color }}">
+    <a href="/questions?grade={{ g }}" class="grade-box" style="--et-color:{{ et.color }}">
       <span class="grade-num">{{ g }}</span>
       <span class="grade-label">{{ g }}-р анги</span>
-      <span class="grade-type-badge">{{ et.icon }} {{ et.name }}</span>
+      <span class="grade-type-badge">{{ et.icon }}<br>{{ et.name[:6] }}</span>
     </a>
     {% endfor %}
   </div>
-</section>
+</div>
 
 {% endblock %}
 {% block scripts %}
 <script>
-document.querySelectorAll('.stat-num[data-target]').forEach(el => {
-  const target = +el.dataset.target;
-  let current = 0;
-  const step = Math.ceil(target / 60);
-  const timer = setInterval(() => {
-    current = Math.min(current + step, target);
-    el.textContent = current.toLocaleString();
-    if (current >= target) clearInterval(timer);
+fetch('/api/stats').then(r=>r.json()).then(d=>{
+  const q = document.getElementById('stat-q');
+  const s = document.getElementById('stat-s');
+  if(q) animateNum(q, d.total_questions||0);
+  if(s) s.textContent = d.subjects||0;
+}).catch(()=>{});
+
+function animateNum(el, target) {
+  let cur = 0;
+  const step = Math.ceil(target/60);
+  const t = setInterval(()=>{
+    cur = Math.min(cur+step, target);
+    el.textContent = cur.toLocaleString();
+    if(cur>=target) clearInterval(t);
   }, 25);
-});
+}
 </script>
 {% endblock %}
