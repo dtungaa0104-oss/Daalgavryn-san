@@ -467,100 +467,125 @@ function openCT(type) {
 
 function getTemplate(type) {
   var go = gradeOpts(9);
-  switch(type) {
-    case 'temperament':
-      return '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:12px">🧠 Темпераментийн судалгаа</h2>' +
-        '<div class="field-group" style="margin-bottom:10px"><label>Сурагчийн нэр</label><input type="text" id="ct-name" placeholder="Нэр"></div>' +
-        '<div class="field-group" style="margin-bottom:14px"><label>Анги</label><select id="ct-grade-t">' + go + '</select></div>' +
-        surveyQ(0,'Шинэ нөхдүүдтэй хялбархан ойртдог уу?',['Тийм','Заримдаа','Үгүй']) +
-        surveyQ(1,'Ярих дуртай уу, чимээгүй байх дуртай уу?',['Ярих','Дунд зэрэг','Чимээгүй']) +
-        surveyQ(2,'Уурлахад хурдан уу?',['Тийм','Заримдаа','Үгүй']) +
-        surveyQ(3,'Нэг зүйл удаан сонирхдог уу?',['Тийм','Дунд зэрэг','Үгүй']) +
-        surveyQ(4,'Шинэ орчинд хурдан дасдаг уу?',['Тийм','Заримдаа','Удаан']) +
-        surveyQ(5,'Гунигтай болоход удаан уу?',['Удаан','Дунд','Хурдан']) +
-        '<button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="analyzeTempera()">🤖 AI дүн шинжилгээ</button>' +
-        '<div class="ai-out" id="temp-result"></div>';
-
-    case 'career':
-      return '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:12px">🎯 Мэргэжил сонголтын тест</h2>' +
-        '<div class="field-group" style="margin-bottom:10px"><label>Сурагчийн нэр</label><input type="text" id="career-name" placeholder="Нэр"></div>' +
-        '<div class="field-group" style="margin-bottom:14px"><label>Анги</label><select id="career-grade">' + go + '</select></div>' +
-        surveyQ(10,'Техник, машин ажиллуулах дуртай?',['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй']) +
-        surveyQ(11,'Судалгаа, шинжилгээ хийх дуртай?',['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй']) +
-        surveyQ(12,'Зурах, бүтээх, зохиох дуртай?',['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй']) +
-        surveyQ(13,'Хүмүүст туслах, заах дуртай?',['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй']) +
-        surveyQ(14,'Худалдаа, бизнес, удирдлага дуртай?',['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй']) +
-        surveyQ(15,'Тооцоо, бүртгэл, систем дуртай?',['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй']) +
-        '<button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="analyzeCareer()">🤖 AI мэргэжил санал болгох</button>' +
-        '<div class="ai-out" id="career-result"></div>';
-
-    case 'parent':
-      return '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:12px">👨‍👩‍👧 Асран хамгаалагч танд</h2>' +
-        '<div class="form-grid">' +
-        '<div class="field-group"><label>Сурагчийн нэр</label><input type="text" id="par-student" placeholder="Нэр"></div>' +
-        '<div class="field-group"><label>Анги</label><select id="par-grade">' + go + '</select></div>' +
-        '<div class="field-group" style="grid-column:1/-1"><label>Мэдэгдлийн төрөл</label><select id="par-type">' +
-        '<option>Хүүхдийн амжилт, магтаал</option>' +
-        '<option>Анхаарал хандуулах зүйл</option>' +
-        '<option>Ирц, хоцролтын тухай</option>' +
-        '<option>Эцэг эхтэй уулзах урилга</option>' +
-        '<option>Гэрийн даалгавар биелүүлэх хүсэлт</option>' +
-        '<option>Сурлагын явцын тухай</option></select></div>' +
-        '<div class="field-group" style="grid-column:1/-1"><label>Нэмэлт тэмдэглэл</label><input type="text" id="par-note" placeholder="Тусгайлан дурдах зүйл..."></div></div>' +
-        '<button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="genParentMsg()">✦ Мэдэгдэл бичих</button>' +
-        '<div id="par-actions" style="display:none;gap:.5rem;margin-top:.5rem">' +
-        '<button class="btn btn-sm btn-outline" onclick="printOut('par-result','Эцэг эхэд мэдэгдэл')">🖨 Хэвлэх</button>' +
-        '<button class="btn btn-sm btn-outline" onclick="dlOut('par-result','parent')">⬇ Татах</button></div>' +
-        '<div class="ai-out" id="par-result"></div>';
-
-    case 'psychology':
-      return '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:12px">💚 AI Сэтгэлзүйн зөвлөгөө</h2>' +
-        '<div class="form-grid">' +
-        '<div class="field-group"><label>Анги</label><select id="psy-grade">' + go + '</select></div>' +
-        '<div class="field-group"><label>Нөхцөл байдал</label><select id="psy-topic">' +
-        '<option>Сурагч сургуульд ирэхийг хүсэхгүй</option>' +
-        '<option>Сурагчид хоорондоо зөрчилдөж байна</option>' +
-        '<option>Сурагч гунигтай, дотогшоо болсон</option>' +
-        '<option>Сурагч хичээлдээ анхаарал тавьдаггүй</option>' +
-        '<option>Бүлгийн уур амьсгал муу</option>' +
-        '<option>Сурагч ганцаардаж байна</option></select></div></div>' +
-        '<div class="field-group" style="margin-top:.5rem"><label>Нэмэлт тайлбар</label>' +
-        '<textarea id="psy-detail" placeholder="Дэлгэрэнгүй тайлбарлана уу..." style="width:100%;min-height:70px;padding:8px;border:1.5px solid var(--green-100);border-radius:8px;font-family:inherit;font-size:.85rem;background:var(--green-50);outline:none"></textarea></div>' +
-        '<button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="genPsyAdvice()">💚 AI зөвлөгөө авах</button>' +
-        '<div id="psy-actions" style="display:none;margin-top:.5rem">' +
-        '<button class="btn btn-sm btn-outline" onclick="printOut('psy-result','Сэтгэлзүйн зөвлөгөө')">🖨 Хэвлэх</button></div>' +
-        '<div class="ai-out" id="psy-result"></div>';
-
-    case 'qr':
-      return '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:12px">📱 QR кодоор судалгаа</h2>' +
-        '<div class="field-group" style="margin-bottom:10px"><label>Судалгааны линк</label><input type="text" id="qr-url" placeholder="https://forms.google.com/..." style="width:100%"></div>' +
-        '<div class="field-group" style="margin-bottom:12px"><label>Гарчиг</label><input type="text" id="qr-title" placeholder="Темпераментийн судалгаа — 9А анги"></div>' +
-        '<button class="btn btn-primary" onclick="genQR()" style="margin-bottom:14px">📱 QR код үүсгэх</button>' +
-        '<div class="qr-box" id="qr-result" style="display:none">' +
-        '<img id="qr-img" style="width:200px;height:200px;border:3px solid var(--green-100);border-radius:8px">' +
-        '<p id="qr-label" style="font-size:.85rem;margin-top:8px;color:var(--text-mid);font-weight:600"></p>' +
-        '<button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="printQR()">🖨 Хэвлэх</button></div>' +
-        '<p style="font-size:.75rem;color:var(--text-muted);margin-top:12px">💡 Google Forms, Microsoft Forms болон бусад линкийг ашиглана</p>';
-
-    case 'portfolio':
-      return '<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:12px">📁 Хөгжлийн портфолио</h2>' +
-        '<div class="form-grid">' +
-        '<div class="field-group"><label>Сурагчийн нэр</label><input type="text" id="port-name" placeholder="Нэр"></div>' +
-        '<div class="field-group"><label>Анги</label><select id="port-grade">' + go + '</select></div></div>' +
-        '<div class="field-group" style="margin-top:.8rem"><label>Сурлагын дүн (дундаж)</label><input type="text" id="port-grade-avg" placeholder="Жишээ: 80%"></div>' +
-        '<div class="field-group" style="margin-top:.5rem"><label>Оролцсон тэмцээн, арга хэмжээ</label><input type="text" id="port-activity" placeholder="Жишээ: Математикийн олимпиад..."></div>' +
-        '<div class="field-group" style="margin-top:.5rem"><label>Зан төлөв, ирц</label><input type="text" id="port-behavior" placeholder="Жишээ: Идэвхтэй, ирц 95%..."></div>' +
-        '<div class="field-group" style="margin-top:.5rem"><label>Зорилго</label><input type="text" id="port-goal" placeholder="Жишээ: Математик багш болно..."></div>' +
-        '<button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="genPortReport()">🤖 AI тайлан гаргах</button>' +
-        '<div id="port-actions" style="display:none;margin-top:.5rem">' +
-        '<button class="btn btn-sm btn-outline" onclick="printOut('port-result','Портфолио тайлан')">🖨 Хэвлэх</button>' +
-        '<button class="btn btn-sm btn-outline" onclick="dlOut('port-result','portfolio')">⬇ Татах</button></div>' +
-        '<div class="ai-out" id="port-result"></div>';
-
-    default: return null;
+  if (type === 'temperament') {
+    return `<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:12px">🧠 Темпераментийн судалгаа</h2>
+      <div class="field-group" style="margin-bottom:10px"><label>Сурагчийн нэр</label><input type="text" id="ct-name" placeholder="Нэр"></div>
+      <div class="field-group" style="margin-bottom:14px"><label>Анги</label><select id="ct-grade-t">${go}</select></div>
+      ${surveyQ(0,'Шинэ нөхдүүдтэй хялбархан ойртдог уу?',['Тийм','Заримдаа','Үгүй'])}
+      ${surveyQ(1,'Ярих дуртай уу, чимээгүй байх дуртай уу?',['Ярих','Дунд зэрэг','Чимээгүй'])}
+      ${surveyQ(2,'Уурлахад хурдан уу?',['Тийм','Заримдаа','Үгүй'])}
+      ${surveyQ(3,'Нэг зүйл удаан сонирхдог уу?',['Тийм','Дунд зэрэг','Үгүй'])}
+      ${surveyQ(4,'Шинэ орчинд хурдан дасдаг уу?',['Тийм','Заримдаа','Удаан'])}
+      ${surveyQ(5,'Гунигтай болоход удаан уу?',['Удаан','Дунд','Хурдан'])}
+      <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="analyzeTempera()">🤖 AI дүн шинжилгээ</button>
+      <div class="ai-out" id="temp-result"></div>`;
   }
+  if (type === 'career') {
+    return `<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:12px">🎯 Мэргэжил сонголтын тест</h2>
+      <div class="field-group" style="margin-bottom:10px"><label>Сурагчийн нэр</label><input type="text" id="career-name" placeholder="Нэр"></div>
+      <div class="field-group" style="margin-bottom:14px"><label>Анги</label><select id="career-grade">${go}</select></div>
+      ${surveyQ(10,'Техник, машин ажиллуулах дуртай?',['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй'])}
+      ${surveyQ(11,'Судалгаа, шинжилгээ хийх дуртай?',['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй'])}
+      ${surveyQ(12,'Зурах, бүтээх, зохиох дуртай?',['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй'])}
+      ${surveyQ(13,'Хүмүүст туслах, заах дуртай?',['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй'])}
+      ${surveyQ(14,'Худалдаа, бизнес, удирдлага дуртай?',['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй'])}
+      ${surveyQ(15,'Тооцоо, бүртгэл, систем дуртай?',['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй'])}
+      <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="analyzeCareer()">🤖 AI мэргэжил санал болгох</button>
+      <div class="ai-out" id="career-result"></div>`;
+  }
+  if (type === 'parent') {
+    return `<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:12px">👨‍👩‍👧 Асран хамгаалагч танд</h2>
+      <div class="form-grid">
+        <div class="field-group"><label>Сурагчийн нэр</label><input type="text" id="par-student" placeholder="Нэр"></div>
+        <div class="field-group"><label>Анги</label><select id="par-grade">${go}</select></div>
+        <div class="field-group" style="grid-column:1/-1"><label>Мэдэгдлийн төрөл</label>
+          <select id="par-type">
+            <option>Хүүхдийн амжилт, магтаал</option>
+            <option>Анхаарал хандуулах зүйл</option>
+            <option>Ирц, хоцролтын тухай</option>
+            <option>Эцэг эхтэй уулзах урилга</option>
+            <option>Гэрийн даалгавар биелүүлэх хүсэлт</option>
+            <option>Сурлагын явцын тухай</option>
+          </select>
+        </div>
+        <div class="field-group" style="grid-column:1/-1"><label>Нэмэлт тэмдэглэл</label>
+          <input type="text" id="par-note" placeholder="Тусгайлан дурдах зүйл...">
+        </div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="genParentMsg()">✦ Мэдэгдэл бичих</button>
+      <div id="par-actions" style="display:none;gap:.5rem;margin-top:.5rem">
+        <button class="btn btn-sm btn-outline" onclick="printOut('par-result','Эцэг эхэд мэдэгдэл')">🖨 Хэвлэх</button>
+        <button class="btn btn-sm btn-outline" onclick="dlOut('par-result','parent')">⬇ Татах</button>
+      </div>
+      <div class="ai-out" id="par-result"></div>`;
+  }
+  if (type === 'psychology') {
+    return `<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:12px">💚 AI Сэтгэлзүйн зөвлөгөө</h2>
+      <div class="form-grid">
+        <div class="field-group"><label>Анги</label><select id="psy-grade">${go}</select></div>
+        <div class="field-group"><label>Нөхцөл байдал</label>
+          <select id="psy-topic">
+            <option>Сурагч сургуульд ирэхийг хүсэхгүй</option>
+            <option>Сурагчид хоорондоо зөрчилдөж байна</option>
+            <option>Сурагч гунигтай, дотогшоо болсон</option>
+            <option>Сурагч хичээлдээ анхаарал тавьдаггүй</option>
+            <option>Бүлгийн уур амьсгал муу</option>
+            <option>Сурагч ганцаардаж байна</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group" style="margin-top:.5rem"><label>Нэмэлт тайлбар</label>
+        <textarea id="psy-detail" placeholder="Дэлгэрэнгүй тайлбарлана уу..." style="width:100%;min-height:70px;padding:8px;border:1.5px solid var(--green-100);border-radius:8px;font-family:inherit;font-size:.85rem;background:var(--green-50);outline:none"></textarea>
+      </div>
+      <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="genPsyAdvice()">💚 AI зөвлөгөө авах</button>
+      <div id="psy-actions" style="display:none;margin-top:.5rem">
+        <button class="btn btn-sm btn-outline" onclick="printOut('psy-result','Сэтгэлзүйн зөвлөгөө')">🖨 Хэвлэх</button>
+      </div>
+      <div class="ai-out" id="psy-result"></div>`;
+  }
+  if (type === 'qr') {
+    return `<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:12px">📱 QR кодоор судалгаа</h2>
+      <div class="field-group" style="margin-bottom:10px"><label>Судалгааны линк</label>
+        <input type="text" id="qr-url" placeholder="https://forms.google.com/..." style="width:100%">
+      </div>
+      <div class="field-group" style="margin-bottom:12px"><label>Гарчиг</label>
+        <input type="text" id="qr-title" placeholder="Темпераментийн судалгаа — 9А анги">
+      </div>
+      <button class="btn btn-primary" onclick="genQR()" style="margin-bottom:14px">📱 QR код үүсгэх</button>
+      <div class="qr-box" id="qr-result" style="display:none">
+        <img id="qr-img" style="width:200px;height:200px;border:3px solid var(--green-100);border-radius:8px">
+        <p id="qr-label" style="font-size:.85rem;margin-top:8px;color:var(--text-mid);font-weight:600"></p>
+        <button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="printQR()">🖨 Хэвлэх</button>
+      </div>
+      <p style="font-size:.75rem;color:var(--text-muted);margin-top:12px">💡 Google Forms болон бусад судалгааны линкийг ашиглана</p>`;
+  }
+  if (type === 'portfolio') {
+    return `<h2 style="font-size:1.1rem;font-weight:800;margin-bottom:12px">📁 Хөгжлийн портфолио</h2>
+      <div class="form-grid">
+        <div class="field-group"><label>Сурагчийн нэр</label><input type="text" id="port-name" placeholder="Нэр"></div>
+        <div class="field-group"><label>Анги</label><select id="port-grade">${go}</select></div>
+      </div>
+      <div class="field-group" style="margin-top:.8rem"><label>Сурлагын дүн (дундаж)</label>
+        <input type="text" id="port-grade-avg" placeholder="Жишээ: 80%">
+      </div>
+      <div class="field-group" style="margin-top:.5rem"><label>Оролцсон тэмцээн, арга хэмжээ</label>
+        <input type="text" id="port-activity" placeholder="Жишээ: Математикийн олимпиад...">
+      </div>
+      <div class="field-group" style="margin-top:.5rem"><label>Зан төлөв, ирц</label>
+        <input type="text" id="port-behavior" placeholder="Жишээ: Идэвхтэй, ирц 95%...">
+      </div>
+      <div class="field-group" style="margin-top:.5rem"><label>Зорилго</label>
+        <input type="text" id="port-goal" placeholder="Жишээ: Математик багш болно...">
+      </div>
+      <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="genPortReport()">🤖 AI тайлан гаргах</button>
+      <div id="port-actions" style="display:none;margin-top:.5rem">
+        <button class="btn btn-sm btn-outline" onclick="printOut('port-result','Портфолио тайлан')">🖨 Хэвлэх</button>
+        <button class="btn btn-sm btn-outline" onclick="dlOut('port-result','portfolio')">⬇ Татах</button>
+      </div>
+      <div class="ai-out" id="port-result"></div>`;
+  }
+  return null;
 }
-
 
 function gradeOpts(sel) {
   var opts = '';
