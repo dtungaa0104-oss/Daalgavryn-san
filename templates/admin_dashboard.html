@@ -30,10 +30,10 @@
         <span class="astat-num">{{ total }}</span>
         <span class="astat-label">Нийт даалгавар</span>
       </div>
-      {% for row in by_diff %}
+      {% for row in by_level %}
       <div class="astat-card">
-        <span class="astat-num diff-{{ row.difficulty }}">{{ row.cnt }}</span>
-        <span class="astat-label">{{ row.difficulty }}</span>
+        <span class="astat-num diff-{{ row.level }}">{{ row.cnt }}</span>
+        <span class="astat-label">{{ row.level }}</span>
       </div>
       {% endfor %}
     </div>
@@ -69,7 +69,7 @@
             <td class="mono">{{ q.id }}</td>
             <td>{{ q.grade }}-р</td>
             <td>{{ q.subject }}</td>
-            <td><span class="q-diff diff-{{ q.difficulty }}">{{ q.difficulty }}</span></td>
+            <td><span class="q-diff diff-{{ q.level }}">{{ q.level }}</span></td>
             <td class="q-preview">{{ q.question[:60] }}{% if q.question|length > 60 %}…{% endif %}</td>
             <td>
               <a href="/admin/edit/{{ q.id }}" class="btn btn-sm btn-outline">Засах</a>

@@ -858,3 +858,69 @@ main { flex: 1; }
 .ai-q-text { font-size:.9rem; margin-bottom:.5rem; }
 .ai-opts { display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:.4rem; }
 .ai-answer { font-size:.78rem; color:var(--green); font-family:var(--font-mono); }
+
+/* ══ LEVEL (Мэдлэг ойлголт / Чадвар / Хэрэглээ) ══════════ */
+.level-МэдлэгОйлголт, .diff-Хялбар { background:rgba(34,197,94,.15);  color:#4ade80; border:1px solid rgba(34,197,94,.3); }
+.level-Чадвар,         .diff-Дунд   { background:rgba(59,130,246,.15);  color:#60a5fa; border:1px solid rgba(59,130,246,.3); }
+.level-Хэрэглээ,       .diff-Хүнд   { background:rgba(168,85,247,.15);  color:#c084fc; border:1px solid rgba(168,85,247,.3); }
+
+.diff-bg-МэдлэгОйлголт { background:#4ade80 !important; }
+.diff-bg-Чадвар         { background:#60a5fa !important; }
+.diff-bg-Хэрэглээ       { background:#c084fc !important; }
+
+.q-level {
+  font-size:.7rem; padding:2px 8px; border-radius:20px; font-weight:600;
+}
+
+/* ══ EXTRA SECTION (Олимпиад / Интерактив) ══════════════ */
+.extra-section {
+  padding: 40px 32px;
+  background: var(--white);
+  border-top: 2px solid var(--green-50);
+  border-bottom: 2px solid var(--green-50);
+}
+.extra-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+.extra-card {
+  display: flex; flex-direction: column; gap: .7rem;
+  padding: 1.8rem; border-radius: 14px;
+  border: 2px solid var(--green-100);
+  text-decoration: none; color: var(--text-dark);
+  transition: all .2s; position: relative; overflow: hidden;
+}
+.extra-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(15,110,86,.15);
+}
+.olympiad-card {
+  background: linear-gradient(135deg, #fff 60%, #f0f7e8);
+  border-color: #A5D6A7;
+}
+.olympiad-card:hover { border-color: #43A047; }
+.interactive-card {
+  background: linear-gradient(135deg, #fff 60%, #E1F5EE);
+  border-color: #80CBC4;
+}
+.interactive-card:hover { border-color: var(--teal-600); }
+
+.extra-icon { font-size: 2.2rem; line-height: 1; }
+.extra-card h3 {
+  font-size: 1.1rem; font-weight: 800; color: var(--text-dark);
+}
+.extra-card p { font-size: .85rem; color: var(--text-muted); line-height: 1.55; flex: 1; }
+.extra-tags {
+  display: flex; gap: .4rem; flex-wrap: wrap;
+}
+.extra-tags span {
+  font-size: .72rem; padding: 3px 9px; border-radius: 20px;
+  background: var(--green-50); color: var(--text-mid);
+  border: 1px solid var(--green-100); font-weight: 500;
+}
+.extra-link {
+  font-size: .82rem; font-weight: 700; color: var(--teal-600);
+  margin-top: .3rem;
+}

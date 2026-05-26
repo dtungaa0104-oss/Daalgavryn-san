@@ -1,171 +1,255 @@
 {% extends "base.html" %}
 {% block title %}Интерактив даалгавар — Орхонтуул ЕБС{% endblock %}
-
 {% block content %}
 
-<div class="page-header inter-header">
-  <div class="inter-header-icon">⚡</div>
-  <div>
-    <h1>Интерактив <span class="accent">Даалгавар</span></h1>
-    <p>Дэлхийн шилдэг интерактив боловсролын платформууд — хичээл тус бүрээр</p>
+<div class="page-header">
+  <h1>⚡ Интерактив <span>Даалгавар</span></h1>
+  <p>Дасгал хийж оноо авна — хариулт шалгагдана, явц хадгалагдана</p>
+</div>
+
+<!-- Тохиргоо + оноо -->
+<div class="filter-panel">
+  <div class="filter-row">
+    <div class="filter-group">
+      <label>Анги</label>
+      <select id="ia-grade">
+        {% for g in range(1,13) %}<option value="{{ g }}" {% if g==9 %}selected{% endif %}>{{ g }}-р анги</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Хичээл</label>
+      <select id="ia-subject">
+        {% for key, subjs in subjects.items() %}
+          {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Тоо</label>
+      <select id="ia-count">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="15">15</option>
+        <option value="20">20</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="startQuiz()">▶ Эхлэх</button>
+    <div class="score-display" id="score-display" style="display:none">
+      <span class="score-label">Оноо:</span>
+      <span class="score-val" id="score-val">0</span>
+      <span class="score-total" id="score-total"></span>
+    </div>
   </div>
 </div>
 
-<!-- ── Категори tab ── -->
-<div class="inter-cats" id="inter-cats">
-  <button class="icat-btn active" data-cat="all" onclick="filterCat('all', this)">⚡ Бүгд</button>
-  {% for cat in categories %}
-  <button class="icat-btn" data-cat="{{ cat.id }}" onclick="filterCat('{{ cat.id }}', this)"
-          style="--cat-color: {{ cat.color }}">
-    {{ cat.icon }} {{ cat.name }}
-  </button>
-  {% endfor %}
-</div>
-
-<!-- ── Хайх ── -->
-<div class="inter-search-row">
-  <input type="text" id="inter-search" class="inter-search-input"
-         placeholder="🔍 Платформ, хичээл, чиглэл хайх..."
-         oninput="filterSites()">
-  <div class="inter-count">
-    <span id="inter-visible-count">{{ sites|length }}</span> платформ
+<!-- Явцын мөр -->
+<div id="progress-wrap" style="display:none;padding:0 2rem;background:#fff;border-bottom:2px solid var(--green-50)">
+  <div style="display:flex;align-items:center;gap:1rem;padding:.6rem 0">
+    <span id="progress-text" style="font-size:.82rem;color:var(--text-muted);white-space:nowrap"></span>
+    <div style="flex:1;background:var(--green-100);border-radius:99px;height:8px;overflow:hidden">
+      <div id="progress-bar" style="height:100%;background:var(--teal-600);border-radius:99px;transition:width .4s;width:0%"></div>
+    </div>
+    <span id="progress-pct" style="font-size:.82rem;font-weight:700;color:var(--teal-600);white-space:nowrap">0%</span>
   </div>
 </div>
 
-<!-- ── Онцлох платформ ── -->
-{% set featured = sites | selectattr('featured') | list %}
-{% if featured %}
-<div class="inter-section">
-  <h2 class="inter-section-title">⭐ Онцлох платформ</h2>
-  <div class="inter-featured-grid">
-    {% for s in featured %}
-    <a href="{{ s.url }}" target="_blank" rel="noopener"
-       class="inter-featured-card site-card"
-       data-cat="{{ s.category }}"
-       data-tags="{{ s.tags | join(' ') | lower }}"
-       data-title="{{ s.name | lower }}"
-       style="--site-color: {{ s.color }}">
-      <div class="ifc-top">
-        <div class="ifc-logo">{{ s.icon }}</div>
-        <div class="ifc-meta">
-          <div class="ifc-badges">
-            {% for tag in s.subjects[:3] %}
-            <span class="ifc-subject">{{ tag }}</span>
-            {% endfor %}
-          </div>
-          {% if s.free %}
-          <span class="ifc-free">✓ Үнэгүй</span>
-          {% else %}
-          <span class="ifc-paid">💳 Төлбөртэй</span>
-          {% endif %}
-        </div>
-      </div>
-      <div class="ifc-name">{{ s.name }}</div>
-      <div class="ifc-desc">{{ s.desc }}</div>
-      <div class="ifc-footer">
-        <span class="ifc-lang">{{ s.lang }}</span>
-        <span class="ifc-link">Орох →</span>
-      </div>
-    </a>
-    {% endfor %}
+<!-- Гол агуулга -->
+<div style="padding:1.5rem 2rem;max-width:800px;margin:0 auto" id="quiz-area">
+  <div class="empty-state">
+    <div class="empty-icon">⚡</div>
+    <p>Анги, хичээлээ сонгоод "Эхлэх" товчийг дарна уу</p>
   </div>
 </div>
-{% endif %}
 
-<!-- ── Бүх платформ (категориор бүлэглэсэн) ── -->
-{% for cat in categories %}
-{% set cat_sites = sites | selectattr('category', 'equalto', cat.id) | list %}
-{% if cat_sites %}
-<div class="inter-section cat-section" data-cat="{{ cat.id }}">
-  <h2 class="inter-section-title" style="color: {{ cat.color }}">
-    {{ cat.icon }} {{ cat.name }}
-    <span class="cat-count">{{ cat_sites|length }}</span>
-  </h2>
-  <div class="inter-sites-grid">
-    {% for s in cat_sites %}
-    <a href="{{ s.url }}" target="_blank" rel="noopener"
-       class="inter-site-card site-card"
-       data-cat="{{ s.category }}"
-       data-tags="{{ s.tags | join(' ') | lower }}"
-       data-title="{{ s.name | lower }}"
-       style="--site-color: {{ s.color }}">
-      <div class="isc-left">
-        <div class="isc-icon">{{ s.icon }}</div>
-      </div>
-      <div class="isc-body">
-        <div class="isc-top">
-          <span class="isc-name">{{ s.name }}</span>
-          {% if s.free %}
-          <span class="ifc-free isc-free">✓ Үнэгүй</span>
-          {% endif %}
-        </div>
-        <div class="isc-desc">{{ s.desc }}</div>
-        <div class="isc-tags">
-          {% for subj in s.subjects %}
-          <span class="isc-tag">{{ subj }}</span>
-          {% endfor %}
-          <span class="isc-lang-tag">{{ s.lang }}</span>
-        </div>
-      </div>
-      <div class="isc-arrow">→</div>
-    </a>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
-{% endfor %}
+<style>
+.score-display { display:flex;align-items:center;gap:.5rem;background:var(--green-50);border:1.5px solid var(--green-100);border-radius:8px;padding:.4rem 1rem;margin-left:.5rem; }
+.score-label   { font-size:.8rem;color:var(--text-muted); }
+.score-val     { font-size:1.4rem;font-weight:800;color:var(--teal-600);line-height:1; }
+.score-total   { font-size:.8rem;color:var(--text-muted); }
 
-<!-- Empty -->
-<div class="inter-empty" id="inter-empty" style="display:none">
-  <div>🔍</div>
-  <p>Таарах платформ олдсонгүй</p>
-  <button class="btn btn-outline" onclick="resetInterFilter()">Шүүлтүүр цэвэрлэх</button>
-</div>
+.quiz-card {
+  background:#fff;border:2px solid var(--green-100);border-radius:14px;
+  padding:1.5rem;margin-bottom:1rem;transition:border-color .2s;
+}
+.quiz-q-num  { font-size:.75rem;color:var(--text-muted);font-family:monospace;margin-bottom:.5rem; }
+.quiz-q-text { font-size:1rem;font-weight:600;color:var(--text-dark);margin-bottom:1rem;line-height:1.5; }
+.quiz-opts   { display:flex;flex-direction:column;gap:.5rem; }
+.quiz-opt    {
+  display:flex;align-items:center;gap:.8rem;
+  padding:.7rem 1rem;border-radius:8px;
+  border:1.5px solid var(--green-100);background:var(--green-50);
+  cursor:pointer;transition:all .15s;font-size:.9rem;color:var(--text-dark);
+}
+.quiz-opt:hover:not(.disabled) { border-color:var(--teal-600);background:var(--teal-50); }
+.quiz-opt.correct  { border-color:#43A047;background:#E8F5E9;color:#2E7D32;font-weight:600; }
+.quiz-opt.wrong    { border-color:#E53935;background:#FFEBEE;color:#C62828; }
+.quiz-opt.show-correct { border-color:#43A047;background:#E8F5E9;opacity:.7; }
+.quiz-opt.disabled { cursor:default; }
+.opt-letter  { width:26px;height:26px;border-radius:50%;border:1.5px solid var(--green-200);
+  display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;
+  flex-shrink:0;color:var(--teal-600); }
+.quiz-opt.correct .opt-letter  { background:#43A047;border-color:#43A047;color:#fff; }
+.quiz-opt.wrong   .opt-letter  { background:#E53935;border-color:#E53935;color:#fff; }
+.quiz-opt.show-correct .opt-letter { background:#43A047;border-color:#43A047;color:#fff; }
+
+.quiz-feedback { margin-top:.8rem;padding:.7rem 1rem;border-radius:8px;font-size:.88rem;font-weight:600; }
+.feedback-correct { background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7; }
+.feedback-wrong   { background:#FFEBEE;color:#C62828;border:1px solid #FFCDD2; }
+
+.quiz-open-input { width:100%;padding:.7rem 1rem;border:1.5px solid var(--green-100);border-radius:8px;font-size:.9rem;background:var(--green-50);color:var(--text-dark);outline:none; }
+.quiz-open-input:focus { border-color:var(--teal-600); }
+.quiz-check-btn { margin-top:.5rem; }
+
+.result-card {
+  background:#fff;border:2px solid var(--green-100);border-radius:16px;
+  padding:2.5rem;text-align:center;
+}
+.result-icon  { font-size:3.5rem;margin-bottom:1rem; }
+.result-score { font-size:3rem;font-weight:800;color:var(--teal-600);margin-bottom:.3rem; }
+.result-msg   { font-size:1.1rem;color:var(--text-mid);margin-bottom:1.5rem; }
+.result-breakdown { display:flex;justify-content:center;gap:2rem;margin-bottom:1.5rem; }
+.rb-item { text-align:center; }
+.rb-num  { font-size:1.5rem;font-weight:800; }
+.rb-lbl  { font-size:.75rem;color:var(--text-muted); }
+</style>
 
 {% endblock %}
-
 {% block scripts %}
 <script>
-let currentCat = 'all';
+let questions = [];
+let currentIdx = 0;
+let score = 0;
+let answered = 0;
 
-function filterCat(cat, el) {
-  currentCat = cat;
-  document.querySelectorAll('.icat-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
+async function startQuiz() {
+  const grade   = document.getElementById('ia-grade').value;
+  const subject = document.getElementById('ia-subject').value;
+  const count   = document.getElementById('ia-count').value;
+  const area    = document.getElementById('quiz-area');
 
-  // Section харуулах/нуух
-  document.querySelectorAll('.cat-section').forEach(sec => {
-    sec.style.display = (cat === 'all' || sec.dataset.cat === cat) ? '' : 'none';
-  });
+  area.innerHTML = '<div class="loading"><div class="spinner"></div><p>Даалгавар татаж байна...</p></div>';
 
-  filterSites();
+  const res  = await fetch(`/api/questions?grade=${grade}&subject=${encodeURIComponent(subject)}&count=${count}&level=all&bloom=all`);
+  const data = await res.json();
+  questions = data.questions;
+
+  if (!questions.length) {
+    area.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠</div><p>Даалгавар байхгүй байна. Admin-аас нэмнэ үү.</p></div>';
+    return;
+  }
+
+  currentIdx = 0; score = 0; answered = 0;
+  document.getElementById('score-display').style.display = 'flex';
+  document.getElementById('score-val').textContent = '0';
+  document.getElementById('score-total').textContent = `/ ${questions.reduce((s,q)=>s+q.score,0)}`;
+  document.getElementById('progress-wrap').style.display = 'block';
+  renderQuestion();
 }
 
-function filterSites() {
-  const search  = document.getElementById('inter-search').value.toLowerCase();
-  const cards   = document.querySelectorAll('.site-card');
-  let visible   = 0;
-
-  cards.forEach(card => {
-    const matchCat    = currentCat === 'all' || card.dataset.cat === currentCat;
-    const matchSearch = !search
-      || card.dataset.title.includes(search)
-      || card.dataset.tags.includes(search);
-    const show = matchCat && matchSearch;
-    card.style.display = show ? '' : 'none';
-    if (show) visible++;
-  });
-
-  document.getElementById('inter-visible-count').textContent = visible;
-  document.getElementById('inter-empty').style.display = visible === 0 ? 'flex' : 'none';
+function updateProgress() {
+  const pct = Math.round(answered / questions.length * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent  = pct + '%';
+  document.getElementById('progress-text').textContent = `${answered} / ${questions.length} даалгавар`;
 }
 
-function resetInterFilter() {
-  currentCat = 'all';
-  document.getElementById('inter-search').value = '';
-  document.querySelectorAll('.icat-btn').forEach((b,i) => b.classList.toggle('active', i===0));
-  document.querySelectorAll('.cat-section').forEach(s => s.style.display = '');
-  filterSites();
+function renderQuestion() {
+  updateProgress();
+  if (currentIdx >= questions.length) { showResult(); return; }
+  const q   = questions[currentIdx];
+  const area = document.getElementById('quiz-area');
+  const lvlCss = (q.level||'').replace(/ /g,'');
+
+  let optsHtml = '';
+  if (q.options && q.options.length) {
+    const letters = ['А','Б','В','Г'];
+    optsHtml = `<div class="quiz-opts">
+      ${q.options.map((o,i) => `
+        <div class="quiz-opt" id="opt-${i}" onclick="checkAnswer(${i},'${letters[i]}','${q.answer||'А'}',${q.score})">
+          <span class="opt-letter">${letters[i]}</span>
+          <span>${o.replace(/^[АБВГабвг]\.\s*/,'')}</span>
+        </div>`).join('')}
+    </div>`;
+  } else {
+    optsHtml = `<div>
+      <input type="text" class="quiz-open-input" id="open-ans" placeholder="Хариултаа бичнэ үү..." onkeydown="if(event.key==='Enter')checkOpen('${q.answer||''}',${q.score})">
+      <button class="btn btn-primary btn-sm quiz-check-btn" onclick="checkOpen('${q.answer||''}',${q.score})">Шалгах</button>
+    </div>`;
+  }
+
+  area.innerHTML = `
+    <div class="quiz-card" id="quiz-card">
+      <div class="quiz-q-num">
+        Даалгавар ${currentIdx+1} / ${questions.length} &nbsp;·&nbsp;
+        <span class="q-level level-${lvlCss}">${q.level||''}</span>
+        &nbsp;·&nbsp; ${q.score}п
+      </div>
+      <div class="quiz-q-text">${q.question}</div>
+      ${optsHtml}
+      <div id="feedback"></div>
+    </div>
+    ${currentIdx < questions.length-1
+      ? `<button class="btn btn-outline" id="next-btn" style="display:none;margin-top:.5rem" onclick="nextQ()">Дараагийнх →</button>`
+      : `<button class="btn btn-primary" id="next-btn" style="display:none;margin-top:.5rem" onclick="nextQ()">Дүн харах ✓</button>`
+    }`;
+}
+
+function checkAnswer(idx, letter, correct, pts) {
+  document.querySelectorAll('.quiz-opt').forEach(o => o.classList.add('disabled'));
+  const letters = ['А','Б','В','Г'];
+  const isCorrect = letter === correct;
+  const correctIdx = letters.indexOf(correct);
+
+  document.getElementById('opt-'+idx).classList.add(isCorrect ? 'correct' : 'wrong');
+  if (!isCorrect && correctIdx >= 0) document.getElementById('opt-'+correctIdx).classList.add('show-correct');
+
+  document.getElementById('feedback').innerHTML = `<div class="quiz-feedback ${isCorrect?'feedback-correct':'feedback-wrong'}">
+    ${isCorrect ? '✓ Зөв! +'+pts+' оноо' : '✗ Буруу. Зөв хариулт: '+correct}
+  </div>`;
+
+  if (isCorrect) { score += pts; document.getElementById('score-val').textContent = score; }
+  answered++;
+  document.getElementById('next-btn').style.display = 'inline-flex';
+  updateProgress();
+}
+
+function checkOpen(correct, pts) {
+  const val = document.getElementById('open-ans')?.value.trim();
+  if (!val) return;
+  document.getElementById('open-ans').disabled = true;
+  document.querySelector('.quiz-check-btn').disabled = true;
+  const isCorrect = val.toLowerCase() === (correct||'').toLowerCase();
+  document.getElementById('feedback').innerHTML = `<div class="quiz-feedback ${isCorrect?'feedback-correct':'feedback-wrong'}">
+    ${isCorrect ? '✓ Зөв! +'+pts+' оноо' : '✗ Зөв хариулт: '+correct}
+  </div>`;
+  if (isCorrect) { score += pts; document.getElementById('score-val').textContent = score; }
+  answered++;
+  document.getElementById('next-btn').style.display = 'inline-flex';
+  updateProgress();
+}
+
+function nextQ() { currentIdx++; renderQuestion(); }
+
+function showResult() {
+  const total = questions.reduce((s,q)=>s+q.score,0);
+  const pct   = Math.round(score/total*100);
+  const icon  = pct>=80?'🏆':pct>=60?'👍':pct>=40?'📚':'💪';
+  const msg   = pct>=80?'Гайхалтай! Маш сайн хариулсан!':pct>=60?'Сайн! Үргэлжлүүлэн суралц.':pct>=40?'Дунд зэрэг. Дахин давтаарай.':'Дахин оролдоорой!';
+
+  document.getElementById('quiz-area').innerHTML = `
+    <div class="result-card">
+      <div class="result-icon">${icon}</div>
+      <div class="result-score">${score} <span style="font-size:1.5rem;color:var(--text-muted)">/ ${total}</span></div>
+      <div class="result-msg">${msg}</div>
+      <div class="result-breakdown">
+        <div class="rb-item"><div class="rb-num" style="color:#43A047">${questions.filter((_,i)=>i<answered).length}</div><div class="rb-lbl">Нийт</div></div>
+        <div class="rb-item"><div class="rb-num" style="color:#1565C0">${pct}%</div><div class="rb-lbl">Хувь</div></div>
+        <div class="rb-item"><div class="rb-num" style="color:var(--teal-600)">${score}</div><div class="rb-lbl">Оноо</div></div>
+      </div>
+      <button class="btn btn-primary" onclick="startQuiz()">↻ Дахин оролдох</button>
+    </div>`;
+  document.getElementById('progress-bar').style.width = '100%';
+  document.getElementById('progress-pct').textContent = '100%';
 }
 </script>
 {% endblock %}

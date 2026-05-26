@@ -1,186 +1,147 @@
 {% extends "base.html" %}
-{% block title %}Олимпиад — Орхонтуул ЕБС{% endblock %}
-
+{% block title %}Олимпиадын даалгавар — Орхонтуул ЕБС{% endblock %}
 {% block content %}
 
-<div class="page-header olym-header">
-  <div class="olym-header-icon">🏆</div>
-  <div>
-    <h1>Олимпиадын <span class="accent">Материал</span></h1>
-    <p>Өмнөх онуудын олимпиадын даалгавар, хариулт — хичээл тус бүрээр</p>
-  </div>
+<div class="page-header">
+  <h1>🏅 Олимпиадын <span>Даалгавар</span></h1>
+  <p>Улсын болон аймгийн олимпиадын даалгаварууд — хичээл, анги, шатаар хайна</p>
 </div>
 
-<!-- ── Шүүлтүүр ── -->
-<div class="olym-filters">
-  <div class="olym-filter-row">
-
-    <!-- Хичээл tab -->
-    <div class="olym-subject-tabs" id="subject-tabs">
-      <button class="osub-tab active" data-subject="all" onclick="filterSubject('all', this)">
-        📚 Бүгд
-      </button>
-      {% for subj in subjects %}
-      <button class="osub-tab" data-subject="{{ subj }}" onclick="filterSubject('{{ subj }}', this)">
-        {{ subj_icons.get(subj, '📖') }} {{ subj }}
-      </button>
-      {% endfor %}
+<div class="filter-panel">
+  <div class="filter-row">
+    <div class="filter-group">
+      <label>Анги</label>
+      <select id="f-grade">
+        {% for g in range(1,13) %}<option value="{{ g }}">{{ g }}-р анги</option>{% endfor %}
+      </select>
     </div>
-
-    <div class="olym-right-filters">
-      <!-- Жил -->
-      <div class="olym-filter-group">
-        <label>Жил</label>
-        <select id="filter-year" onchange="applyFilters()">
-          <option value="all">Бүх жил</option>
-          {% for y in years %}
-          <option value="{{ y }}">{{ y }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <!-- Шат -->
-      <div class="olym-filter-group">
-        <label>Шат</label>
-        <select id="filter-level" onchange="applyFilters()">
-          <option value="all">Бүх шат</option>
-          {% for lv in levels %}
-          <option value="{{ lv }}">{{ lv }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <!-- Хайх -->
-      <div class="olym-filter-group olym-search-wrap">
-        <input type="text" id="olym-search" placeholder="🔍 Хайх..." oninput="applyFilters()">
-      </div>
+    <div class="filter-group">
+      <label>Хичээл</label>
+      <select id="f-subject">
+        {% for key, subjs in subjects.items() %}
+          {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+        {% endfor %}
+      </select>
     </div>
-
-  </div>
-</div>
-
-<!-- ── Статистик ── -->
-<div class="olym-stats">
-  <div class="olym-stat">
-    <span id="stat-total">{{ materials|length }}</span>
-    <label>Нийт материал</label>
-  </div>
-  <div class="olym-stat">
-    <span>{{ years|length }}</span>
-    <label>Он жил</label>
-  </div>
-  <div class="olym-stat">
-    <span>{{ subjects|length }}</span>
-    <label>Хичээл</label>
-  </div>
-  <div class="olym-stat">
-    <span>{{ levels|length }}</span>
-    <label>Шат</label>
-  </div>
-</div>
-
-<!-- ── Материалын grid ── -->
-<div class="olym-grid" id="olym-grid">
-  {% for m in materials %}
-  <div class="olym-card"
-       data-subject="{{ m.subject }}"
-       data-year="{{ m.year }}"
-       data-level="{{ m.level }}"
-       data-title="{{ m.title | lower }}">
-
-    <div class="olym-card-top" style="--subj-color: {{ m.color }}">
-      <div class="olym-card-icon">{{ m.icon }}</div>
-      <div class="olym-card-badges">
-        <span class="olym-badge olym-year">{{ m.year }}</span>
-        <span class="olym-badge olym-level level-{{ m.level_key }}">{{ m.level }}</span>
-      </div>
+    <div class="filter-group">
+      <label>Олимпиадын шат</label>
+      <select id="f-stage">
+        <option value="all">Бүгд</option>
+        <option value="Сургуулийн">Сургуулийн шат</option>
+        <option value="Аймгийн">Аймгийн шат</option>
+        <option value="Улсын">Улсын шат</option>
+        <option value="Олон улсын">Олон улсын шат</option>
+      </select>
     </div>
-
-    <div class="olym-card-body">
-      <div class="olym-subj-tag" style="color: {{ m.color }}">{{ m.subject }}</div>
-      <h3 class="olym-card-title">{{ m.title }}</h3>
-      <p class="olym-card-desc">{{ m.desc }}</p>
+    <div class="filter-group">
+      <label>Тоо</label>
+      <select id="f-count">
+        <option value="10">10</option>
+        <option value="20" selected>20</option>
+        <option value="30">30</option>
+      </select>
     </div>
-
-    <div class="olym-card-footer">
-      {% if m.has_answer %}
-      <span class="olym-has-answer">✓ Хариулттай</span>
-      {% endif %}
-      <div class="olym-card-actions">
-        {% if m.file_url %}
-        <a href="{{ m.file_url }}" target="_blank" class="btn btn-sm btn-primary olym-btn">
-          ⬇ Татах
-        </a>
-        {% endif %}
-        {% if m.answer_url %}
-        <a href="{{ m.answer_url }}" target="_blank" class="btn btn-sm btn-outline olym-btn">
-          📋 Хариулт
-        </a>
-        {% endif %}
-        {% if not m.file_url and not m.answer_url %}
-        <span class="olym-soon">Удахгүй нэмэгдэнэ</span>
-        {% endif %}
-      </div>
-    </div>
+    <button class="btn btn-primary" onclick="loadOlympiad()">Хайх</button>
   </div>
-  {% endfor %}
 </div>
 
-<!-- Empty state -->
-<div class="olym-empty" id="olym-empty" style="display:none">
-  <div class="empty-icon">🔍</div>
-  <p>Таарах материал олдсонгүй</p>
-  <button class="btn btn-outline" onclick="resetFilters()">Шүүлтүүр цэвэрлэх</button>
+<div class="results-bar" id="results-bar" style="display:none">
+  <span id="result-count"></span>
+  <div class="bar-actions">
+    <button class="btn btn-sm btn-outline" onclick="selectAll()">Бүгдийг сонгох</button>
+    <button class="btn btn-sm btn-primary" onclick="downloadSelected()">⬇ Татах</button>
+  </div>
 </div>
 
-<!-- ── Admin нэмэх товч ── -->
-{% if session.get('admin') %}
-<div class="olym-admin-bar">
-  <a href="/admin/olympiad/add" class="btn btn-primary">➕ Материал нэмэх</a>
+<div class="questions-grid" id="olympiad-container">
+  <div class="empty-state" style="grid-column:1/-1">
+    <div class="empty-icon">🏅</div>
+    <p>Шүүлтүүрээ тохируулаад "Хайх" товчийг дарна уу</p>
+  </div>
 </div>
-{% endif %}
 
 {% endblock %}
-
 {% block scripts %}
 <script>
-let currentSubject = 'all';
+let allQuestions = [];
+let selected = new Set();
 
-function filterSubject(subj, el) {
-  currentSubject = subj;
-  document.querySelectorAll('.osub-tab').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  applyFilters();
+async function loadOlympiad() {
+  const grade   = document.getElementById('f-grade').value;
+  const subject = document.getElementById('f-subject').value;
+  const count   = document.getElementById('f-count').value;
+  const stage   = document.getElementById('f-stage').value;
+
+  const container = document.getElementById('olympiad-container');
+  container.innerHTML = '<div class="loading" style="grid-column:1/-1"><div class="spinner"></div><p>Татаж байна...</p></div>';
+
+  const res  = await fetch(`/api/questions?grade=${grade}&subject=${encodeURIComponent(subject)}&count=${count}&bloom=all&level=all`);
+  const data = await res.json();
+  allQuestions = data.questions;
+  selected.clear();
+  renderOlympiad(allQuestions, stage);
 }
 
-function applyFilters() {
-  const year    = document.getElementById('filter-year').value;
-  const level   = document.getElementById('filter-level').value;
-  const search  = document.getElementById('olym-search').value.toLowerCase();
-  const cards   = document.querySelectorAll('.olym-card');
+function renderOlympiad(questions, stage) {
+  const container = document.getElementById('olympiad-container');
+  const bar       = document.getElementById('results-bar');
+  const stages    = ['Сургуулийн','Аймгийн','Улсын','Олон улсын'];
 
-  let visible = 0;
-  cards.forEach(card => {
-    const matchSubj   = currentSubject === 'all' || card.dataset.subject === currentSubject;
-    const matchYear   = year === 'all'  || card.dataset.year  === year;
-    const matchLevel  = level === 'all' || card.dataset.level === level;
-    const matchSearch = !search || card.dataset.title.includes(search)
-                                || card.dataset.subject.toLowerCase().includes(search);
-    const show = matchSubj && matchYear && matchLevel && matchSearch;
-    card.style.display = show ? '' : 'none';
-    if (show) visible++;
+  if (!questions.length) {
+    container.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">○</div><p>Даалгавар олдсонгүй</p></div>';
+    bar.style.display = 'none';
+    return;
+  }
+
+  bar.style.display = 'flex';
+  document.getElementById('result-count').textContent = `${questions.length} даалгавар`;
+
+  container.innerHTML = questions.map((q, i) => {
+    const s = stage !== 'all' ? stage : stages[Math.min(Math.floor(i/5), 3)];
+    const stageColor = s==='Улсын'?'#C62828':s==='Аймгийн'?'#1565C0':s==='Олон улсын'?'#6A1B9A':'#2E7D32';
+    return `
+    <div class="question-card ${selected.has(q.id)?'selected':''}" id="card-${q.id}" onclick="toggleSelect('${q.id}')">
+      <div class="card-header">
+        <span class="q-id">${q.q_code||q.id}</span>
+        <span style="font-size:.7rem;padding:2px 8px;border-radius:20px;font-weight:600;
+          background:${stageColor}18;color:${stageColor};border:1px solid ${stageColor}44">${s} шат</span>
+        <span class="q-level level-${(q.level||'').replace(/ /g,'')}">${q.level||''}</span>
+        <span class="q-score">${q.score}п</span>
+      </div>
+      <div class="card-body">
+        <p class="q-text">${i+1}. ${q.question}</p>
+        ${q.options ? `<div class="q-options">${q.options.map(o=>`<span class="q-opt">${o}</span>`).join('')}</div>` : ''}
+      </div>
+      <div class="card-footer">
+        <span class="q-type">${q.q_type||''}</span>
+        <span class="q-topic">${q.topic||''}</span>
+        <div class="check-icon">${selected.has(q.id)?'✓':''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleSelect(id) {
+  if (selected.has(id)) selected.delete(id);
+  else selected.add(id);
+  document.getElementById('card-'+id)?.classList.toggle('selected');
+  const ci = document.querySelector(`#card-${id} .check-icon`);
+  if (ci) ci.textContent = selected.has(id) ? '✓' : '';
+}
+function selectAll() { allQuestions.forEach(q => selected.add(String(q.id))); renderOlympiad(allQuestions, document.getElementById('f-stage').value); }
+function downloadSelected() {
+  const qs = allQuestions.filter(q => selected.has(String(q.id)));
+  if (!qs.length) { alert('Даалгавар сонгоно уу'); return; }
+  let t = `ОРХОНТУУЛ ЕБС — ОЛИМПИАДЫН ДААЛГАВАР\n${'='.repeat(50)}\n\n`;
+  qs.forEach((q,i) => {
+    t += `${i+1}. [${q.level}] ${q.question}\n`;
+    if (q.options) q.options.forEach(o => t += `   ${o}\n`);
+    t += `   Хариулт: ${q.answer||'—'}  Оноо: ${q.score}\n\n`;
   });
-
-  document.getElementById('stat-total').textContent = visible;
-  document.getElementById('olym-empty').style.display = visible === 0 ? 'flex' : 'none';
-  document.getElementById('olym-grid').style.display  = visible === 0 ? 'none'  : 'grid';
-}
-
-function resetFilters() {
-  currentSubject = 'all';
-  document.getElementById('filter-year').value  = 'all';
-  document.getElementById('filter-level').value = 'all';
-  document.getElementById('olym-search').value  = '';
-  document.querySelectorAll('.osub-tab').forEach((b,i) => b.classList.toggle('active', i===0));
-  applyFilters();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([t],{type:'text/plain;charset=utf-8'}));
+  a.download = `olympiad_${Date.now()}.txt`;
+  a.click();
 }
 </script>
 {% endblock %}

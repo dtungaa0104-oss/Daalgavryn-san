@@ -1,449 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Блупринт — Шалгалт үүсгэх{% endblock %}
-
-{% block head %}
-<link rel="stylesheet" href="/static/css/green.css">
-<style>
-/* ══════════════════════════════════════════
-   BLUEPRINT ХУУДАСНЫ ӨНГӨ — ногоон систем
-══════════════════════════════════════════ */
-
-/* Layout */
-.blueprint-layout {
-  display: grid;
-  grid-template-columns: 360px 1fr;
-  gap: 0;
-  min-height: calc(100vh - 60px);
-}
-
-/* Зүүн тохиргооны панел */
-.bp-config {
-  background: #ffffff;
-  border-right: 2px solid #C0DD97;
-  padding: 24px 20px;
-  overflow-y: auto;
-  position: sticky;
-  top: 60px;
-  height: calc(100vh - 60px);
-}
-
-.panel-title {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  color: #639922;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.panel-title::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: #C0DD97;
-}
-
-/* Шалгалтын төрөл товч */
-.exam-type-selector {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.et-select-btn {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border: 1.5px solid #C0DD97;
-  border-radius: 10px;
-  background: #f6fbf0;
-  cursor: pointer;
-  transition: all .15s;
-  text-align: left;
-  font-family: inherit;
-}
-.et-select-btn:hover {
-  border-color: var(--et-color, #0F6E56);
-  background: #EAF3DE;
-}
-.et-select-btn.active {
-  border-color: var(--et-color, #0F6E56);
-  background: #fff;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--et-color, #0F6E56) 15%, transparent);
-}
-.etb-icon { font-size: 20px; flex-shrink: 0; }
-.etb-info strong { display: block; font-size: 13px; color: #173404; }
-.etb-info small  { font-size: 11px; color: #639922; }
-
-/* Ангийн товч */
-.grade-selector {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-.grade-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  border: 1.5px solid #C0DD97;
-  background: #EAF3DE;
-  color: #173404;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all .15s;
-  font-family: inherit;
-}
-.grade-btn:hover  { border-color: var(--et-color, #0F6E56); background: #f0f7e8; }
-.grade-btn.active {
-  background: var(--et-color, #0F6E56);
-  color: #fff;
-  border-color: var(--et-color, #0F6E56);
-}
-.grade-btn.dimmed { opacity: 0.3; pointer-events: none; }
-
-.grade-exam-info {
-  font-size: 12px;
-  color: #3B6D11;
-  margin-bottom: 4px;
-  min-height: 20px;
-}
-
-/* Хичээл сонгох */
-.styled-select {
-  width: 100%;
-  padding: 9px 12px;
-  border: 1.5px solid #C0DD97;
-  border-radius: 8px;
-  background: #f6fbf0;
-  color: #173404;
-  font-size: 13px;
-  font-family: inherit;
-  appearance: none;
-  cursor: pointer;
-  margin-bottom: 4px;
-}
-.styled-select:focus {
-  outline: none;
-  border-color: #0F6E56;
-  box-shadow: 0 0 0 3px rgba(15,110,86,0.12);
-}
-
-/* Slider */
-.blueprint-sliders { display: flex; flex-direction: column; gap: 10px; }
-.slider-row {
-  display: grid;
-  grid-template-columns: 70px 1fr 32px;
-  align-items: center;
-  gap: 10px;
-}
-.diff-label {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 99px;
-  text-align: center;
-}
-.diff-Хялбар { background: #EAF3DE; color: #27500A; border: 1px solid #C0DD97; }
-.diff-Дунд   { background: #E1F5EE; color: #085041; border: 1px solid #9FE1CB; }
-.diff-Хүнд   { background: #173404; color: #C0DD97; border: 1px solid #3B6D11; }
-
-.bp-slider {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 5px;
-  border-radius: 3px;
-  background: #C0DD97;
-  outline: none;
-  cursor: pointer;
-}
-.bp-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #0F6E56;
-  cursor: pointer;
-  border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(0,0,0,.2);
-}
-.slider-val {
-  font-size: 14px;
-  font-weight: 700;
-  color: #0F6E56;
-  text-align: center;
-}
-
-/* Total bar */
-.total-bar {
-  margin-top: 14px;
-  padding: 10px 14px;
-  background: #EAF3DE;
-  border: 1px solid #C0DD97;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #3B6D11;
-}
-.total-bar strong { color: #0F6E56; font-size: 16px; }
-
-/* Үүсгэх товч */
-.btn-full { width: 100%; }
-.btn.btn-primary {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: linear-gradient(135deg, #0F6E56, #27500A);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all .2s;
-  font-family: inherit;
-}
-.btn.btn-primary:hover {
-  background: linear-gradient(135deg, #27500A, #0F6E56);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(15,110,86,0.3);
-}
-.btn.btn-outline {
-  padding: 10px 20px;
-  background: transparent;
-  color: #0F6E56;
-  border: 2px solid #0F6E56;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all .2s;
-  font-family: inherit;
-}
-.btn.btn-outline:hover { background: #EAF3DE; }
-
-/* ══ БАРУУН: Үр дүн ══ */
-.bp-result {
-  background: #f0f7e8;
-  background-image:
-    radial-gradient(circle, #97C459 1px, transparent 1px),
-    radial-gradient(circle, #C0DD97 1px, transparent 1px);
-  background-size: 40px 40px, 20px 20px;
-  background-position: 0 0, 10px 10px;
-  padding: 28px;
-  overflow-y: auto;
-}
-
-/* Empty state */
-.empty-state.tall {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  min-height: 300px;
-  text-align: center;
-  color: #639922;
-}
-.empty-icon { font-size: 52px; opacity: .35; margin-bottom: 16px; }
-
-/* Loading */
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-  gap: 16px;
-  color: #3B6D11;
-}
-.spinner {
-  width: 44px;
-  height: 44px;
-  border: 3px solid #C0DD97;
-  border-top-color: #0F6E56;
-  border-radius: 50%;
-  animation: spin .8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Exam result */
-.exam-result {
-  background: #fff;
-  border: 1.5px solid #C0DD97;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 24px rgba(15,110,86,0.08);
-}
-.exam-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 24px 28px;
-  background: #f6fbf0;
-  border-bottom: 1.5px solid #C0DD97;
-  gap: 20px;
-}
-.exam-type-tag {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 12px;
-  border-radius: 99px;
-  margin-bottom: 8px;
-}
-.exam-header h2 {
-  font-size: 18px;
-  font-weight: 800;
-  color: #173404;
-  margin-bottom: 10px;
-}
-.exam-badges { display: flex; gap: 8px; flex-wrap: wrap; }
-.badge {
-  font-size: 11px;
-  background: #EAF3DE;
-  color: #3B6D11;
-  border: 1px solid #C0DD97;
-  padding: 3px 10px;
-  border-radius: 99px;
-  font-weight: 600;
-}
-.badge-note { background: #FFF3CD; color: #856404; border-color: #FFD966; }
-
-.exam-summary {
-  display: flex;
-  gap: 20px;
-  flex-shrink: 0;
-}
-.sum-item {
-  text-align: center;
-  background: #fff;
-  border: 1px solid #C0DD97;
-  border-radius: 10px;
-  padding: 10px 18px;
-  min-width: 72px;
-}
-.sum-item span { display: block; font-size: 24px; font-weight: 800; color: #0F6E56; }
-.sum-item label { font-size: 11px; color: #639922; }
-
-/* Info banner */
-.info-banner {
-  padding: 12px 20px;
-  font-size: 12px;
-  font-weight: 500;
-}
-.green-banner { background: #EAF3DE; color: #27500A; border-bottom: 1px solid #C0DD97; }
-.blue-banner  { background: #E1F5EE; color: #085041; border-bottom: 1px solid #9FE1CB; }
-
-/* Blueprint chart */
-.blueprint-chart {
-  padding: 16px 28px;
-  border-bottom: 1px solid #EAF3DE;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.chart-bar-row { display: flex; align-items: center; gap: 12px; }
-.chart-bar-wrap { flex: 1; background: #EAF3DE; border-radius: 99px; height: 22px; overflow: hidden; }
-.chart-bar {
-  height: 100%;
-  border-radius: 99px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding-right: 8px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #fff;
-  min-width: 30px;
-  transition: width .4s ease;
-}
-.diff-bg-Хялбар { background: #639922; }
-.diff-bg-Дунд   { background: #0F6E56; }
-.diff-bg-Хүнд   { background: #173404; }
-
-/* Questions */
-.exam-questions { padding: 20px 28px; display: flex; flex-direction: column; gap: 12px; }
-.eq-item {
-  display: flex;
-  gap: 14px;
-  padding: 14px;
-  background: #f6fbf0;
-  border: 1px solid #EAF3DE;
-  border-radius: 10px;
-  transition: border-color .15s;
-}
-.eq-item:hover { border-color: #C0DD97; }
-.eq-num {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  background: #0F6E56;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.eq-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
-.q-diff {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 99px;
-}
-.q-bloom {
-  font-size: 10px;
-  background: #fff;
-  color: #639922;
-  border: 1px solid #C0DD97;
-  padding: 2px 8px;
-  border-radius: 99px;
-}
-.q-score {
-  font-size: 10px;
-  background: #EAF3DE;
-  color: #27500A;
-  padding: 2px 8px;
-  border-radius: 99px;
-  font-weight: 700;
-}
-.eq-content p { font-size: 13px; color: #173404; line-height: 1.6; }
-.q-options { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.q-opt {
-  font-size: 12px;
-  background: #fff;
-  border: 1px solid #C0DD97;
-  border-radius: 6px;
-  padding: 4px 10px;
-  color: #3B6D11;
-}
-
-/* Actions */
-.exam-actions {
-  display: flex;
-  gap: 10px;
-  padding: 20px 28px;
-  border-top: 1.5px solid #EAF3DE;
-  background: #f6fbf0;
-}
-</style>
-{% endblock %}
-
 {% block content %}
 
 <div class="blueprint-layout">
-
   <!-- ══ ЗҮҮН: Тохиргоо ══ -->
   <div class="bp-config">
 
-    <!-- 1. Шалгалтын төрөл -->
     <h2 class="panel-title">① Шалгалтын төрөл</h2>
     <div class="exam-type-selector" id="exam-type-selector">
       {% for eid, et in exam_types.items() %}
@@ -459,7 +21,6 @@
       {% endfor %}
     </div>
 
-    <!-- 2. Анги -->
     <h2 class="panel-title" style="margin-top:1.5rem">② Анги</h2>
     <div class="grade-selector" id="grade-selector">
       {% for g in range(1,13) %}
@@ -472,7 +33,6 @@
     </div>
     <div class="grade-exam-info" id="grade-exam-info"></div>
 
-    <!-- 3. Хичээл -->
     <h2 class="panel-title" style="margin-top:1.5rem">③ Хичээл</h2>
     <select id="bp-subject" class="styled-select">
       {% for key, subjs in subjects.items() %}
@@ -480,16 +40,18 @@
       {% endfor %}
     </select>
 
-    <!-- 4. Блупринт -->
     <h2 class="panel-title" style="margin-top:1.5rem">④ Блупринт</h2>
+    <p class="hint">Түвшин тус бүрд хэдэн даалгавар оруулахыг тохируулна</p>
+
     <div class="blueprint-sliders">
-      {% for diff in difficulties %}
+      {% for lvl in levels %}
+      {% set lvl_css = lvl | replace(' ','') %}
       <div class="slider-row">
-        <span class="diff-label diff-{{ diff }}">{{ diff }}</span>
+        <span class="q-level level-{{ lvl_css }}">{{ lvl }}</span>
         <input type="range" min="0" max="25" value="0"
-               id="slider-{{ diff }}" class="bp-slider"
-               oninput="updateSlider(this,'{{ diff }}')">
-        <span class="slider-val" id="val-{{ diff }}">0</span>
+               id="slider-{{ lvl }}" class="bp-slider"
+               oninput="updateSlider(this,'{{ lvl }}')">
+        <span class="slider-val" id="val-{{ lvl }}">0</span>
       </div>
       {% endfor %}
     </div>
@@ -497,13 +59,12 @@
     <div class="total-bar">
       Нийт: <strong id="total-count">0</strong> даалгавар
       &nbsp;|&nbsp; Оноо: <strong id="total-score">0</strong>
-      <span id="guitsegdel-note" style="display:none;color:#0F6E56;font-size:.78rem;margin-left:.5rem">(оноогүй)</span>
+      <span id="guitsegdel-note" style="display:none;color:var(--green);font-size:.78rem;margin-left:.5rem">(оноогүй)</span>
     </div>
 
     <button class="btn btn-primary btn-full" style="margin-top:1rem" onclick="generateExam()">
       ✦ Шалгалт үүсгэх
     </button>
-
   </div>
 
   <!-- ══ БАРУУН: Үр дүн ══ -->
@@ -513,7 +74,6 @@
       <p>Шалгалтын төрөл, анги, хичээлээ сонгоод<br>"Шалгалт үүсгэх" дарна уу</p>
     </div>
   </div>
-
 </div>
 
 {% endblock %}
@@ -521,13 +81,14 @@
 <script>
 const EXAM_TYPES = {{ exam_types | tojson }};
 const GRADE_MAP  = {{ grade_exam_map | tojson }};
+const LEVELS     = {{ levels | tojson }};
+const LEVEL_SCORES = {"Мэдлэг ойлголт":1,"Чадвар":2,"Хэрэглээ":3};
 
 let currentExamId = null;
 let currentGrade  = null;
 
-const urlParams = new URLSearchParams(location.search);
 window.onload = () => {
-  const init = urlParams.get('exam') || Object.keys(EXAM_TYPES)[0];
+  const init = new URLSearchParams(location.search).get('exam') || Object.keys(EXAM_TYPES)[0];
   selectExamType(init);
 };
 
@@ -535,133 +96,131 @@ function selectExamType(eid) {
   if (!EXAM_TYPES[eid]) return;
   currentExamId = eid;
   document.querySelectorAll('.et-select-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('etbtn-' + eid)?.classList.add('active');
-  const et = EXAM_TYPES[eid];
-  const bp = et.blueprint;
-  for (let g = 1; g <= 12; g++) {
-    const btn = document.getElementById('gbtn-' + g);
-    if (!btn) continue;
-    btn.classList.toggle('dimmed', !et.grades.includes(g));
-    btn.classList.remove('active');
+  document.getElementById('etbtn-'+eid)?.classList.add('active');
+  const bp = EXAM_TYPES[eid].blueprint;
+  for (let g=1;g<=12;g++) {
+    const btn=document.getElementById('gbtn-'+g);
+    if (btn) btn.classList.toggle('dimmed',!EXAM_TYPES[eid].grades.includes(g));
+    btn?.classList.remove('active');
   }
-  selectGrade(et.grades[0]);
-  setSliders(bp['Хялбар']||0, bp['Дунд']||0, bp['Хүнд']||0);
-  document.getElementById('guitsegdel-note').style.display =
-    eid === 'guitsegdel' ? 'inline' : 'none';
+  selectGrade(EXAM_TYPES[eid].grades[0]);
+  setSliders(bp['Мэдлэг ойлголт']||0, bp['Чадвар']||0, bp['Хэрэглээ']||0);
+  document.getElementById('guitsegdel-note').style.display = eid==='guitsegdel'?'inline':'none';
 }
 
 function selectGrade(g) {
   currentGrade = g;
   document.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('gbtn-' + g)?.classList.add('active');
-  const eid = GRADE_MAP[g] || 'guitsegdel';
-  const et  = EXAM_TYPES[eid];
+  document.getElementById('gbtn-'+g)?.classList.add('active');
+  const eid=GRADE_MAP[g]||'guitsegdel'; const et=EXAM_TYPES[eid];
   document.getElementById('grade-exam-info').innerHTML =
     `<span style="color:${et.color}">${et.icon} ${g}-р анги — ${et.name}</span>`;
-  if (currentExamId && !EXAM_TYPES[currentExamId]?.grades.includes(g)) {
-    selectExamType(eid);
-  }
+  if (currentExamId && !EXAM_TYPES[currentExamId]?.grades.includes(g)) selectExamType(eid);
 }
 
-function setSliders(h, d, hard) {
-  [['Хялбар',h],['Дунд',d],['Хүнд',hard]].forEach(([k,v]) => {
-    document.getElementById('slider-'+k).value = v;
-    document.getElementById('val-'+k).textContent = v;
+function setSliders(m, c, h) {
+  [['Мэдлэг ойлголт',m],['Чадвар',c],['Хэрэглээ',h]].forEach(([k,v])=>{
+    document.getElementById('slider-'+k).value=v;
+    document.getElementById('val-'+k).textContent=v;
   });
   updateTotal();
 }
-function updateSlider(el, key) {
-  document.getElementById('val-'+key).textContent = el.value;
+
+function updateSlider(el,key) {
+  document.getElementById('val-'+key).textContent=el.value;
   updateTotal();
 }
+
 function updateTotal() {
-  const [h,d,n] = ['Хялбар','Дунд','Хүнд'].map(k => +document.getElementById('slider-'+k).value);
-  document.getElementById('total-count').textContent = h+d+n;
-  document.getElementById('total-score').textContent = h*1+d*2+n*3;
+  let total=0, score=0;
+  LEVELS.forEach(k => {
+    const v=+document.getElementById('slider-'+k).value;
+    total+=v; score+=v*(LEVEL_SCORES[k]||1);
+  });
+  document.getElementById('total-count').textContent=total;
+  document.getElementById('total-score').textContent=score;
 }
 
 async function generateExam() {
   if (!currentGrade) { alert('Анги сонгоно уу'); return; }
-  const subject = document.getElementById('bp-subject').value;
-  const blueprint = {
-    'Хялбар': +document.getElementById('slider-Хялбар').value,
-    'Дунд':   +document.getElementById('slider-Дунд').value,
-    'Хүнд':   +document.getElementById('slider-Хүнд').value,
-  };
-  const panel = document.getElementById('bp-result');
-  panel.innerHTML = '<div class="loading"><div class="spinner"></div><p>Шалгалт үүсгэж байна...</p></div>';
-  const res  = await fetch('/api/generate-exam', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ grade: currentGrade, subject, exam_id: currentExamId, blueprint })
-  });
-  const exam = await res.json();
+  const subject=document.getElementById('bp-subject').value;
+  const blueprint={};
+  LEVELS.forEach(k => blueprint[k]=+document.getElementById('slider-'+k).value);
+  const panel=document.getElementById('bp-result');
+  panel.innerHTML='<div class="loading"><div class="spinner"></div><p>Шалгалт үүсгэж байна...</p></div>';
+  const res=await fetch('/api/generate-exam',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({grade:currentGrade,subject,exam_id:currentExamId,blueprint})});
+  const exam=await res.json();
   if (exam.error) {
-    panel.innerHTML = `<div class="empty-state tall"><div class="empty-icon">⚠</div>
+    panel.innerHTML=`<div class="empty-state tall"><div class="empty-icon">⚠</div>
       <p>${exam.error}</p>
-      <p style="font-size:.85rem;color:#639922;margin-top:.5rem">
-        Admin панелаас даалгавар нэмнэ үү → <a href="/admin/add">Admin</a></p></div>`;
+      <p style="font-size:.85rem;color:var(--muted);margin-top:.5rem">
+        <a href="/admin/add">Admin → Даалгавар нэмэх →</a></p></div>`;
     return;
   }
   renderExam(exam);
 }
 
 function renderExam(exam) {
-  const panel = document.getElementById('bp-result');
-  const et    = EXAM_TYPES[exam.exam_id] || {};
-  const isG   = exam.exam_id === 'guitsegdel';
-  const isE   = exam.exam_id === 'elselt';
-  const diffCounts = {};
-  exam.questions.forEach(q => { diffCounts[q.difficulty] = (diffCounts[q.difficulty]||0)+1; });
+  const panel=document.getElementById('bp-result');
+  const et=EXAM_TYPES[exam.exam_id]||{};
+  const isG=exam.exam_id==='guitsegdel';
+  const lvlCounts={};
+  exam.questions.forEach(q=>{ const l=q.level||q.difficulty||''; lvlCounts[l]=(lvlCounts[l]||0)+1; });
 
-  panel.innerHTML = `
+  panel.innerHTML=`
     <div class="exam-result">
-      <div class="exam-header" style="border-left:3px solid ${et.color||'#0F6E56'}">
+      <div class="exam-header" style="border-left:3px solid ${et.color||'#f0a500'}">
         <div class="exam-meta">
           <div class="exam-type-tag" style="background:${et.color}22;color:${et.color};border:1px solid ${et.color}55">
-            ${et.icon||'📋'} ${exam.exam_type}
-          </div>
+            ${et.icon||'📋'} ${exam.exam_type}</div>
           <h2>${exam.title}</h2>
           <div class="exam-badges">
             <span class="badge">${exam.grade}-р анги</span>
             <span class="badge">⏱ ${exam.duration}</span>
-            ${exam.note ? `<span class="badge badge-note">⚠ ${exam.note}</span>` : ''}
+            ${exam.note?`<span class="badge badge-note">⚠ ${exam.note}</span>`:''}
           </div>
         </div>
         <div class="exam-summary">
           <div class="sum-item"><span>${exam.total_questions}</span><label>Даалгавар</label></div>
           <div class="sum-item">
-            <span style="color:${et.color||'#0F6E56'}">${isG ? '—' : exam.total_score}</span>
-            <label>${isG ? 'Оноогүй' : 'Оноо'}</label>
+            <span style="color:${et.color||'var(--accent)'}">${isG?'—':exam.total_score}</span>
+            <label>${isG?'Оноогүй':'Оноо'}</label>
           </div>
         </div>
       </div>
-      ${isG ? `<div class="info-banner green-banner">📝 Гүйцэтгэлийн үнэлгээ — оноогоор дүгнэхгүй. Багш ажиглалтын дэвтэр хөтөлж сурагч бүрийн хөгжлийг тодорхойлно.</div>` : ''}
-      ${isE ? `<div class="info-banner blue-banner">🎓 Элсэлтийн шалгалтын загвар — 1 буруу хариулт = −0.2 оноо. Нийт 100 оноо.</div>` : ''}
+      ${isG?'<div class="info-banner green-banner">📝 Гүйцэтгэлийн үнэлгээ — оноогоор дүгнэхгүй. Багш ажиглалтын дэвтэр хөтөлнө.</div>':''}
+
       <div class="blueprint-chart">
-        ${Object.entries(diffCounts).map(([d,c]) => `
-          <div class="chart-bar-row">
-            <span class="diff-label diff-${d}">${d}</span>
+        ${Object.entries(lvlCounts).map(([l,c])=>{
+          const css=l.replace(/ /g,'');
+          return `<div class="chart-bar-row">
+            <span class="q-level level-${css}" style="min-width:130px">${l}</span>
             <div class="chart-bar-wrap">
-              <div class="chart-bar diff-bg-${d}" style="width:${(c/exam.total_questions*100).toFixed(0)}%">${c}</div>
+              <div class="chart-bar diff-bg-${css}" style="width:${(c/exam.total_questions*100).toFixed(0)}%">${c}</div>
             </div>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
       </div>
+
       <div class="exam-questions">
-        ${exam.questions.map((q,i) => `
-          <div class="eq-item">
+        ${exam.questions.map((q,i)=>{
+          const lvl=q.level||q.difficulty||''; const css=lvl.replace(/ /g,'');
+          return `<div class="eq-item">
             <div class="eq-num">${i+1}</div>
             <div class="eq-content">
               <div class="eq-tags">
-                <span class="q-diff diff-${q.difficulty}">${q.difficulty}</span>
-                <span class="q-bloom">${q.bloom}</span>
-                ${!isG ? `<span class="q-score">${q.score}п</span>` : ''}
+                <span class="q-level level-${css}">${lvl}</span>
+                <span class="q-bloom">${q.bloom||''}</span>
+                ${!isG?`<span class="q-score">${q.score}п</span>`:''}
               </div>
               <p>${q.question}</p>
-              ${q.options ? `<div class="q-options">${q.options.map(o=>`<span class="q-opt">${o}</span>`).join('')}</div>` : ''}
+              ${q.options?`<div class="q-options">${q.options.map(o=>`<span class="q-opt">${o}</span>`).join('')}</div>`:''}
             </div>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
       </div>
+
       <div class="exam-actions">
         <button class="btn btn-primary" onclick='downloadExam(${JSON.stringify(exam).replace(/'/g,"\\'")})'> ⬇ Татаж авах</button>
         <button class="btn btn-outline" onclick="generateExam()">↻ Дахин үүсгэх</button>
@@ -670,29 +229,25 @@ function renderExam(exam) {
 }
 
 function downloadExam(exam) {
-  const isG = exam.exam_id === 'guitsegdel';
-  let t = `${'═'.repeat(60)}\n   ОРХОНТУУЛ ЕБС\n   ${exam.title}\n${'═'.repeat(60)}\n\n`;
-  t += `Шалгалтын төрөл: ${exam.exam_type}\nНийт даалгавар:  ${exam.total_questions}\n`;
-  if (!isG) t += `Нийт оноо:       ${exam.total_score}\n`;
-  t += `Хугацаа:         ${exam.duration}\n`;
-  if (exam.note) t += `Тэмдэглэл:       ${exam.note}\n`;
-  t += `\n${'─'.repeat(60)}\n\n`;
-  exam.questions.forEach((q,i) => {
-    t += `${i+1}. [${q.difficulty} · ${q.bloom}]${isG?'':` (${q.score}п)`}\n${q.question}\n`;
-    if (q.options) q.options.forEach(o => t += `    ${o}\n`);
-    t += '\n';
+  const isG=exam.exam_id==='guitsegdel';
+  let t=`${'═'.repeat(60)}\n   ОРХОНТУУЛ ЕБС\n   ${exam.title}\n${'═'.repeat(60)}\n\n`;
+  t+=`Шалгалт: ${exam.exam_type}   Даалгавар: ${exam.total_questions}   Хугацаа: ${exam.duration}\n`;
+  if(!isG) t+=`Нийт оноо: ${exam.total_score}\n`;
+  if(exam.note) t+=`Тэмдэглэл: ${exam.note}\n`;
+  t+=`\n${'─'.repeat(60)}\n\n`;
+  exam.questions.forEach((q,i)=>{
+    const lvl=q.level||q.difficulty||'';
+    t+=`${i+1}. [${lvl}]${isG?'':` (${q.score}п)`}\n${q.question}\n`;
+    if(q.options) q.options.forEach(o=>t+=`    ${o}\n`);
+    t+='\n';
   });
-  if (!isG) {
-    t += `\n${'─'.repeat(60)}\nХАРИУЛТЫН ХУУДАС\n`;
-    exam.questions.forEach((q,i) => t += `${i+1}. ${q.answer||'—'}   `);
-  }
-  const blob = new Blob([t], {type:'text/plain;charset=utf-8'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `${exam.exam_id}_${exam.grade}angi_${exam.subject}_${Date.now()}.txt`;
+  if(!isG){ t+=`\n${'─'.repeat(60)}\nХАРИУЛТЫН ХУУДАС\n`;
+    exam.questions.forEach((q,i)=>t+=`${i+1}.${q.answer||'—'}  `); }
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([t],{type:'text/plain;charset=utf-8'}));
+  a.download=`${exam.exam_id}_${exam.grade}angi_${exam.subject}_${Date.now()}.txt`;
   a.click();
 }
-
 updateTotal();
 </script>
 {% endblock %}

@@ -14,14 +14,11 @@
       <a href="/admin/logout" class="slink logout">🚪 Гарах</a>
     </nav>
   </aside>
-
   <div class="admin-main">
     <div class="admin-topbar">
-      <h1>Даалгаврын жагсаалт <span class="muted-text">({{ questions|length }} ширхэг)</span></h1>
+      <h1>Даалгаврын жагсаалт <span class="muted-text">({{ questions|length }})</span></h1>
       <a href="/admin/add" class="btn btn-primary btn-sm">➕ Нэмэх</a>
     </div>
-
-    <!-- Filters -->
     <form method="GET" class="list-filters">
       <select name="grade">
         <option value="">Бүх анги</option>
@@ -29,30 +26,30 @@
       </select>
       <select name="subject">
         <option value="">Бүх хичээл</option>
-        {% for key, subjs in subjects.items() %}{% for s in subjs %}
+        {% for key,subjs in subjects.items() %}{% for s in subjs %}
         <option value="{{ s }}" {% if sel_subject==s %}selected{% endif %}>{{ s }}</option>
         {% endfor %}{% endfor %}
       </select>
-      <select name="difficulty">
+      <select name="level">
         <option value="">Бүх түвшин</option>
-        {% for d in difficulties %}<option value="{{ d }}" {% if sel_diff==d %}selected{% endif %}>{{ d }}</option>{% endfor %}
+        {% for l in levels %}<option value="{{ l }}" {% if sel_level==l %}selected{% endif %}>{{ l }}</option>{% endfor %}
       </select>
       <button type="submit" class="btn btn-primary btn-sm">Шүүх</button>
       <a href="/admin/list" class="btn btn-outline btn-sm">Цэвэрлэх</a>
     </form>
-
     {% if questions %}
     <table class="admin-table">
       <thead>
-        <tr><th>#</th><th>Анги</th><th>Хичээл</th><th>Хүндрэл</th><th>Блум</th><th>Даалгавар</th><th>Оноо</th><th>Үйлдэл</th></tr>
+        <tr><th>#</th><th>Анги</th><th>Хичээл</th><th>Түвшин</th><th>Блум</th><th>Даалгавар</th><th>Оноо</th><th></th></tr>
       </thead>
       <tbody>
         {% for q in questions %}
+        {% set lvl_css = (q.level or '')|replace(' ','') %}
         <tr>
           <td class="mono">{{ q.id }}</td>
           <td>{{ q.grade }}-р</td>
           <td>{{ q.subject }}</td>
-          <td><span class="q-diff diff-{{ q.difficulty }}">{{ q.difficulty }}</span></td>
+          <td><span class="q-level level-{{ lvl_css }}">{{ q.level or '—' }}</span></td>
           <td><span class="q-bloom">{{ q.bloom }}</span></td>
           <td class="q-preview">{{ q.question[:70] }}{% if q.question|length > 70 %}…{% endif %}</td>
           <td class="mono accent-text">{{ q.score }}п</td>

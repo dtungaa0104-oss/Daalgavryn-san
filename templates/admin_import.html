@@ -76,7 +76,7 @@
         <div class="field-group">
           <label>Үндсэн хүндрэл</label>
           <select id="imp-diff">
-            {% for d in difficulties %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
+            {% for l in levels %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
           </select>
         </div>
       </div>
@@ -131,7 +131,7 @@ async function uploadFile() {
   fd.append('file', selectedFile);
   fd.append('grade',               document.getElementById('imp-grade').value);
   fd.append('subject',             document.getElementById('imp-subject').value);
-  fd.append('default_difficulty',  document.getElementById('imp-diff').value);
+  fd.append('default_level',  document.getElementById('imp-diff').value);
 
   const btn = event.target;
   btn.disabled = true; btn.textContent = '⏳ Боловсруулж байна...';
