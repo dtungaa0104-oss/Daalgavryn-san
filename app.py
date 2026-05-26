@@ -2,6 +2,10 @@ import os, sqlite3, re
 from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+try:
+    import anthropic as _anthropic
+except ImportError:
+    _anthropic = None
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "orkhontul-ebs-2025")
@@ -205,14 +209,14 @@ def generate_exam():
             api_key=os.environ.get("ANTHROPIC_API_KEY","")
             if api_key:
                 try:
-                    import anthropic,json as _json
+                    import json as _json
                     score=LEVEL_SCORE.get(lvl,1)
                     prompt=f"""Та Монгол боловсролын {grade}-р ангийн {subject} хичээлийн багш.
 Блупринтийн түвшин: {lvl}
 {need} даалгавар зохио. Зөвхөн JSON array буцаа, тайлбаргүй.
 Формат: [{{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","answer":"А"}}]
 Монгол хэлээр."""
-                    client=anthropic.Anthropic(api_key=api_key)
+                    client=__anthropic.Anthropic(api_key=api_key)
                     msg=client.messages.create(model="claude-sonnet-4-5",max_tokens=3000,
                         messages=[{"role":"user","content":prompt}])
                     raw=msg.content[0].text.strip()
@@ -387,7 +391,7 @@ def admin_import():
 @login_required
 def admin_ai_generate():
     if request.method=="POST":
-        import anthropic,json as _json
+        import json as _json
         grade=int(request.form.get("grade",9)); subject=request.form.get("subject","Математик")
         topic=request.form.get("topic",""); lvl=request.form.get("level","Мэдлэг ойлголт")
         bloom=request.form.get("bloom","Мэдлэг"); q_type=request.form.get("q_type","Нэг сонголт")
@@ -405,7 +409,7 @@ def admin_ai_generate():
 {"Нээлттэй бол option_a..d = null." if not has_options else ""}
 Монгол хэлээр."""
         try:
-            client=anthropic.Anthropic(api_key=api_key)
+            client=__anthropic.Anthropic(api_key=api_key)
             msg=client.messages.create(model="claude-sonnet-4-5",max_tokens=4000,
                 messages=[{"role":"user","content":prompt}])
             raw_text=msg.content[0].text.strip()
@@ -446,7 +450,7 @@ def teacher_page():
 
 @app.route("/api/teacher-ai", methods=["POST"])
 def teacher_ai():
-    import anthropic, json as _json
+    import json as _json
     data    = request.json
     prompt  = data.get("prompt","")
     api_key = os.environ.get("ANTHROPIC_API_KEY","")
@@ -455,7 +459,7 @@ def teacher_ai():
     if not prompt:
         return jsonify({"error":"Prompt хоосон байна"}), 400
     try:
-        client  = anthropic.Anthropic(api_key=api_key)
+        client  = __anthropic.Anthropic(api_key=api_key)
         msg     = client.messages.create(
             model="claude-sonnet-4-5", max_tokens=3000,
             messages=[{"role":"user","content": prompt}])
@@ -467,7 +471,6 @@ def teacher_ai():
 # ══ ЧАТБОТ ════════════════════════════════════════════════
 @app.route("/api/chat", methods=["POST"])
 def chatbot():
-    import anthropic
     data     = request.json
     messages = data.get("messages", [])
     api_key  = os.environ.get("ANTHROPIC_API_KEY","")
@@ -475,8 +478,10 @@ def chatbot():
         return jsonify({"error":"API тохируулаагүй"}), 400
     if not messages:
         return jsonify({"error":"Мессеж хоосон"}), 400
+    if _anthropic is None:
+        return jsonify({"error":"anthropic module суугаагүй байна"}), 500
     try:
-        client = anthropic.Anthropic(api_key=api_key)
+        client = __anthropic.Anthropic(api_key=api_key)
         msg = client.messages.create(
             model="claude-sonnet-4-5",
             max_tokens=3000,
@@ -493,7 +498,10 @@ def chatbot():
         )
         return jsonify({"reply": msg.content[0].text})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        err_detail = traceback.format_exc()
+        print("CHAT ERROR:", err_detail)
+        return jsonify({"error": str(e), "detail": err_detail[-500:]}), 500
 
 # ══ START ══════════════════════════════════════════════════
 if __name__=="__main__":
