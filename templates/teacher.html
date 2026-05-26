@@ -283,14 +283,13 @@ function showTab(tab) {
 
 // ══ AI ДУУДАХ ════════════════════════════════════════
 async function callAI(prompt, outId, btnId, actionsId) {
-  var btn = document.getElementById(btnId);
+  var btn = btnId ? document.getElementById(btnId) : null;
   var out = document.getElementById(outId);
-  if (!btn || !out) return;
-  var origLabel = btn.getAttribute('data-label') || btn.textContent;
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-sm"></span> AI боловсруулж байна...';
+  if (!out) return;
+  var origLabel = btn ? (btn.getAttribute('data-label') || btn.textContent) : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> AI боловсруулж байна...'; }
   out.className = 'ai-out show';
-  out.textContent = '⏳ Боловсруулж байна... (30-60 секунд)';
+  out.innerHTML = '⏳ Боловсруулж байна... (30-60 секунд)';
   try {
     var res = await fetch('/api/chat', {
       method: 'POST',
@@ -299,20 +298,25 @@ async function callAI(prompt, outId, btnId, actionsId) {
     });
     if (!res.ok) {
       var txt = await res.text();
-      out.textContent = '❌ HTTP ' + res.status + ': ' + txt.slice(0,200);
-      btn.disabled = false; btn.textContent = origLabel; return;
+      out.innerHTML = '❌ HTTP ' + res.status + ': ' + txt.slice(0,200);
+      if (btn) { btn.disabled = false; btn.textContent = origLabel; } return;
     }
     var data = await res.json();
-    btn.disabled = false; btn.textContent = origLabel;
-    if (data.error) { out.textContent = '❌ ' + data.error; return; }
-    out.textContent = data.reply || data.result || '⚠️ Хариулт хоосон';
+    if (btn) { btn.disabled = false; btn.textContent = origLabel; }
+    if (data.error) { out.innerHTML = '❌ ' + data.error; return; }
+    var reply = data.reply || data.result || '⚠️ Хариулт хоосон';
+    // Мөр таслалт → <br> болгон HTML render хийх
+    out.innerHTML = reply
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\n/g,'<br>');
     if (actionsId) {
       var actEl = document.getElementById(actionsId);
       if (actEl) { actEl.style.display = 'flex'; }
     }
   } catch(e) {
-    btn.disabled = false; btn.textContent = origLabel;
-    out.textContent = '❌ ' + (e.name === 'AbortError' ? 'Хугацаа дуусав. Дахин оролдоно уу.' : 'Алдаа: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = origLabel; }
+    out.innerHTML = '❌ ' + (e.name === 'AbortError' ? 'Хугацаа дуусав. Дахин оролдоно уу.' : 'Алдаа: ' + e.message);
   }
 }
 
@@ -606,6 +610,8 @@ function selOpt(btn, idx) {
 function closeCT() { document.getElementById('ct-modal').style.display = 'none'; }
 
 async function analyzeTempera() {
+  var selfBtn = document.querySelector('[onclick="analyzeTempera()"]');
+  if (selfBtn) { selfBtn.disabled = true; selfBtn.innerHTML = '<span class="spinner-sm"></span> AI боловсруулж байна...'; }
   var name = document.getElementById('ct-name').value || 'Сурагч';
   var grade = document.getElementById('ct-grade-t').value || '9';
   var ans = Object.entries(surveyAnswers).filter(function(e){return e[0]<10}).map(function(e){return (parseInt(e[0])+1) + ': ' + e[1]}).join(', ');
@@ -630,9 +636,11 @@ async function analyzeTempera() {
     '   - Сурлагыг дэмжих тодорхой санал\n' +
     '   - Эцэг эхтэй хамтран ажиллах арга\n\n' +
     'Монгол хэлээр, багш шууд ашиглаж болохоор практик, дэлгэрэнгүй бичнэ үү.',
-    'temp-result', 'ct-modal-content', null);
+    'temp-result', null, null);
 }
 async function analyzeCareer() {
+  var selfBtn = document.querySelector('[onclick="analyzeCareer()"]');
+  if (selfBtn) { selfBtn.disabled = true; selfBtn.innerHTML = '<span class="spinner-sm"></span> AI боловсруулж байна...'; }
   var name = document.getElementById('career-name').value || 'Сурагч';
   var grade = document.getElementById('career-grade').value || '9';
   var ans = Object.entries(surveyAnswers).filter(function(e){return e[0]>=10}).map(function(e){return (parseInt(e[0])-9) + ': ' + e[1]}).join(', ');
@@ -654,9 +662,11 @@ async function analyzeCareer() {
     '4. ЭЦЭГ ЭХЭД ЗӨВЛӨМЖ\n' +
     '   - Хүүхдийн мэргэжлийн сонголтыг дэмжих арга\n\n' +
     'Монгол хэлээр, бодитой, дэлгэрэнгүй бичнэ үү.',
-    'career-result', 'ct-modal-content', null);
+    'career-result', null, null);
 }
 async function genParentMsg() {
+  var selfBtn = document.querySelector('[onclick="genParentMsg()"]');
+  if (selfBtn) { selfBtn.disabled = true; selfBtn.innerHTML = '<span class="spinner-sm"></span> AI боловсруулж байна...'; }
   var student = document.getElementById('par-student').value || 'Сурагч';
   var grade = document.getElementById('par-grade').value || '9';
   var type = document.getElementById('par-type').value;
@@ -673,9 +683,11 @@ async function genParentMsg() {
     '- Холбоо барих мэдээлэл орхих (...)\n' +
     '- Хүндэтгэлтэйгээр төгсгөх\n\n' +
     'Монгол хэлээр, 150-200 үгтэй, албан ёсны боловч дотны өнгө аястай байна.',
-    'par-result', 'ct-modal-content', null);
+    'par-result', null, null);
 }
 async function genPsyAdvice() {
+  var selfBtn = document.querySelector('[onclick="genPsyAdvice()"]');
+  if (selfBtn) { selfBtn.disabled = true; selfBtn.innerHTML = '<span class="spinner-sm"></span> AI боловсруулж байна...'; }
   var grade = document.getElementById('psy-grade').value || '9';
   var topic = document.getElementById('psy-topic').value;
   var detail = document.getElementById('psy-detail').value;
@@ -699,7 +711,7 @@ async function genPsyAdvice() {
     '5. МЭРГЭЖЛИЙН ТУСЛАЛЦАА\n' +
     '   - Сэтгэл зүйч, нийгмийн ажилтанд хэзээ хандах\n\n' +
     'Монгол хэлээр, анги удирдсан багш шууд ашиглаж болох практик зөвлөмж.',
-    'psy-result', 'ct-modal-content', null);
+    'psy-result', null, null);
 }
 function genQR() {
   var url = document.getElementById('qr-url').value;
@@ -719,6 +731,8 @@ function printQR() {
   win.document.close(); setTimeout(function(){win.print()},500);
 }
 async function genPortReport() {
+  var selfBtn = document.querySelector('[onclick="genPortReport()"]');
+  if (selfBtn) { selfBtn.disabled = true; selfBtn.innerHTML = '<span class="spinner-sm"></span> AI боловсруулж байна...'; }
   var name = document.getElementById('port-name').value || 'Сурагч';
   var grade = document.getElementById('port-grade').value || '9';
   var avg = document.getElementById('port-grade-avg').value;
@@ -745,7 +759,7 @@ async function genPortReport() {
     '5. АНГИ УДИРДСАН БАГШИЙН ДҮГНЭЛТ\n' +
     '   - Эцэг эх, сурагчид хандсан товч мессеж\n\n' +
     'Монгол хэлээр, эцэг эх болон сурагчид харуулж болохоор найрсаг, бодитой тайлан.',
-    'port-result', 'ct-modal-content', null);
+    'port-result', null, null);
 }
 
 // ══ ХЭВЛЭХ / ТАТАХ ═══════════════════════════════════
