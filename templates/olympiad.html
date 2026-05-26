@@ -79,7 +79,11 @@
   <span id="result-count"></span>
   <div class="bar-actions">
     <button class="btn btn-sm btn-outline" onclick="selectAll()">Бүгдийг сонгох</button>
-    <button class="btn btn-sm btn-primary" onclick="downloadSelected()">⬇ Татах</button>
+    <div class="dl-btn-group">
+      <button class="btn btn-sm btn-primary" onclick="downloadSelected()">⬇ Татах</button>
+      <button class="btn btn-sm btn-primary" onclick="showDownloadMenu(this, ()=>allQuestions.filter(q=>selected.has(String(q.id))), ()=>'Орхонтуул ЕБС — Даалгавар')">▾</button>
+    </div>
+    <button class="btn btn-sm btn-outline" onclick="printQuestions(allQuestions.filter(q=>selected.has(String(q.id))), 'Орхонтуул ЕБС — Даалгавар')">🖨 Хэвлэх</button>
   </div>
 </div>
 

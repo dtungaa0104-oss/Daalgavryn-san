@@ -220,7 +220,10 @@
   <span id="result-count"></span>
   <div class="bar-actions">
     <button class="btn btn-sm btn-outline" onclick="selectAll()">Бүгдийг сонгох</button>
-    <button class="btn btn-sm btn-primary" onclick="downloadSelected()">⬇ Татах</button>
+    <div class="dl-btn-group">
+      <button class="btn btn-sm btn-primary" onclick="dlSelected()">⬇ Татах</button>
+      <button class="btn btn-sm btn-primary" onclick="showDownloadMenu(this, getSelected, getTitle)">▾</button>
+    </div>
   </div>
 </div>
 

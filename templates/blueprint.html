@@ -95,6 +95,7 @@ const LEVEL_SCORES = {"Мэдлэг ойлголт":1,"Чадвар":2,"Хэрэ
 
 let currentExamId = null;
 let currentGrade  = null;
+let currentExam   = null;
 
 window.onload = () => {
   const init = new URLSearchParams(location.search).get('exam') || Object.keys(EXAM_TYPES)[0];
@@ -167,6 +168,7 @@ async function generateExam() {
         <a href="/admin/add">Admin → Даалгавар нэмэх →</a></p></div>`;
     return;
   }
+  currentExam = exam;
   renderExam(exam);
 }
 
@@ -233,13 +235,17 @@ function renderExam(exam) {
       </div>
 
       <div class="exam-actions">
-        <button class="btn btn-primary" onclick='downloadExam(${JSON.stringify(exam).replace(/'/g,"\\'")})'> ⬇ Татаж авах</button>
+        <div class="dl-btn-group">
+          <button class="btn btn-primary" onclick='dlExamTXT(currentExam)'>⬇ TXT татах</button>
+          <button class="btn btn-primary" onclick="showDownloadMenu(this, ()=>currentExam.questions, ()=>currentExam.title)">▾</button>
+        </div>
+        <button class="btn btn-outline" onclick="printQuestions(currentExam.questions, currentExam.title)">🖨 Хэвлэх</button>
         <button class="btn btn-outline" onclick="generateExam()">↻ Дахин үүсгэх</button>
       </div>
     </div>`;
 }
 
-function downloadExam(exam) {
+function dlExamTXT(exam) {
   const isG=exam.exam_id==='guitsegdel';
   let t=`${'═'.repeat(60)}\n   ОРХОНТУУЛ ЕБС\n   ${exam.title}\n${'═'.repeat(60)}\n\n`;
   t+=`Шалгалт: ${exam.exam_type}   Даалгавар: ${exam.total_questions}   Хугацаа: ${exam.duration}\n`;

@@ -924,3 +924,23 @@ main { flex: 1; }
   font-size: .82rem; font-weight: 700; color: var(--teal-600);
   margin-top: .3rem;
 }
+
+/* ══ ТАТАХ / ХЭВЛЭХ DROPDOWN ══════════════════════════ */
+.dl-menu {
+  background:#fff; border:1.5px solid var(--green-100);
+  border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.15);
+  overflow:hidden; min-width:170px;
+}
+.dl-item {
+  padding:10px 16px; font-size:.88rem; font-weight:500;
+  color:var(--text-dark); cursor:pointer; transition:background .12s;
+  display:flex; align-items:center; gap:8px;
+}
+.dl-item:hover { background:var(--green-50); color:var(--teal-600); }
+.dl-item + .dl-item { border-top:1px solid var(--green-50); }
+
+/* Татах товч бүлэг */
+.dl-btn-group { display:flex; gap:0; }
+.dl-btn-group .btn { border-radius:0; }
+.dl-btn-group .btn:first-child { border-radius:var(--radius) 0 0 var(--radius); }
+.dl-btn-group .btn:last-child  { border-radius:0 var(--radius) var(--radius) 0; border-left:1px solid rgba(255,255,255,.3); }
