@@ -352,7 +352,8 @@ def admin_import():
         from file_importer import extract_from_pdf,extract_from_docx,parse_raw_text
         f=request.files.get("file"); grade=int(request.form.get("grade",9))
         subject=request.form.get("subject","Математик")
-        lvl=request.form.get("default_level","Мэдлэг ойлголт")
+        # default_level өгөгдөөгүй бол автоматаар тодорхойлно
+        lvl=request.form.get("default_level","auto")
         if not f or f.filename=="":
             return jsonify({"error":"Файл сонгоогүй байна"}),400
         file_bytes=f.read(); fname=f.filename.lower()
