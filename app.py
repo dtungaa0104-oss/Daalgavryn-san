@@ -7,10 +7,6 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "orkhontul-ebs-2025")
 DB_PATH        = os.environ.get("DB_PATH", "questions.db")
 
-# ══════════════════════════════════════════════════════════
-#  ШАЛГАЛТЫН БҮТЭЦ — Монгол ЕБС-ийн бодит стандарт
-#  Түвшин: Мэдлэг ойлголт | Чадвар | Хэрэглээ
-# ══════════════════════════════════════════════════════════
 EXAM_TYPES = {
     "ulsiin": {
         "id":"ulsiin","name":"Улсын шалгалт","icon":"🏆","color":"#f0a500",
@@ -57,16 +53,12 @@ SUBJECTS = {
                "Хими","Биологи","Газарзүй","Түүх","Англи хэл","Нийгмийн ухаан"]
 }
 
-# Блупринтийн түвшин — Мэдлэг ойлголт / Чадвар / Хэрэглээ
-LEVELS     = ["Мэдлэг ойлголт","Чадвар","Хэрэглээ"]
-BLOOM      = ["Мэдлэг","Ойлголт","Хэрэглээ","Шинжилгээ","Үнэлгээ","Бүтээл"]
-Q_TYPES    = ["Нэг сонголт","Олон сонголт","Нээлттэй","Гүйцэтгэлийн","Олимпиад"]
-ADMIN_PW   = os.environ.get("ADMIN_PASSWORD","orkhontul2025")
-
-# Түвшин → оноо
+LEVELS      = ["Мэдлэг ойлголт","Чадвар","Хэрэглээ"]
+BLOOM       = ["Мэдлэг","Ойлголт","Хэрэглээ","Шинжилгээ","Үнэлгээ","Бүтээл"]
+Q_TYPES     = ["Нэг сонголт","Олон сонголт","Нээлттэй","Гүйцэтгэлийн","Олимпиад"]
+ADMIN_PW    = os.environ.get("ADMIN_PASSWORD","orkhontul2025")
 LEVEL_SCORE = {"Мэдлэг ойлголт":1,"Чадвар":2,"Хэрэглээ":3}
 
-# ── DB ──────────────────────────────────────────────────
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -77,13 +69,11 @@ def init_db():
     conn.execute("""CREATE TABLE IF NOT EXISTS questions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         q_code TEXT UNIQUE, grade INTEGER NOT NULL, subject TEXT NOT NULL,
-        level TEXT NOT NULL,
-        bloom TEXT NOT NULL, q_type TEXT NOT NULL,
+        level TEXT NOT NULL, bloom TEXT NOT NULL, q_type TEXT NOT NULL,
         question TEXT NOT NULL,
         option_a TEXT, option_b TEXT, option_c TEXT, option_d TEXT,
         answer TEXT, score INTEGER DEFAULT 1, topic TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
-    # Хуучин difficulty баганатай DB-д level багана нэмэх
     try:
         conn.execute("ALTER TABLE questions ADD COLUMN level TEXT NOT NULL DEFAULT 'Мэдлэг ойлголт'")
     except: pass
@@ -99,7 +89,6 @@ def row_to_dict(row):
         if d.get("option_a") else None)
     return d
 
-# ── Auth ─────────────────────────────────────────────────
 def login_required(f):
     @wraps(f)
     def dec(*a,**kw):
@@ -136,6 +125,38 @@ def interactive_page():
     return render_template("interactive.html", subjects=SUBJECTS,
         levels=LEVELS, blooms=BLOOM, grade_exam_map=GRADE_EXAM_MAP)
 
+# ══ БОСГО ШАЛГАЛТ ═════════════════════════════════════════
+@app.route("/mongol-bichig")
+def mongol_bichig_page():
+    conn = get_db()
+    years = conn.execute(
+        "SELECT DISTINCT topic FROM questions WHERE subject='Монгол хэл бичгийн босго шалгалт' ORDER BY topic DESC"
+    ).fetchall()
+    recent = conn.execute(
+        "SELECT * FROM questions WHERE subject='Монгол хэл бичгийн босго шалгалт' ORDER BY id DESC LIMIT 20"
+    ).fetchall()
+    total = conn.execute(
+        "SELECT COUNT(*) FROM questions WHERE subject='Монгол хэл бичгийн босго шалгалт'"
+    ).fetchone()[0]
+    conn.close()
+    return render_template("mongol_bichig.html",
+        years=[r['topic'] for r in years],
+        recent=recent, total=total,
+        levels=LEVELS, blooms=BLOOM)
+
+@app.route("/api/update-topic")
+def update_topic():
+    subject = request.args.get("subject","")
+    topic   = request.args.get("topic","")
+    if not subject or not topic:
+        return jsonify({"ok": False})
+    conn = get_db()
+    conn.execute(
+        "UPDATE questions SET topic=? WHERE subject=? AND (topic IS NULL OR topic='')",
+        (topic, subject))
+    conn.commit(); conn.close()
+    return jsonify({"ok": True})
+
 # ══ API ═══════════════════════════════════════════════════
 @app.route("/api/questions")
 def api_questions():
@@ -146,11 +167,11 @@ def api_questions():
     q_type  = request.args.get("q_type","all")
     count   = int(request.args.get("count",20))
     conn=get_db(); sql,params="SELECT * FROM questions WHERE 1=1",[]
-    if grade:          sql+=" AND grade=?";   params.append(int(grade))
-    if subject:        sql+=" AND subject=?"; params.append(subject)
-    if level!="all":   sql+=" AND level=?";   params.append(level)
-    if bloom!="all":   sql+=" AND bloom=?";   params.append(bloom)
-    if q_type!="all":  sql+=" AND q_type=?";  params.append(q_type)
+    if grade:         sql+=" AND grade=?";   params.append(int(grade))
+    if subject:       sql+=" AND subject=?"; params.append(subject)
+    if level!="all":  sql+=" AND level=?";   params.append(level)
+    if bloom!="all":  sql+=" AND bloom=?";   params.append(bloom)
+    if q_type!="all": sql+=" AND q_type=?";  params.append(q_type)
     sql+=" ORDER BY RANDOM() LIMIT ?"; params.append(count)
     rows=conn.execute(sql,params).fetchall(); conn.close()
     return jsonify({"questions":[row_to_dict(r) for r in rows],"total":len(rows)})
@@ -159,26 +180,23 @@ def api_questions():
 def generate_exam():
     data=request.json; grade=data.get("grade",9); subject=data.get("subject","Математик")
     exam_id=data.get("exam_id","devshih"); blueprint=data.get("blueprint",{})
-    use_ai=data.get("use_ai", True)   # default: AI-аар нөхнө
+    use_ai=data.get("use_ai",True)
     et=EXAM_TYPES.get(exam_id,EXAM_TYPES["devshih"]); bp=et["blueprint"]
     conn=get_db(); selected=[]; ai_generated=0
-
     for lvl in LEVELS:
-        cnt=int(blueprint.get(lvl, bp.get(lvl,0)))
+        cnt=int(blueprint.get(lvl,bp.get(lvl,0)))
         if cnt<=0: continue
         rows=conn.execute(
             "SELECT * FROM questions WHERE grade=? AND subject=? AND level=? ORDER BY RANDOM() LIMIT ?",
             (grade,subject,lvl,cnt)).fetchall()
-        db_qs = [row_to_dict(r) for r in rows]
+        db_qs=[row_to_dict(r) for r in rows]
         selected.extend(db_qs)
-        need = cnt - len(db_qs)
-
-        # DB хүрэлцэхгүй → AI-аар нөхнө
-        if need > 0 and use_ai:
+        need=cnt-len(db_qs)
+        if need>0 and use_ai:
             api_key=os.environ.get("ANTHROPIC_API_KEY","")
             if api_key:
                 try:
-                    import anthropic, json as _json
+                    import anthropic,json as _json
                     score=LEVEL_SCORE.get(lvl,1)
                     prompt=f"""Та Монгол боловсролын {grade}-р ангийн {subject} хичээлийн багш.
 Блупринтийн түвшин: {lvl}
@@ -202,27 +220,22 @@ def generate_exam():
                                  q.get('option_a'),q.get('option_b'),q.get('option_c'),q.get('option_d'),
                                  q.get('answer','А'),score,''))
                             conn.commit()
-                            # Хадгалсан даалгаварыг дахин уншиж selected-д нэмнэ
                             saved=conn.execute("SELECT * FROM questions WHERE q_code=?",(q_code,)).fetchone()
                             if saved:
                                 selected.append(row_to_dict(saved))
                                 ai_generated+=1
                         except: pass
-                except Exception as e:
-                    pass  # AI алдаа гарвал DB-ийн байгаагаар явна
-
+                except: pass
     conn.close()
     if not selected:
         api_key=os.environ.get("ANTHROPIC_API_KEY","")
         if not api_key:
-            return jsonify({"error":f"{grade}-р ангийн '{subject}' даалгавар байхгүй. ANTHROPIC_API_KEY тохируулж AI-аар үүсгэх боломжтой."})
-        return jsonify({"error":f"{grade}-р ангийн '{subject}' даалгавар үүсгэж чадсангүй. Дахин оролдоно уу."})
-
+            return jsonify({"error":f"{grade}-р ангийн '{subject}' даалгавар байхгүй. ANTHROPIC_API_KEY тохируулна уу."})
+        return jsonify({"error":f"{grade}-р ангийн '{subject}' даалгавар үүсгэж чадсангүй."})
     msg_parts=[]
     db_count=len(selected)-ai_generated
     if db_count>0: msg_parts.append(f"DB: {db_count}")
     if ai_generated>0: msg_parts.append(f"AI: {ai_generated}")
-
     return jsonify({"exam_id":exam_id,"exam_type":et["name"],"exam_icon":et["icon"],
         "title":f"{grade}-р ангийн {subject} — {et['name']}","grade":grade,"subject":subject,
         "total_questions":len(selected),"total_score":sum(q["score"] for q in selected),
@@ -271,8 +284,7 @@ def admin_dashboard():
 @login_required
 def admin_add():
     if request.method=="POST":
-        f=request.form; lvl=f["level"]
-        score=LEVEL_SCORE.get(lvl,1)
+        f=request.form; lvl=f["level"]; score=LEVEL_SCORE.get(lvl,1)
         q_code=f"Q{f['grade']}-{f['subject'][:3]}-{datetime.now().strftime('%f')}"
         conn=get_db()
         conn.execute("""INSERT INTO questions(q_code,grade,subject,level,bloom,q_type,question,
@@ -320,7 +332,6 @@ def admin_delete(qid):
     conn=get_db(); conn.execute("DELETE FROM questions WHERE id=?",(qid,))
     conn.commit(); conn.close(); return redirect(url_for("admin_list"))
 
-# ── Файл upload ──────────────────────────────────────────
 @app.route("/admin/import",methods=["GET","POST"])
 @login_required
 def admin_import():
@@ -339,7 +350,7 @@ def admin_import():
             else: return jsonify({"error":"PDF, Word (.docx), эсвэл .txt файл оруулна уу"}),400
             questions=parse_raw_text(raw,grade,subject,lvl)
             if not questions:
-                return jsonify({"error":"Даалгавар илрүүлж чадсангүй. Файлын форматыг шалгана уу."}),400
+                return jsonify({"error":"Даалгавар илрүүлж чадсангүй."}),400
             conn=get_db(); saved=skipped=0
             for q in questions:
                 try:
@@ -357,7 +368,6 @@ def admin_import():
             return jsonify({"error":f"Файл уншихад алдаа: {str(e)}"}),500
     return render_template("admin_import.html",subjects=SUBJECTS,levels=LEVELS)
 
-# ── AI үүсгэгч ───────────────────────────────────────────
 @app.route("/admin/ai-generate",methods=["GET","POST"])
 @login_required
 def admin_ai_generate():
@@ -369,7 +379,7 @@ def admin_ai_generate():
         count=min(int(request.form.get("count",5)),20)
         api_key=os.environ.get("ANTHROPIC_API_KEY","")
         if not api_key:
-            return jsonify({"error":"ANTHROPIC_API_KEY тохируулаагүй. Render → Environment-д нэмнэ үү."}),400
+            return jsonify({"error":"ANTHROPIC_API_KEY тохируулаагүй."}),400
         has_options=q_type in("Нэг сонголт","Олон сонголт")
         score=LEVEL_SCORE.get(lvl,1)
         prompt=f"""Та Монгол боловсролын {grade}-р ангийн {subject} хичээлийн багш.
@@ -410,41 +420,7 @@ def admin_ai_generate():
     return render_template("admin_ai_generate.html",
         subjects=SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
 
+# ══ START ══════════════════════════════════════════════════
 if __name__=="__main__":
     port=int(os.environ.get("PORT",5000))
     app.run(host="0.0.0.0",port=port)
-
-# ══ МОНГОЛ ХЭЛ БИЧГИЙН ШАЛГАЛТ ════════════════════════════
-@app.route("/mongol-bichig")
-def mongol_bichig_page():
-    # Монгол бичгийн шалгалтын өмнөх жилийн даалгаварууд
-    conn = get_db()
-    years = conn.execute(
-        "SELECT DISTINCT topic FROM questions WHERE subject='Монгол хэл бичгийн босго шалгалт' ORDER BY topic DESC"
-    ).fetchall()
-    recent = conn.execute(
-        "SELECT * FROM questions WHERE subject='Монгол хэл бичгийн босго шалгалт' ORDER BY id DESC LIMIT 20"
-    ).fetchall()
-    total = conn.execute(
-        "SELECT COUNT(*) FROM questions WHERE subject='Монгол хэл бичгийн босго шалгалт'"
-    ).fetchone()[0]
-    conn.close()
-    return render_template("mongol_bichig.html",
-        years=[r['topic'] for r in years],
-        recent=recent,
-        total=total,
-        levels=LEVELS,
-        blooms=BLOOM)
-
-@app.route("/api/update-topic")
-def update_topic():
-    subject = request.args.get("subject","")
-    topic   = request.args.get("topic","")
-    if not subject or not topic:
-        return jsonify({"ok": False})
-    conn = get_db()
-    conn.execute(
-        "UPDATE questions SET topic=? WHERE subject=? AND (topic IS NULL OR topic='')",
-        (topic, subject))
-    conn.commit(); conn.close()
-    return jsonify({"ok": True})
