@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}Олимпиад — Орхонтуул ЕБС{% endblock %}
+
+{% block content %}
+
+<div class="page-header olym-header">
+  <div class="olym-header-icon">🏆</div>
+  <div>
+    <h1>Олимпиадын <span class="accent">Материал</span></h1>
+    <p>Өмнөх онуудын олимпиадын даалгавар, хариулт — хичээл тус бүрээр</p>
+  </div>
+</div>
+
+<!-- ── Шүүлтүүр ── -->
+<div class="olym-filters">
+  <div class="olym-filter-row">
+
+    <!-- Хичээл tab -->
+    <div class="olym-subject-tabs" id="subject-tabs">
+      <button class="osub-tab active" data-subject="all" onclick="filterSubject('all', this)">
+        📚 Бүгд
+      </button>
+      {% for subj in subjects %}
+      <button class="osub-tab" data-subject="{{ subj }}" onclick="filterSubject('{{ subj }}', this)">
+        {{ subj_icons.get(subj, '📖') }} {{ subj }}
+      </button>
+      {% endfor %}
+    </div>
+
+    <div class="olym-right-filters">
+      <!-- Жил -->
+      <div class="olym-filter-group">
+        <label>Жил</label>
+        <select id="filter-year" onchange="applyFilters()">
+          <option value="all">Бүх жил</option>
+          {% for y in years %}
+          <option value="{{ y }}">{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <!-- Шат -->
+      <div class="olym-filter-group">
+        <label>Шат</label>
+        <select id="filter-level" onchange="applyFilters()">
+          <option value="all">Бүх шат</option>
+          {% for lv in levels %}
+          <option value="{{ lv }}">{{ lv }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <!-- Хайх -->
+      <div class="olym-filter-group olym-search-wrap">
+        <input type="text" id="olym-search" placeholder="🔍 Хайх..." oninput="applyFilters()">
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Статистик ── -->
+<div class="olym-stats">
+  <div class="olym-stat">
+    <span id="stat-total">{{ materials|length }}</span>
+    <label>Нийт материал</label>
+  </div>
+  <div class="olym-stat">
+    <span>{{ years|length }}</span>
+    <label>Он жил</label>
+  </div>
+  <div class="olym-stat">
+    <span>{{ subjects|length }}</span>
+    <label>Хичээл</label>
+  </div>
+  <div class="olym-stat">
+    <span>{{ levels|length }}</span>
+    <label>Шат</label>
+  </div>
+</div>
+
+<!-- ── Материалын grid ── -->
+<div class="olym-grid" id="olym-grid">
+  {% for m in materials %}
+  <div class="olym-card"
+       data-subject="{{ m.subject }}"
+       data-year="{{ m.year }}"
+       data-level="{{ m.level }}"
+       data-title="{{ m.title | lower }}">
+
+    <div class="olym-card-top" style="--subj-color: {{ m.color }}">
+      <div class="olym-card-icon">{{ m.icon }}</div>
+      <div class="olym-card-badges">
+        <span class="olym-badge olym-year">{{ m.year }}</span>
+        <span class="olym-badge olym-level level-{{ m.level_key }}">{{ m.level }}</span>
+      </div>
+    </div>
+
+    <div class="olym-card-body">
+      <div class="olym-subj-tag" style="color: {{ m.color }}">{{ m.subject }}</div>
+      <h3 class="olym-card-title">{{ m.title }}</h3>
+      <p class="olym-card-desc">{{ m.desc }}</p>
+    </div>
+
+    <div class="olym-card-footer">
+      {% if m.has_answer %}
+      <span class="olym-has-answer">✓ Хариулттай</span>
+      {% endif %}
+      <div class="olym-card-actions">
+        {% if m.file_url %}
+        <a href="{{ m.file_url }}" target="_blank" class="btn btn-sm btn-primary olym-btn">
+          ⬇ Татах
+        </a>
+        {% endif %}
+        {% if m.answer_url %}
+        <a href="{{ m.answer_url }}" target="_blank" class="btn btn-sm btn-outline olym-btn">
+          📋 Хариулт
+        </a>
+        {% endif %}
+        {% if not m.file_url and not m.answer_url %}
+        <span class="olym-soon">Удахгүй нэмэгдэнэ</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Empty state -->
+<div class="olym-empty" id="olym-empty" style="display:none">
+  <div class="empty-icon">🔍</div>
+  <p>Таарах материал олдсонгүй</p>
+  <button class="btn btn-outline" onclick="resetFilters()">Шүүлтүүр цэвэрлэх</button>
+</div>
+
+<!-- ── Admin нэмэх товч ── -->
+{% if session.get('admin') %}
+<div class="olym-admin-bar">
+  <a href="/admin/olympiad/add" class="btn btn-primary">➕ Материал нэмэх</a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentSubject = 'all';
+
+function filterSubject(subj, el) {
+  currentSubject = subj;
+  document.querySelectorAll('.osub-tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  const year    = document.getElementById('filter-year').value;
+  const level   = document.getElementById('filter-level').value;
+  const search  = document.getElementById('olym-search').value.toLowerCase();
+  const cards   = document.querySelectorAll('.olym-card');
+
+  let visible = 0;
+  cards.forEach(card => {
+    const matchSubj   = currentSubject === 'all' || card.dataset.subject === currentSubject;
+    const matchYear   = year === 'all'  || card.dataset.year  === year;
+    const matchLevel  = level === 'all' || card.dataset.level === level;
+    const matchSearch = !search || card.dataset.title.includes(search)
+                                || card.dataset.subject.toLowerCase().includes(search);
+    const show = matchSubj && matchYear && matchLevel && matchSearch;
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  document.getElementById('stat-total').textContent = visible;
+  document.getElementById('olym-empty').style.display = visible === 0 ? 'flex' : 'none';
+  document.getElementById('olym-grid').style.display  = visible === 0 ? 'none'  : 'grid';
+}
+
+function resetFilters() {
+  currentSubject = 'all';
+  document.getElementById('filter-year').value  = 'all';
+  document.getElementById('filter-level').value = 'all';
+  document.getElementById('olym-search').value  = '';
+  document.querySelectorAll('.osub-tab').forEach((b,i) => b.classList.toggle('active', i===0));
+  applyFilters();
+}
+</script>
+{% endblock %}
