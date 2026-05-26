@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Интерактив даалгавар — Орхонтуул ЕБС{% endblock %}
+
+{% block content %}
+
+<div class="page-header inter-header">
+  <div class="inter-header-icon">⚡</div>
+  <div>
+    <h1>Интерактив <span class="accent">Даалгавар</span></h1>
+    <p>Дэлхийн шилдэг интерактив боловсролын платформууд — хичээл тус бүрээр</p>
+  </div>
+</div>
+
+<!-- ── Категори tab ── -->
+<div class="inter-cats" id="inter-cats">
+  <button class="icat-btn active" data-cat="all" onclick="filterCat('all', this)">⚡ Бүгд</button>
+  {% for cat in categories %}
+  <button class="icat-btn" data-cat="{{ cat.id }}" onclick="filterCat('{{ cat.id }}', this)"
+          style="--cat-color: {{ cat.color }}">
+    {{ cat.icon }} {{ cat.name }}
+  </button>
+  {% endfor %}
+</div>
+
+<!-- ── Хайх ── -->
+<div class="inter-search-row">
+  <input type="text" id="inter-search" class="inter-search-input"
+         placeholder="🔍 Платформ, хичээл, чиглэл хайх..."
+         oninput="filterSites()">
+  <div class="inter-count">
+    <span id="inter-visible-count">{{ sites|length }}</span> платформ
+  </div>
+</div>
+
+<!-- ── Онцлох платформ ── -->
+{% set featured = sites | selectattr('featured') | list %}
+{% if featured %}
+<div class="inter-section">
+  <h2 class="inter-section-title">⭐ Онцлох платформ</h2>
+  <div class="inter-featured-grid">
+    {% for s in featured %}
+    <a href="{{ s.url }}" target="_blank" rel="noopener"
+       class="inter-featured-card site-card"
+       data-cat="{{ s.category }}"
+       data-tags="{{ s.tags | join(' ') | lower }}"
+       data-title="{{ s.name | lower }}"
+       style="--site-color: {{ s.color }}">
+      <div class="ifc-top">
+        <div class="ifc-logo">{{ s.icon }}</div>
+        <div class="ifc-meta">
+          <div class="ifc-badges">
+            {% for tag in s.subjects[:3] %}
+            <span class="ifc-subject">{{ tag }}</span>
+            {% endfor %}
+          </div>
+          {% if s.free %}
+          <span class="ifc-free">✓ Үнэгүй</span>
+          {% else %}
+          <span class="ifc-paid">💳 Төлбөртэй</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="ifc-name">{{ s.name }}</div>
+      <div class="ifc-desc">{{ s.desc }}</div>
+      <div class="ifc-footer">
+        <span class="ifc-lang">{{ s.lang }}</span>
+        <span class="ifc-link">Орох →</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Бүх платформ (категориор бүлэглэсэн) ── -->
+{% for cat in categories %}
+{% set cat_sites = sites | selectattr('category', 'equalto', cat.id) | list %}
+{% if cat_sites %}
+<div class="inter-section cat-section" data-cat="{{ cat.id }}">
+  <h2 class="inter-section-title" style="color: {{ cat.color }}">
+    {{ cat.icon }} {{ cat.name }}
+    <span class="cat-count">{{ cat_sites|length }}</span>
+  </h2>
+  <div class="inter-sites-grid">
+    {% for s in cat_sites %}
+    <a href="{{ s.url }}" target="_blank" rel="noopener"
+       class="inter-site-card site-card"
+       data-cat="{{ s.category }}"
+       data-tags="{{ s.tags | join(' ') | lower }}"
+       data-title="{{ s.name | lower }}"
+       style="--site-color: {{ s.color }}">
+      <div class="isc-left">
+        <div class="isc-icon">{{ s.icon }}</div>
+      </div>
+      <div class="isc-body">
+        <div class="isc-top">
+          <span class="isc-name">{{ s.name }}</span>
+          {% if s.free %}
+          <span class="ifc-free isc-free">✓ Үнэгүй</span>
+          {% endif %}
+        </div>
+        <div class="isc-desc">{{ s.desc }}</div>
+        <div class="isc-tags">
+          {% for subj in s.subjects %}
+          <span class="isc-tag">{{ subj }}</span>
+          {% endfor %}
+          <span class="isc-lang-tag">{{ s.lang }}</span>
+        </div>
+      </div>
+      <div class="isc-arrow">→</div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- Empty -->
+<div class="inter-empty" id="inter-empty" style="display:none">
+  <div>🔍</div>
+  <p>Таарах платформ олдсонгүй</p>
+  <button class="btn btn-outline" onclick="resetInterFilter()">Шүүлтүүр цэвэрлэх</button>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentCat = 'all';
+
+function filterCat(cat, el) {
+  currentCat = cat;
+  document.querySelectorAll('.icat-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+
+  // Section харуулах/нуух
+  document.querySelectorAll('.cat-section').forEach(sec => {
+    sec.style.display = (cat === 'all' || sec.dataset.cat === cat) ? '' : 'none';
+  });
+
+  filterSites();
+}
+
+function filterSites() {
+  const search  = document.getElementById('inter-search').value.toLowerCase();
+  const cards   = document.querySelectorAll('.site-card');
+  let visible   = 0;
+
+  cards.forEach(card => {
+    const matchCat    = currentCat === 'all' || card.dataset.cat === currentCat;
+    const matchSearch = !search
+      || card.dataset.title.includes(search)
+      || card.dataset.tags.includes(search);
+    const show = matchCat && matchSearch;
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  document.getElementById('inter-visible-count').textContent = visible;
+  document.getElementById('inter-empty').style.display = visible === 0 ? 'flex' : 'none';
+}
+
+function resetInterFilter() {
+  currentCat = 'all';
+  document.getElementById('inter-search').value = '';
+  document.querySelectorAll('.icat-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.querySelectorAll('.cat-section').forEach(s => s.style.display = '');
+  filterSites();
+}
+</script>
+{% endblock %}
