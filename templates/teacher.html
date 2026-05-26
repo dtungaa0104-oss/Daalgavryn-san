@@ -78,7 +78,7 @@
   <div class="t-tab active" onclick="showTab('plan')">📅 Жилийн төлөвлөгөө</div>
   <div class="t-tab" onclick="showTab('lesson')">📖 Ээлжит хичээл</div>
   <div class="t-tab" onclick="showTab('game')">🎮 Алжаал тайлах тоглоом</div>
-  <div class="t-tab" onclick="showTab('quiz')">📝 Сорил</div>
+  <div class="t-tab" onclick="showTab('quiz')">👨‍👧 Анги удирдсан багш</div>
 </div>
 
 <!-- ══ TAB 1: ЖИЛИЙН ТӨЛӨВЛӨГӨӨ ══ -->
@@ -258,42 +258,110 @@
 
 <!-- ══ TAB 4: СОРИЛ ══ -->
 <div class="t-panel" id="panel-quiz">
-  <div class="tool-wrap">
-    <div class="tool-card">
-      <h3>📝 Хурдан сорил үүсгэгч</h3>
-      <div class="form-grid">
-        <div class="field-group">
-          <label>Анги</label>
-          <select id="qz-grade">
-            {% for g in range(1,13) %}<option value="{{ g }}" {% if g==9 %}selected{% endif %}>{{ g }}-р анги</option>{% endfor %}
-          </select>
-        </div>
-        <div class="field-group">
-          <label>Хичээл</label>
-          <select id="qz-subject">
-            {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
-          </select>
-        </div>
-        <div class="field-group">
-          <label>Даалгаврын тоо</label>
-          <select id="qz-count">
-            <option value="5">5</option>
-            <option value="10" selected>10</option>
-            <option value="15">15</option>
-            <option value="20">20</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label>Сэдэв</label>
-          <input type="text" id="qz-topic" placeholder="Хамрах сэдэв...">
-        </div>
-      </div>
-      <div style="display:flex;gap:.6rem;margin-top:1rem;flex-wrap:wrap">
-        <button class="btn btn-primary" id="qz-btn" onclick="genQuiz()">✦ Сорил үүсгэх</button>
-        <button class="btn btn-outline" id="qz-print" style="display:none" onclick="printOut('qz-out','Сорил')">🖨 Хэвлэх</button>
-        <button class="btn btn-outline" id="qz-dl" style="display:none" onclick="dlOut('qz-out','quiz')">⬇ Татах</button>
-      </div>
-      <div class="ai-out" id="qz-out"></div>
+  <style>
+  .ct-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; padding:24px 32px; }
+  .ct-card  {
+    background:#fff; border-radius:14px; border:2px solid var(--green-100);
+    padding:18px; cursor:pointer; transition:all .2s; display:flex; flex-direction:column; gap:10px;
+  }
+  .ct-card:hover { border-color:var(--ct-color,var(--teal-600)); transform:translateY(-2px); box-shadow:0 6px 20px rgba(15,110,86,.12); }
+  .ct-card::before { content:''; display:block; width:100%; height:3px; border-radius:3px; background:var(--ct-color,var(--teal-600)); margin-bottom:2px; }
+  .ct-icon  { font-size:1.8rem; }
+  .ct-title { font-size:.95rem; font-weight:800; color:var(--text-dark); }
+  .ct-desc  { font-size:.8rem; color:var(--text-muted); line-height:1.5; flex:1; }
+  .ct-btn   { font-size:.8rem; font-weight:700; color:var(--ct-color,var(--teal-600)); }
+
+  .ct-modal {
+    position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:2000;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .ct-modal-box {
+    background:#fff; border-radius:16px; width:100%; max-width:640px;
+    max-height:90vh; overflow-y:auto; padding:24px; position:relative;
+  }
+  .ct-modal-close {
+    position:absolute; top:14px; right:16px;
+    background:var(--green-50); border:1px solid var(--green-100);
+    border-radius:8px; padding:4px 10px; cursor:pointer; font-size:.85rem;
+  }
+  .ct-modal h2 { font-size:1.1rem; font-weight:800; margin-bottom:14px; color:var(--text-dark); }
+
+  .survey-form  { display:flex; flex-direction:column; gap:10px; }
+  .survey-q     { background:var(--green-50); border-radius:8px; padding:12px; }
+  .survey-q p   { font-size:.88rem; font-weight:600; color:var(--text-dark); margin-bottom:8px; }
+  .survey-opts  { display:flex; gap:8px; flex-wrap:wrap; }
+  .survey-opt   {
+    padding:5px 14px; border-radius:20px; border:1.5px solid var(--green-100);
+    background:#fff; font-size:.8rem; cursor:pointer; transition:all .15s;
+  }
+  .survey-opt.selected { background:var(--teal-600); color:#fff; border-color:var(--teal-600); }
+  .survey-result { background:var(--green-50); border:1.5px solid var(--green-100); border-radius:10px; padding:14px; margin-top:10px; font-size:.88rem; line-height:1.7; display:none; }
+
+  .qr-box { text-align:center; padding:10px; }
+  .qr-box canvas { border:3px solid var(--green-100); border-radius:8px; }
+  .portfolio-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+  .port-item { background:var(--green-50); border-radius:8px; padding:10px; text-align:center; cursor:pointer; border:1.5px dashed var(--green-100); transition:all .15s; }
+  .port-item:hover { border-color:var(--teal-600); background:var(--teal-50); }
+  .port-item div { font-size:1.4rem; margin-bottom:4px; }
+  .port-item span { font-size:.75rem; color:var(--text-mid); font-weight:600; }
+  </style>
+
+  <div style="background:var(--teal-600);padding:16px 32px;border-bottom:2px solid var(--green-200)">
+    <h2 style="color:#fff;font-size:1rem;font-weight:800;margin:0">👨‍👧 Анги удирдсан багшид зориулсан хэрэгслүүд</h2>
+    <p style="color:rgba(255,255,255,.75);font-size:.8rem;margin:4px 0 0">Сурагчийн хөгжил, судалгаа, AI зөвлөгөө — нэг дороос</p>
+  </div>
+
+  <div class="ct-grid">
+
+    <div class="ct-card" style="--ct-color:#E53935" onclick="openCT('temperament')">
+      <span class="ct-icon">🧠</span>
+      <div class="ct-title">Темпераментийн судалгаа</div>
+      <div class="ct-desc">Сурагчийн зан чанарыг тодорхойлох — Сангвиник, Флегматик, Холерик, Меланхолик. Хариулт дараа AI дүн шинжилгээ хийнэ.</div>
+      <span class="ct-btn">Судалгаа эхлэх →</span>
+    </div>
+
+    <div class="ct-card" style="--ct-color:#7B1FA2" onclick="openCT('career')">
+      <span class="ct-icon">🎯</span>
+      <div class="ct-title">Мэргэжил сонголтын тест</div>
+      <div class="ct-desc">Holland RIASEC онолд суурилсан тест. Сурагчийн сонирхол, чадварт тохирсон мэргэжлийг AI санал болгоно.</div>
+      <span class="ct-btn">Тест эхлэх →</span>
+    </div>
+
+    <div class="ct-card" style="--ct-color:#1565C0" onclick="openCT('parent')">
+      <span class="ct-icon">👨‍👩‍👧</span>
+      <div class="ct-title">Асран хамгаалагч танд</div>
+      <div class="ct-desc">Эцэг эхэд зориулсан мэдэгдэл, зөвлөмж. Сурагчийн хэрэгцээнд нийцсэн захидал AI-аар бэлддэг.</div>
+      <span class="ct-btn">Мэдэгдэл бичих →</span>
+    </div>
+
+    <div class="ct-card" style="--ct-color:#00897B" onclick="openCT('psychology')">
+      <span class="ct-icon">💚</span>
+      <div class="ct-title">AI Сэтгэлзүйн зөвлөгөө</div>
+      <div class="ct-desc">Сурагчийн сэтгэл санааны байдал тодорхойлж, анги удирдсан багшид практик зөвлөмж өгнө.</div>
+      <span class="ct-btn">Зөвлөгөө авах →</span>
+    </div>
+
+    <div class="ct-card" style="--ct-color:#F57C00" onclick="openCT('qr')">
+      <span class="ct-icon">📱</span>
+      <div class="ct-title">QR кодоор судалгаа</div>
+      <div class="ct-desc">Судалгааны линкийг QR код болгон хэвлэнэ. Сурагчид утсаараа скан хийж бөглөнө.</div>
+      <span class="ct-btn">QR код үүсгэх →</span>
+    </div>
+
+    <div class="ct-card" style="--ct-color:#2E7D32" onclick="openCT('portfolio')">
+      <span class="ct-icon">📁</span>
+      <div class="ct-title">Сурагчийн хөгжлийн портфолио</div>
+      <div class="ct-desc">Сурагч бүрийн амжилт, оролцоо, хөгжлийг бүртгэж хадгалах. AI-аар тайлан бэлддэг.</div>
+      <span class="ct-btn">Портфолио үүсгэх →</span>
+    </div>
+
+  </div>
+
+  <!-- Modal -->
+  <div class="ct-modal" id="ct-modal" style="display:none" onclick="if(event.target===this)closeCT()">
+    <div class="ct-modal-box">
+      <button class="ct-modal-close" onclick="closeCT()">✕ Хаах</button>
+      <div id="ct-modal-content"></div>
     </div>
   </div>
 </div>
@@ -350,6 +418,12 @@ async function callAI(prompt, outId, btnId, actionsId) {
       })
     });
 
+    if (!res.ok) {
+      const txt = await res.text();
+      btn.disabled = false; btn.textContent = origLabel;
+      out.textContent = '❌ HTTP ' + res.status + ': ' + txt.slice(0,150);
+      return;
+    }
     const data = await res.json();
     btn.disabled = false;
     btn.textContent = origLabel;
@@ -358,15 +432,20 @@ async function callAI(prompt, outId, btnId, actionsId) {
       out.textContent = '❌ ' + data.error;
       return;
     }
-    out.textContent = data.reply || data.reply || data.result;
+    out.textContent = data.reply || data.result || '⚠️ Хариулт хоосон';
     if (actionsId) {
       const actEl = document.getElementById(actionsId);
       if (actEl) actEl.style.display = 'flex';
-    }
-  } catch(e) {
+    }  } catch(e) {
     btn.disabled = false;
     btn.textContent = origLabel;
-    out.textContent = '❌ Холболтын алдаа. Интернет болон API тохиргоогоо шалгана уу.';
+    clearTimeout(timeoutId);
+    if (e && e.name === 'AbortError') {
+      out.textContent = '⏱ Хугацаа дуусав. Render сайт унтарсан байж болно — 1 минут хүлээгээд дахин оролдоно уу.';
+    } else {
+      out.textContent = '❌ Алдаа: ' + (e && e.message ? e.message : String(e));
+    }
+    console.error('callAI catch:', e);
   }
 }
 
@@ -623,16 +702,318 @@ function renderQuizGame(cont, questions) {
   show();
 }
 
-async function genQuiz() {
-  const g=document.getElementById('qz-grade').value;
-  const s=document.getElementById('qz-subject').value;
-  const n=document.getElementById('qz-count').value;
-  const t=document.getElementById('qz-topic').value;
-  document.getElementById('qz-btn').setAttribute('data-label','✦ Сорил үүсгэх');
-  await callAI(`${g}-р ангийн ${s} хичээлийн ${t?t+' сэдвийн':''} ${n} асуулттай сорил.
-Хариулттай, оноотой дэлгэрэнгүй сорил гарга. Монгол хэлээр.`, 'qz-out','qz-btn', null);
-  document.getElementById('qz-print').style.display='inline-flex';
-  document.getElementById('qz-dl').style.display='inline-flex';
+// ══ АНГИ УДИРДСАН БАГШ функцүүд ══════════════════════
+
+const CT_CONTENT = {
+
+  temperament: `
+    <h2>🧠 Темпераментийн судалгаа</h2>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px">Сурагчдад өгөх судалгаа — AI дүн шинжилгээ хийнэ</p>
+    <div class="field-group" style="margin-bottom:10px">
+      <label>Сурагчийн нэр (заавал биш)</label>
+      <input type="text" id="ct-name" placeholder="Жишээ: Болд">
+    </div>
+    <div class="field-group" style="margin-bottom:14px">
+      <label>Анги</label>
+      <select id="ct-grade-t">
+        ${Array.from({length:12},(_,i)=>`<option value="${i+1}"${i+8?' selected':''}">${i+1}-р анги</option>`).join('')}
+      </select>
+    </div>
+    <div class="survey-form" id="temp-form">
+      ${[
+        {q:'1. Шинэ нөхдүүдтэй хялбархан ойртдог уу?', opts:['Тийм','Заримдаа','Үгүй']},
+        {q:'2. Ярих дуртай уу, чимээгүй байх дуртай уу?', opts:['Ярих','Дунд зэрэг','Чимээгүй']},
+        {q:'3. Уурлахад хурдан уу?', opts:['Тийм','Заримдаа','Үгүй']},
+        {q:'4. Нэг зүйл удаан сонирхдог уу?', opts:['Тийм','Дунд зэрэг','Үгүй']},
+        {q:'5. Шинэ орчинд хурдан дасдаг уу?', opts:['Тийм','Заримдаа','Удаан']},
+        {q:'6. Гунигтай болоход удаан уу?', opts:['Удаан','Дунд','Хурдан']},
+      ].map((item,i)=>`
+        <div class="survey-q">
+          <p>${item.q}</p>
+          <div class="survey-opts">
+            ${item.opts.map(o=>`<button class="survey-opt" onclick="selectOpt(this,${i})">${o}</button>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>
+    <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="analyzeTempera()">🤖 AI дүн шинжилгээ хийх</button>
+    <div class="survey-result ai-out" id="temp-result"></div>`,
+
+  career: `
+    <h2>🎯 Мэргэжил сонголтын тест</h2>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px">Holland RIASEC онол — AI мэргэжил санал болгоно</p>
+    <div class="field-group" style="margin-bottom:10px">
+      <label>Сурагчийн нэр</label>
+      <input type="text" id="career-name" placeholder="Нэр оруулна уу">
+    </div>
+    <div class="field-group" style="margin-bottom:14px">
+      <label>Анги</label>
+      <select id="career-grade">
+        ${Array.from({length:12},(_,i)=>`<option value="${i+1}"${i+8?' selected':''}">${i+1}-р анги</option>`).join('')}
+      </select>
+    </div>
+    <div class="survey-form">
+      ${[
+        {q:'1. Техник, механизм, машин ажиллуулах дуртай?', opts:['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй']},
+        {q:'2. Судалгаа, дүн шинжилгээ хийх дуртай?', opts:['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй']},
+        {q:'3. Зурах, бүтээх, зохиох дуртай?', opts:['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй']},
+        {q:'4. Хүмүүст туслах, заах дуртай?', opts:['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй']},
+        {q:'5. Худалдаа, бизнес, удирдлага хийх дуртай?', opts:['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй']},
+        {q:'6. Тооцоо, бүртгэл, систем ажиллуулах дуртай?', opts:['Маш дуртай','Дуртай','Дунд зэрэг','Дургүй']},
+      ].map((item,i)=>`
+        <div class="survey-q">
+          <p>${item.q}</p>
+          <div class="survey-opts">
+            ${item.opts.map(o=>`<button class="survey-opt" onclick="selectOpt(this,${i+10})">${o}</button>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>
+    <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="analyzeCareer()">🤖 AI мэргэжил санал болгох</button>
+    <div class="survey-result ai-out" id="career-result"></div>`,
+
+  parent: `
+    <h2>👨‍👩‍👧 Асран хамгаалагч танд</h2>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px">AI-аар эцэг эхэд мэдэгдэл, зөвлөмж бичнэ</p>
+    <div class="form-grid">
+      <div class="field-group">
+        <label>Сурагчийн нэр</label>
+        <input type="text" id="par-student" placeholder="Нэр">
+      </div>
+      <div class="field-group">
+        <label>Анги</label>
+        <select id="par-grade">
+          ${Array.from({length:12},(_,i)=>`<option value="${i+1}">${i+1}-р анги</option>`).join('')}
+        </select>
+      </div>
+      <div class="field-group" style="grid-column:1/-1">
+        <label>Мэдэгдлийн төрөл</label>
+        <select id="par-type">
+          <option>Хүүхдийн амжилт, магтаал</option>
+          <option>Анхаарал хандуулах зүйл</option>
+          <option>Ирц, хоцролтын тухай</option>
+          <option>Эцэг эхтэй уулзах урилга</option>
+          <option>Гэрийн даалгавар биелүүлэх хүсэлт</option>
+          <option>Сурлагын явцын тухай</option>
+        </select>
+      </div>
+      <div class="field-group" style="grid-column:1/-1">
+        <label>Нэмэлт тэмдэглэл</label>
+        <input type="text" id="par-note" placeholder="Тусгайлан дурдах зүйл...">
+      </div>
+    </div>
+    <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="genParentMsg()">✦ Мэдэгдэл бичих</button>
+    <div style="display:flex;gap:.5rem;margin-top:.5rem;display:none" id="par-actions">
+      <button class="btn btn-sm btn-outline" onclick="printOut('par-result','Эцэг эхэд мэдэгдэл')">🖨 Хэвлэх</button>
+      <button class="btn btn-sm btn-outline" onclick="dlOut('par-result','parent_msg')">⬇ Татах</button>
+    </div>
+    <div class="ai-out" id="par-result"></div>`,
+
+  psychology: `
+    <h2>💚 AI Сэтгэлзүйн зөвлөгөө</h2>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px">Анги удирдсан багшид практик зөвлөмж</p>
+    <div class="form-grid">
+      <div class="field-group">
+        <label>Анги</label>
+        <select id="psy-grade">
+          ${Array.from({length:12},(_,i)=>`<option value="${i+1}"${i+8?' selected':''}">${i+1}-р анги</option>`).join('')}
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Нөхцөл байдал</label>
+        <select id="psy-topic">
+          <option>Сурагч сургуульд ирэхийг хүсэхгүй байна</option>
+          <option>Сурагчид хоорондоо зөрчилдөж байна</option>
+          <option>Сурагч гунигтай, дотогшоо болсон байна</option>
+          <option>Сурагч хичээлдээ анхаарал тавьдаггүй байна</option>
+          <option>Бүлгийн уур амьсгал муу байна</option>
+          <option>Сурагч гэртээ хүчирхийлэлд өртсөн байж болзошгүй</option>
+          <option>Сурагч найзгүй ганцаардаж байна</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-group" style="margin-top:.5rem">
+      <label>Нэмэлт тайлбар</label>
+      <textarea id="psy-detail" placeholder="Нөхцөл байдлыг дэлгэрэнгүй тайлбарлана уу..." style="min-height:70px;width:100%;padding:8px;border:1.5px solid var(--green-100);border-radius:8px;font-family:inherit;font-size:.85rem;background:var(--green-50);outline:none"></textarea>
+    </div>
+    <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="genPsyAdvice()">💚 AI зөвлөгөө авах</button>
+    <div style="display:none" id="psy-actions">
+      <button class="btn btn-sm btn-outline" style="margin-top:.5rem" onclick="printOut('psy-result','Сэтгэлзүйн зөвлөгөө')">🖨 Хэвлэх</button>
+    </div>
+    <div class="ai-out" id="psy-result"></div>`,
+
+  qr: `
+    <h2>📱 QR кодоор судалгаа бөглүүлэх</h2>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px">Линкийг QR код болгон хэвлэж сурагчдад өгнө</p>
+    <div class="field-group" style="margin-bottom:12px">
+      <label>Судалгааны линк эсвэл URL</label>
+      <input type="text" id="qr-url" placeholder="https://forms.google.com/..." style="width:100%">
+    </div>
+    <div class="field-group" style="margin-bottom:12px">
+      <label>Судалгааны гарчиг</label>
+      <input type="text" id="qr-title" placeholder="Жишээ: Темпераментийн судалгаа — 9А анги">
+    </div>
+    <button class="btn btn-primary" onclick="genQR()" style="margin-bottom:14px">📱 QR код үүсгэх</button>
+    <div class="qr-box" id="qr-result" style="display:none">
+      <canvas id="qr-canvas"></canvas>
+      <p id="qr-label" style="font-size:.85rem;margin-top:8px;color:var(--text-mid);font-weight:600"></p>
+      <button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="printQR()">🖨 QR код хэвлэх</button>
+    </div>
+    <p style="font-size:.75rem;color:var(--text-muted);margin-top:12px">💡 Google Forms, Microsoft Forms болон бусад судалгааны линкийг ашиглана</p>`,
+
+  portfolio: `
+    <h2>📁 Сурагчийн хөгжлийн портфолио</h2>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px">Сурагч бүрийн хөгжлийг бүртгэж AI тайлан гаргана</p>
+    <div class="form-grid">
+      <div class="field-group">
+        <label>Сурагчийн нэр</label>
+        <input type="text" id="port-name" placeholder="Нэр">
+      </div>
+      <div class="field-group">
+        <label>Анги</label>
+        <select id="port-grade">
+          ${Array.from({length:12},(_,i)=>`<option value="${i+1}">${i+1}-р анги</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <p style="font-size:.8rem;font-weight:700;color:var(--text-mid);margin:12px 0 8px">Бүртгэх мэдээлэл сонгоно уу:</p>
+    <div class="portfolio-grid">
+      <div class="port-item" onclick="openPortSection('academic')"><div>📚</div><span>Сурлагын амжилт</span></div>
+      <div class="port-item" onclick="openPortSection('activity')"><div>🏆</div><span>Нэмэлт үйл ажиллагаа</span></div>
+      <div class="port-item" onclick="openPortSection('behavior')"><div>😊</div><span>Зан төлөв</span></div>
+      <div class="port-item" onclick="openPortSection('goal')"><div>🎯</div><span>Зорилго & Төлөвлөгөө</span></div>
+    </div>
+    <div id="port-section" style="margin-top:12px"></div>
+    <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="genPortReport()">🤖 AI тайлан гаргах</button>
+    <div style="display:none" id="port-actions">
+      <button class="btn btn-sm btn-outline" style="margin-top:.5rem" onclick="printOut('port-result','Портфолио тайлан')">🖨 Хэвлэх</button>
+    </div>
+    <div class="ai-out" id="port-result"></div>`
+};
+
+const surveyAnswers = {};
+
+function openCT(type) {
+  const modal = document.getElementById('ct-modal');
+  const content = document.getElementById('ct-modal-content');
+  content.innerHTML = CT_CONTENT[type] || '<p>Тун удахгүй...</p>';
+  modal.style.display = 'flex';
+}
+function closeCT() {
+  document.getElementById('ct-modal').style.display = 'none';
+}
+function selectOpt(btn, qIdx) {
+  const parent = btn.closest('.survey-opts');
+  parent.querySelectorAll('.survey-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  surveyAnswers[qIdx] = btn.textContent;
+}
+
+async function analyzeTempera() {
+  const name  = document.getElementById('ct-name')?.value || 'Сурагч';
+  const grade = document.getElementById('ct-grade-t')?.value || '9';
+  const ans   = Object.entries(surveyAnswers).filter(([k])=>k<10).map(([k,v])=>`${parseInt(k)+1}-р асуулт: ${v}`).join(', ');
+  const out   = document.getElementById('temp-result');
+  out.className = 'survey-result ai-out show'; out.textContent = '⏳ AI дүн шинжилгээ хийж байна...';
+  await callAI(`${grade}-р ангийн "${name}" сурагчийн темперамент тодорхойл.
+Судалгааны хариулт: ${ans||'Хариулт ороогүй — ерөнхий дүн шинжилгээ хий'}.
+Үр дүн: 1) Темперамент төрөл (Сангвиник/Флегматик/Холерик/Меланхолик), 2) Үндсэн шинж чанар, 3) Сурлагад нөлөөлөл, 4) Багшид практик зөвлөмж. Монгол хэлээр товч бичнэ.`, 'temp-result', 'ct-modal-content', null);
+}
+
+async function analyzeCareer() {
+  const name  = document.getElementById('career-name')?.value || 'Сурагч';
+  const grade = document.getElementById('career-grade')?.value || '9';
+  const ans   = Object.entries(surveyAnswers).filter(([k])=>k>=10).map(([k,v])=>`${parseInt(k)-9}-р асуулт: ${v}`).join(', ');
+  const out   = document.getElementById('career-result');
+  out.className = 'survey-result ai-out show'; out.textContent = '⏳ AI мэргэжил зөвлөмж бэлдэж байна...';
+  await callAI(`${grade}-р ангийн "${name}" сурагчийн Holland RIASEC тестийн үр дүнд мэргэжил зөвлө.
+Сонирхлын судалгаа: ${ans||'Хариулт ороогүй — ерөнхий зөвлөмж өг'}.
+Монгол боловсролын системд нийцүүлэн: 1) Тохирох мэргэжлийн чиглэл (3-5), 2) Оруулах их сургуулийн мэргэжлүүд, 3) Хөгжүүлэх чадварууд. Монгол хэлээр.`, 'career-result', 'ct-modal-content', null);
+}
+
+async function genParentMsg() {
+  const student = document.getElementById('par-student')?.value || 'Сурагч';
+  const grade   = document.getElementById('par-grade')?.value || '9';
+  const type    = document.getElementById('par-type')?.value || '';
+  const note    = document.getElementById('par-note')?.value || '';
+  document.getElementById('par-actions').style.display = 'flex';
+  await callAI(`${grade}-р ангийн "${student}" сурагчийн эцэг эхэд "${type}" сэдвээр албан захидал бич.
+${note?'Нэмэлт: '+note:''}
+Монгол хэлэнд зориулсан эелдэг, хүндэтгэлтэй, 150-200 үгтэй захидал. Багшийн нэр орхино.`, 'par-result', 'ct-modal-content', null);
+}
+
+async function genPsyAdvice() {
+  const grade  = document.getElementById('psy-grade')?.value || '9';
+  const topic  = document.getElementById('psy-topic')?.value || '';
+  const detail = document.getElementById('psy-detail')?.value || '';
+  document.getElementById('psy-actions').style.display = 'block';
+  await callAI(`Анги удирдсан багшид зориулсан сэтгэлзүйн зөвлөмж өг.
+${grade}-р анги. Нөхцөл байдал: ${topic}. ${detail?'Дэлгэрэнгүй: '+detail:''}
+1) Нөхцөл байдлын шинжилгээ, 2) Тэр өдрөө яаж ойртох, 3) Эцэг эхтэй яриа, 4) Мэргэжлийн туслалцаа хэзээ хэрэгтэй. Монгол хэлээр практик, дэлгэрэнгүй.`, 'psy-result', 'ct-modal-content', null);
+}
+
+function genQR() {
+  const url   = document.getElementById('qr-url')?.value;
+  const title = document.getElementById('qr-title')?.value || 'Судалгаа';
+  if (!url) { alert('Линк оруулна уу'); return; }
+  const box = document.getElementById('qr-result');
+  box.style.display = 'block';
+  document.getElementById('qr-label').textContent = title;
+  // QR.js ашиглахгүй — Google Charts API
+  const canvas = document.getElementById('qr-canvas');
+  const img = new Image();
+  img.onload = function() {
+    const ctx = canvas.getContext('2d');
+    canvas.width = img.width; canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+  };
+  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+  canvas.style.width = '200px'; canvas.style.height = '200px';
+}
+
+function printQR() {
+  const canvas = document.getElementById('qr-canvas');
+  const title  = document.getElementById('qr-label')?.textContent || 'Судалгаа';
+  const win = window.open('','_blank');
+  win.document.write(`<html><body style="text-align:center;font-family:sans-serif;padding:30px">
+    <h2>${title}</h2>
+    <img src="${canvas.toDataURL()}" style="width:250px;height:250px">
+    <p style="margin-top:16px;font-size:13px">Утсаараа скан хийж судалгааг бөглөнө үү</p>
+    <button onclick="window.print()" style="margin-top:16px;padding:8px 20px">🖨 Хэвлэх</button>
+  </body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(), 500);
+}
+
+const portData = {};
+function openPortSection(type) {
+  const sections = {
+    academic: {title:'📚 Сурлагын амжилт', fields:['Улирлын дүн (дундаж)','Шилдэг хичээл','Сайжруулах хичээл','Тэмцээн, олимпиадын үр дүн']},
+    activity: {title:'🏆 Нэмэлт үйл ажиллагаа', fields:['Оролцсон тэмцээн, арга хэмжээ','Авсан шагнал','Дугуйлан, секц']},
+    behavior: {title:'😊 Зан төлөв', fields:['Ирц (хувиар)','Найз нөхдийн харилцаа','Хичээлийн идэвх']},
+    goal: {title:'🎯 Зорилго & Төлөвлөгөө', fields:['Энэ улирлын зорилго','Ирээдүйн мэргэжлийн хүсэл','Дэмжлэг хэрэгтэй зүйл']}
+  };
+  const s = sections[type];
+  if (!s) return;
+  const div = document.getElementById('port-section');
+  div.innerHTML = `<div class="tool-card" style="margin-top:0">
+    <h4 style="font-weight:800;margin-bottom:10px">${s.title}</h4>
+    ${s.fields.map(f=>`<div class="field-group" style="margin-bottom:8px">
+      <label>${f}</label>
+      <input type="text" placeholder="${f}..." oninput="portData['${type}_${f}']=this.value">
+    </div>`).join('')}
+  </div>`;
+  portData['_type'] = type;
+}
+
+async function genPortReport() {
+  const name  = document.getElementById('port-name')?.value || 'Сурагч';
+  const grade = document.getElementById('port-grade')?.value || '9';
+  const info  = Object.entries(portData).filter(([k])=>!k.startsWith('_')).map(([k,v])=>`${k.split('_').slice(1).join(' ')}: ${v}`).join('
+');
+  document.getElementById('port-actions').style.display = 'block';
+  await callAI(`${grade}-р ангийн "${name}" сурагчийн хөгжлийн портфолио тайлан бич.
+Мэдээлэл:
+${info||'Мэдээлэл оруулаагүй — ерөнхий загвар гарга'}
+Дэлгэрэнгүй, найрсаг, багш эцэг эхэд харуулах тайлан. Монгол хэлээр.`, 'port-result', 'ct-modal-content', null);
 }
 
 function printOut(id, title) {
