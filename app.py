@@ -365,7 +365,23 @@ def admin_import():
             if fname.endswith(".pdf"):             raw=extract_from_pdf(file_bytes)
             elif fname.endswith((".docx",".doc")): raw=extract_from_docx(file_bytes)
             elif fname.endswith(".txt"):            raw=file_bytes.decode("utf-8",errors="ignore")
-            else: return jsonify({"error":"PDF, Word (.docx), эсвэл .txt файл оруулна уу"}),400
+            elif fname.endswith((".jpg",".jpeg",".png")):
+                # Зураг файлаас текст задлах - OCR хийхгүй, AI-д шууд дамжуулна
+                import base64
+                b64 = base64.b64encode(file_bytes).decode()
+                mt = "image/jpeg" if fname.endswith((".jpg",".jpeg")) else "image/png"
+                api_key2=os.environ.get("ANTHROPIC_API_KEY","")
+                if not api_key2:
+                    return jsonify({"error":"Зураг задлахад ANTHROPIC_API_KEY шаардлагатай"}),400
+                import anthropic as _anth2
+                cl2=_anth2.Anthropic(api_key=api_key2)
+                msg2=cl2.messages.create(model="claude-sonnet-4-5",max_tokens=4000,
+                    messages=[{"role":"user","content":[
+                        {"type":"image","source":{"type":"base64","media_type":mt,"data":b64}},
+                        {"type":"text","text":"Энэ зурган дээрх бүх даалгавар, асуулт, текстийг задлан монгол хэлээр бичнэ үү. Дугаар бүхий даалгаварын жагсаалт хэлбэрээр."}
+                    ]}])
+                raw=msg2.content[0].text
+            else: return jsonify({"error":"PDF, Word (.docx), JPG, PNG эсвэл .txt файл оруулна уу"}),400
             questions=parse_raw_text(raw,grade,subject,lvl)
             if not questions:
                 return jsonify({"error":"Даалгавар илрүүлж чадсангүй."}),400
