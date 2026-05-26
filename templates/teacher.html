@@ -298,7 +298,13 @@ async function callAI(prompt, outId, btnId, actionsId) {
     });
     if (!res.ok) {
       var txt = await res.text();
-      out.innerHTML = '❌ HTTP ' + res.status + ': ' + txt.slice(0,200);
+      // JSON алдаа байвал detail харуулах
+      var errMsg = txt;
+      try {
+        var errJson = JSON.parse(txt);
+        errMsg = errJson.error || errJson.detail || txt;
+      } catch(e2) {}
+      out.innerHTML = '❌ ' + res.status + ': ' + errMsg.slice(0, 500);
       if (btn) { btn.disabled = false; btn.textContent = origLabel; } return;
     }
     var data = await res.json();
