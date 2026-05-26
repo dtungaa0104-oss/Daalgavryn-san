@@ -488,5 +488,20 @@
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script src="{{ url_for('static', filename='js/download.js') }}"></script>
 {% block scripts %}{% endblock %}
+<script>
+// Хичээлийн давхардлыг арилгах
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('select').forEach(function(sel) {
+    var seen = {};
+    Array.from(sel.options).forEach(function(opt) {
+      if (seen[opt.value]) {
+        opt.remove();
+      } else {
+        seen[opt.value] = true;
+      }
+    });
+  });
+});
+</script>
 </body>
 </html>
