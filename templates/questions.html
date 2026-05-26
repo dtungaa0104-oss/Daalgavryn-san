@@ -66,9 +66,7 @@
     <div class="filter-group">
       <label>Хичээл</label>
       <select id="f-subject">
-        {% for key, subjs in subjects.items() %}
-          {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
-        {% endfor %}
+        {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
       </select>
     </div>
     <div class="filter-group">
@@ -123,9 +121,7 @@
       <div class="field-group">
         <label>Хичээл</label>
         <select id="ai-subject">
-          {% for key, subjs in subjects.items() %}
-            {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
-          {% endfor %}
+          {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
         </select>
       </div>
       <div class="field-group">
@@ -181,16 +177,14 @@
       <div class="field-group">
         <label>Хичээл</label>
         <select id="up-subject">
-          {% for key, subjs in subjects.items() %}
-            {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
-          {% endfor %}
+          {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
         </select>
       </div>
       <div class="field-group">
-        <label>Үндсэн түвшин</label>
-        <select id="up-level">
-          {% for l in levels %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
-        </select>
+        <label>Түвшин</label>
+        <div style="padding:6px 10px;background:#E8F5E9;border:1.5px solid #A5D6A7;border-radius:6px;font-size:.82rem;color:#2E7D32;font-weight:600">
+          🤖 Автомат тодорхойлно
+        </div>
       </div>
     </div>
     <div class="mini-drop" id="mini-drop" onclick="document.getElementById('up-file').click()">
@@ -199,9 +193,16 @@
       <p style="font-size:.75rem;color:var(--text-muted)" id="up-filename">эсвэл дарж сонгоно</p>
     </div>
     <input type="file" id="up-file" accept=".pdf,.docx,.doc,.txt" style="display:none">
-    <div style="display:flex;gap:.6rem;margin-top:.8rem;align-items:center">
-      <button class="btn btn-primary btn-sm" onclick="runUpload()">⬆ Оруулах</button>
+    <div style="display:flex;gap:.6rem;margin-top:.8rem;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" id="up-btn" onclick="runUpload()">⬆ Оруулах</button>
       <button class="btn btn-outline btn-sm" onclick="togglePanel('upload')">✕ Хаах</button>
+      <span style="font-size:.75rem;color:var(--text-muted)">🔒 Зөвхөн Admin</span>
+    </div>
+    <div id="up-progress" style="display:none;margin-top:.6rem">
+      <div style="background:var(--green-100);border-radius:99px;height:8px;overflow:hidden">
+        <div id="up-progress-bar" style="height:100%;background:var(--teal-600);border-radius:99px;width:0%;transition:width .3s"></div>
+      </div>
+      <p id="up-progress-text" style="font-size:.75rem;color:var(--text-muted);margin-top:.3rem">Боловсруулж байна...</p>
     </div>
     <div id="upload-result"></div>
   </div>
@@ -268,25 +269,69 @@ function setUpFile(f) {
   drop.classList.add('has-file');
 }
 
-// ── Файл upload ──
+// ── Файл upload (Admin шалгалттай + Progress) ──
 async function runUpload() {
   if (!uploadFile) { alert('Файл сонгоно уу'); return; }
+  const btn = document.getElementById('up-btn');
+  const box = document.getElementById('upload-result');
+  const prog = document.getElementById('up-progress');
+  const bar  = document.getElementById('up-progress-bar');
+  const txt  = document.getElementById('up-progress-text');
+
+  btn.disabled = true; btn.innerHTML = '⏳ Уншиж байна...';
+  prog.style.display = 'block'; box.innerHTML = '';
+
+  // Progress simulation
+  let pct = 0;
+  const timer = setInterval(() => {
+    pct = Math.min(pct + Math.random()*8, 85);
+    bar.style.width = pct + '%';
+    txt.textContent = pct < 30 ? 'Файл уншиж байна...' :
+                      pct < 60 ? 'Даалгавар задлаж байна...' :
+                      pct < 80 ? 'DB-д хадгалж байна...' : 'Дуусахад ойрхон...';
+  }, 400);
+
   const fd = new FormData();
   fd.append('file', uploadFile);
   fd.append('grade',         document.getElementById('up-grade').value);
   fd.append('subject',       document.getElementById('up-subject').value);
-  fd.append('default_level', document.getElementById('up-level').value);
-  const btn = event.target;
-  btn.disabled = true; btn.textContent = '⏳...';
-  const res  = await fetch('/admin/import', { method:'POST', body:fd });
-  const data = await res.json();
-  btn.disabled = false; btn.textContent = '⬆ Оруулах';
-  const box = document.getElementById('upload-result');
-  if (data.error) {
-    box.innerHTML = `<div class="upload-result upload-err">❌ ${data.error}</div>`;
-  } else {
-    box.innerHTML = `<div class="upload-result upload-ok">✅ ${data.saved} даалгавар хадгаллаа${data.skipped?' ('+data.skipped+' алгасав)':''}</div>`;
-    setTimeout(() => loadQuestions(), 800);
+  // Түвшин автоматаар тодорхойлогдоно
+
+  try {
+    const res = await fetch('/admin/import', { method:'POST', body:fd });
+
+    // Admin нэвтрээгүй бол redirect ирнэ
+    if (res.redirected || res.url.includes('/admin/login')) {
+      clearInterval(timer); prog.style.display = 'none';
+      btn.disabled = false; btn.innerHTML = '⬆ Оруулах';
+      box.innerHTML = `<div class="upload-result upload-err">
+        🔒 Зөвхөн Admin оруулах боломжтой.
+        <a href="/admin/login" style="color:var(--teal-600);font-weight:700" target="_blank"> Admin нэвтрэх →</a>
+      </div>`;
+      return;
+    }
+
+    const data = await res.json();
+    clearInterval(timer);
+    bar.style.width = '100%';
+    txt.textContent = 'Дууслаа!';
+
+    setTimeout(() => { prog.style.display = 'none'; }, 800);
+    btn.disabled = false; btn.innerHTML = '⬆ Оруулах';
+
+    if (data.error) {
+      box.innerHTML = `<div class="upload-result upload-err">❌ ${data.error}</div>`;
+    } else {
+      box.innerHTML = `<div class="upload-result upload-ok">
+        ✅ <strong>${data.saved}</strong> даалгавар амжилттай хадгаллаа
+        ${data.skipped ? `<span style="color:var(--text-muted)"> · ${data.skipped} алгасав</span>` : ''}
+      </div>`;
+      setTimeout(() => loadQuestions(), 1000);
+    }
+  } catch(e) {
+    clearInterval(timer); prog.style.display = 'none';
+    btn.disabled = false; btn.innerHTML = '⬆ Оруулах';
+    box.innerHTML = `<div class="upload-result upload-err">❌ Холболтын алдаа. Дахин оролдоно уу.</div>`;
   }
 }
 
