@@ -1,0 +1,648 @@
+{% extends "base.html" %}
+{% block title %}Багш танд — Орхонтуул ЕБС{% endblock %}
+{% block content %}
+<style>
+.teacher-tabs { display:flex; background:var(--teal-600); border-bottom:3px solid var(--green-200); overflow-x:auto; }
+.t-tab {
+  padding:13px 22px; color:rgba(255,255,255,.7); font-size:13px; font-weight:600;
+  cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-3px;
+  white-space:nowrap; transition:all .15s; flex-shrink:0;
+}
+.t-tab:hover  { color:#fff; background:rgba(255,255,255,.08); }
+.t-tab.active { color:#fff; border-bottom-color:var(--green-100); background:rgba(255,255,255,.12); }
+.medle-link {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:3px 10px; border-radius:20px; text-decoration:none;
+  font-size:.75rem; font-weight:600; transition:all .15s;
+  background:#fff; color:#2E7D32; border:1px solid #A5D6A7;
+}
+.medle-link:hover { background:#2E7D32; color:#fff; }
+.medle-link.blue  { color:#1565C0; border-color:#90CAF9; }
+.medle-link.blue:hover { background:#1565C0; color:#fff; }
+.t-panel { display:none; }
+.t-panel.active { display:block; }
+
+.tool-wrap { max-width:820px; margin:0 auto; padding:28px 32px; }
+.tool-card  {
+  background:#fff; border:1.5px solid var(--green-100); border-radius:14px;
+  padding:22px; margin-bottom:16px;
+}
+.tool-card h3 { font-size:1rem; font-weight:800; color:var(--text-dark); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+.ai-out {
+  background:var(--green-50); border:1.5px solid var(--green-100); border-radius:10px;
+  padding:16px; margin-top:14px; font-size:.9rem; line-height:1.8;
+  color:var(--text-dark); white-space:pre-wrap; display:none; min-height:80px;
+}
+.ai-out.show { display:block; }
+
+/* ── Тоглоом ── */
+.game-area  { min-height:300px; }
+.word-grid  { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-top:12px; }
+.word-cell  {
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  font-size:1.1rem; font-weight:800; border-radius:8px; cursor:pointer;
+  border:1.5px solid var(--green-200); background:var(--green-50);
+  color:var(--teal-600); transition:all .15s; user-select:none;
+}
+.word-cell.selected  { background:var(--teal-600); color:#fff; border-color:var(--teal-600); }
+.word-cell.correct   { background:#43A047; color:#fff; border-color:#43A047; }
+.word-cell.wrong     { background:#E53935; color:#fff; border-color:#E53935; animation:shake .3s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+
+.card-grid  { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:12px; }
+.match-card {
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  font-size:.85rem; font-weight:600; text-align:center; padding:6px;
+  border-radius:8px; cursor:pointer;
+  border:1.5px solid var(--green-200); background:var(--teal-600);
+  color:transparent; transition:all .2s; user-select:none; line-height:1.3;
+}
+.match-card.flipped  { background:var(--green-50); color:var(--text-dark); border-color:var(--teal-600); }
+.match-card.matched  { background:#43A047; color:#fff; border-color:#43A047; cursor:default; }
+
+.quiz-q  { font-size:1rem; font-weight:600; margin-bottom:12px; color:var(--text-dark); }
+.quiz-opts { display:flex; flex-direction:column; gap:8px; }
+.quiz-opt  {
+  padding:10px 14px; border-radius:8px; cursor:pointer;
+  border:1.5px solid var(--green-100); background:var(--green-50);
+  font-size:.9rem; color:var(--text-dark); transition:all .15s;
+}
+.quiz-opt:hover:not(.disabled) { border-color:var(--teal-600); background:var(--teal-50); }
+.quiz-opt.correct  { background:#E8F5E9; border-color:#43A047; color:#2E7D32; font-weight:700; }
+.quiz-opt.wrong    { background:#FFEBEE; border-color:#E53935; color:#C62828; }
+.quiz-score { font-size:1.4rem; font-weight:800; color:var(--teal-600); margin-bottom:.5rem; }
+</style>
+
+<!-- Tabs -->
+<div class="teacher-tabs">
+  <div class="t-tab active" onclick="showTab('plan')">📅 Жилийн төлөвлөгөө</div>
+  <div class="t-tab" onclick="showTab('lesson')">📖 Ээлжит хичээл</div>
+  <div class="t-tab" onclick="showTab('game')">🎮 Алжаал тайлах тоглоом</div>
+  <div class="t-tab" onclick="showTab('quiz')">📝 Сорил</div>
+</div>
+
+<!-- ══ TAB 1: ЖИЛИЙН ТӨЛӨВЛӨГӨӨ ══ -->
+<div class="t-panel active" id="panel-plan">
+  <div class="tool-wrap">
+    <div class="tool-card">
+      <h3>📅 Жилийн төлөвлөгөө боловсруулагч</h3>
+      <div class="form-grid">
+        <div class="field-group">
+          <label>Анги <span class="req">*</span></label>
+          <select id="plan-grade">
+            {% for g in range(1,13) %}<option value="{{ g }}" {% if g==9 %}selected{% endif %}>{{ g }}-р анги</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Хичээл <span class="req">*</span></label>
+          <select id="plan-subject">
+            {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Долоо хоногт хичээлийн цаг</label>
+          <select id="plan-hours">
+            <option value="2">7 хоногт 2 цаг</option>
+            <option value="3" selected>7 хоногт 3 цаг</option>
+            <option value="4">7 хоногт 4 цаг</option>
+            <option value="5">7 хоногт 5 цаг</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Улирлын тоо</label>
+          <select id="plan-terms">
+            <option value="3" selected>3 улирал</option>
+            <option value="4">4 улирал</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group" style="margin-top:.8rem">
+        <label>Нэмэлт чиглэл (заавал биш)</label>
+        <input type="text" id="plan-note" placeholder="Жишээ: Улсын шалгалтад бэлтгэх, практик ажилд онцлох...">
+      </div>
+      <div style="margin-top:.8rem;padding:.7rem 1rem;background:#E8F5E9;border:1.5px solid #A5D6A7;border-radius:8px;font-size:.82rem;color:#2E7D32">
+        💡 <strong>medle.mn</strong>-с жишиг хичээлийн сэдэв харж болно:
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.4rem">
+          <a href="https://medle.mn/lesson?grade=9&subject=math" target="_blank" class="medle-link">📐 Математик</a>
+          <a href="https://medle.mn/lesson?grade=9&subject=mongol" target="_blank" class="medle-link">📝 Монгол хэл</a>
+          <a href="https://medle.mn/lesson?grade=9&subject=physics" target="_blank" class="medle-link">⚡ Физик</a>
+          <a href="https://medle.mn/lesson?grade=9&subject=chemistry" target="_blank" class="medle-link">🧪 Хими</a>
+          <a href="https://medle.mn/lesson" target="_blank" class="medle-link">🌐 Бүгд харах →</a>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:.8rem" id="plan-btn" onclick="genPlan()">
+        ✦ Жилийн төлөвлөгөө гаргах
+      </button>
+      <div class="ai-out" id="plan-out"></div>
+      <div id="plan-actions" style="display:none;margin-top:.8rem;display:flex;gap:.6rem">
+        <button class="btn btn-sm btn-outline" onclick="printOut('plan-out','Жилийн төлөвлөгөө')">🖨 Хэвлэх</button>
+        <button class="btn btn-sm btn-outline" onclick="dlOut('plan-out','plan')">⬇ Татах</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 2: ЭЭЛЖИТ ХИЧЭЭЛ ══ -->
+<div class="t-panel" id="panel-lesson">
+  <div class="tool-wrap">
+    <div class="tool-card">
+      <h3>📖 Ээлжит хичээлийн хөтөлбөр боловсруулагч</h3>
+      <div class="form-grid">
+        <div class="field-group">
+          <label>Анги <span class="req">*</span></label>
+          <select id="les-grade">
+            {% for g in range(1,13) %}<option value="{{ g }}" {% if g==9 %}selected{% endif %}>{{ g }}-р анги</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Хичээл <span class="req">*</span></label>
+          <select id="les-subject">
+            {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Хичээлийн цаг (минут)</label>
+          <select id="les-time">
+            <option value="40" selected>40 минут</option>
+            <option value="45">45 минут</option>
+            <option value="80">80 минут (давхар)</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Блупринтийн түвшин</label>
+          <select id="les-level">
+            {% for l in levels %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="field-group" style="margin-top:.8rem">
+        <label>Хичээлийн сэдэв <span class="req">*</span></label>
+        <input type="text" id="les-topic" placeholder="Жишээ: Шугаман тэгшитгэл, Монгол бичгийн үсэг, Хүчлийн шинж чанар..." oninput="updateMedleLink(this.value)">
+      </div>
+      <div class="field-group" style="margin-top:.5rem">
+        <label>Хичээлийн зорилго</label>
+        <input type="text" id="les-goal" placeholder="Жишээ: Сурагч тэгшитгэлийг бодож чадна...">
+      </div>
+      <div style="margin-top:.8rem;padding:.7rem 1rem;background:#E3F2FD;border:1.5px solid #90CAF9;border-radius:8px;font-size:.82rem;color:#1565C0">
+        💡 <strong>medle.mn</strong>-с ижил сэдвийн жишиг хичээл харах:
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.4rem" id="medle-links">
+          <a href="https://medle.mn/lesson" target="_blank" class="medle-link blue">🔍 Хичээл хайх →</a>
+          <a href="https://medle.mn/lesson?type=plan" target="_blank" class="medle-link blue">📋 Ээлжит хичээлийн жишиг →</a>
+          <a href="https://medle.mn" target="_blank" class="medle-link blue">🌐 medle.mn →</a>
+        </div>
+      </div>
+      <div style="margin-top:.8rem;padding:.7rem 1rem;background:#FFF8E1;border:1.5px solid #FFE082;border-radius:8px;font-size:.82rem;color:#E65100">
+        📚 <strong>Дасгал бодлого</strong> — AI-аар үүсгэх эсвэл eContent сурах бичгийн линк:
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.4rem">
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-weight:600">
+            <input type="checkbox" id="les-include-exercises" checked style="width:15px;height:15px"> Дасгал бодлого нэмэх
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-weight:600">
+            <input type="checkbox" id="les-include-econtent"> eContent линк нэмэх
+          </label>
+        </div>
+        <div id="econtent-link-box" style="display:none;margin-top:.5rem">
+          <a id="econtent-link" href="https://econtent.edu.mn" target="_blank"
+            style="color:#1565C0;font-weight:700;font-size:.82rem">
+            📗 eContent сурах бичиг харах →
+          </a>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:.8rem" id="les-btn" onclick="genLesson()">
+        ✦ Ээлжит хичээл боловсруулах
+      </button>
+      <div class="ai-out" id="les-out"></div>
+      <div id="les-actions" style="display:none;margin-top:.8rem;display:flex;gap:.6rem">
+        <button class="btn btn-sm btn-outline" onclick="printOut('les-out','Ээлжит хичээлийн хөтөлбөр')">🖨 Хэвлэх</button>
+        <button class="btn btn-sm btn-outline" onclick="dlOut('les-out','lesson')">⬇ Татах</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 3: ТОГЛООМ ══ -->
+<div class="t-panel" id="panel-game">
+  <div class="tool-wrap">
+    <div class="tool-card">
+      <h3>🎮 Тоглоом тохиргоо</h3>
+      <div class="form-grid">
+        <div class="field-group">
+          <label>Хичээл</label>
+          <select id="gm-subject">
+            {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Тоглоомын төрөл</label>
+          <select id="gm-type">
+            <option value="word">Үг хайх (Word search)</option>
+            <option value="match">Хос карт (Memory)</option>
+            <option value="quiz">Хурдан сорил (Quiz)</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Сэдэв</label>
+          <input type="text" id="gm-topic" placeholder="Жишээ: Математикийн нэр томъёо...">
+        </div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:1rem" id="gm-btn" onclick="genGame()">
+        ▶ Тоглоом үүсгэх
+      </button>
+    </div>
+
+    <div class="tool-card game-area" id="game-area" style="display:none">
+      <div id="game-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 4: СОРИЛ ══ -->
+<div class="t-panel" id="panel-quiz">
+  <div class="tool-wrap">
+    <div class="tool-card">
+      <h3>📝 Хурдан сорил үүсгэгч</h3>
+      <div class="form-grid">
+        <div class="field-group">
+          <label>Анги</label>
+          <select id="qz-grade">
+            {% for g in range(1,13) %}<option value="{{ g }}" {% if g==9 %}selected{% endif %}>{{ g }}-р анги</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Хичээл</label>
+          <select id="qz-subject">
+            {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Даалгаврын тоо</label>
+          <select id="qz-count">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Сэдэв</label>
+          <input type="text" id="qz-topic" placeholder="Хамрах сэдэв...">
+        </div>
+      </div>
+      <div style="display:flex;gap:.6rem;margin-top:1rem;flex-wrap:wrap">
+        <button class="btn btn-primary" id="qz-btn" onclick="genQuiz()">✦ Сорил үүсгэх</button>
+        <button class="btn btn-outline" id="qz-print" style="display:none" onclick="printOut('qz-out','Сорил')">🖨 Хэвлэх</button>
+        <button class="btn btn-outline" id="qz-dl" style="display:none" onclick="dlOut('qz-out','quiz')">⬇ Татах</button>
+      </div>
+      <div class="ai-out" id="qz-out"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const cb = document.getElementById('les-include-econtent');
+  if (cb) cb.addEventListener('change', function() {
+    const box = document.getElementById('econtent-link-box');
+    if (box) box.style.display = this.checked ? 'block' : 'none';
+  });
+});
+
+function updateMedleLink(topic) {
+  const el = document.getElementById('medle-links');
+  if (!el) return;
+  const enc = encodeURIComponent(topic);
+  el.innerHTML = topic
+    ? `<a href="https://medle.mn/search?q=${enc}" target="_blank" class="medle-link blue">🔍 "${topic}" хайх →</a>
+       <a href="https://medle.mn/lesson?q=${enc}" target="_blank" class="medle-link blue">📋 Жишиг хичээл →</a>
+       <a href="https://medle.mn" target="_blank" class="medle-link blue">🌐 medle.mn</a>`
+    : `<a href="https://medle.mn/lesson" target="_blank" class="medle-link blue">🔍 Хичээл хайх →</a>
+       <a href="https://medle.mn/lesson?type=plan" target="_blank" class="medle-link blue">📋 Ээлжит хичээлийн жишиг →</a>
+       <a href="https://medle.mn" target="_blank" class="medle-link blue">🌐 medle.mn →</a>`;
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.t-tab').forEach((t,i)=>
+    t.classList.toggle('active',['plan','lesson','game','quiz'][i]===tab));
+  document.querySelectorAll('.t-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+}
+
+async function callAI(prompt, outId, btnId, actionsId) {
+  const btn = document.getElementById(btnId);
+  const out = document.getElementById(outId);
+  btn.disabled=true; btn.innerHTML='<span class="spinner-sm"></span> AI боловсруулж байна...';
+  out.className='ai-out show'; out.textContent='⏳ Боловсруулж байна...';
+
+  const fd=new FormData();
+  fd.append('grade','9'); fd.append('subject','Ерөнхий');
+  fd.append('level','Чадвар'); fd.append('bloom','Мэдлэг');
+  fd.append('q_type','Нээлттэй'); fd.append('count','1');
+  fd.append('topic', prompt);
+
+  try {
+    const res = await fetch('/api/teacher-ai', {method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({prompt})});
+    const data = await res.json();
+    btn.disabled=false; btn.innerHTML=btn.innerHTML.replace('<span class="spinner-sm"></span> AI боловсруулж байна...', btn.getAttribute('data-label')||'✦ Үүсгэх');
+    if (data.error) { out.textContent='❌ '+data.error; return; }
+    out.textContent = data.result;
+    if (actionsId) document.getElementById(actionsId).style.display='flex';
+  } catch(e) {
+    btn.disabled=false;
+    out.textContent='❌ Холболтын алдаа.';
+  }
+}
+
+function genPlan() {
+  const g=document.getElementById('plan-grade').value;
+  const s=document.getElementById('plan-subject').value;
+  const h=document.getElementById('plan-hours').value;
+  const t=document.getElementById('plan-terms').value;
+  const n=document.getElementById('plan-note').value;
+  document.getElementById('plan-btn').setAttribute('data-label','✦ Жилийн төлөвлөгөө гаргах');
+  callAI(`Монгол боловсролын стандартын дагуу ${g}-р ангийн ${s} хичээлийн жилийн төлөвлөгөө гарга.
+7 хоногт ${h} цаг. ${t} улирал. ${n?'Нэмэлт чиглэл: '+n:''}
+Хүснэгт хэлбэрээр: Улирал | Цаг | Сэдэв | Агуулга | Үнэлгээний хэлбэр
+Монгол хэлээр бичнэ үү. Бодит, дэлгэрэнгүй байна.`, 'plan-out','plan-btn','plan-actions');
+}
+
+function genLesson() {
+  const g       = document.getElementById('les-grade').value;
+  const s       = document.getElementById('les-subject').value;
+  const time    = document.getElementById('les-time').value;
+  const lvl     = document.getElementById('les-level').value;
+  const topic   = document.getElementById('les-topic').value;
+  const goal    = document.getElementById('les-goal').value;
+  const withEx  = document.getElementById('les-include-exercises')?.checked;
+  const withEc  = document.getElementById('les-include-econtent')?.checked;
+
+  if (!topic) { alert('Хичээлийн сэдэв оруулна уу'); return; }
+
+  // eContent линк шинэчлэх
+  if (withEc) {
+    const box  = document.getElementById('econtent-link-box');
+    const link = document.getElementById('econtent-link');
+    box.style.display = 'block';
+    const enc = encodeURIComponent(topic);
+    // Ангид нийцсэн eContent URL
+    const gradeMap = {
+      '1':'1angi','2':'2angi','3':'3angi','4':'4angi','5':'5angi',
+      '6':'6angi','7':'7angi','8':'8angi','9':'9angi',
+      '10':'10angi','11':'11angi','12':'12angi'
+    };
+    link.href   = `https://econtent.edu.mn/book/${gradeMap[g]||''}`;
+    link.textContent = `📗 eContent — ${g}-р ангийн сурах бичиг (${s}) →`;
+  }
+
+  const isMath  = s.includes('Математик');
+  const isPhys  = s.includes('Физик');
+  const isChem  = s.includes('Хими');
+  const isBio   = s.includes('Биологи');
+  const isLang  = s.includes('Монгол');
+
+  // Дасгал бодлогын заавар
+  let exSection = '';
+  if (withEx) {
+    if (isMath || isPhys || isChem) {
+      exSection = `
+6. ДАСГАЛ БОДЛОГО (eContent сурах бичгээс)
+   Ангийн түвшинд нийцсэн ${Math.ceil(parseInt(time)/10)} бодлого гарга:
+   - Мэдлэг ойлголт түвшин: 2 энгийн бодлого (томъёо шууд хэрэглэх)
+   - Чадвар түвшин: 2 дунд бодлого (нэгтгэн бодох)
+   - Хэрэглээ түвшин: 1 амьдралтай холбоотой бодлого
+   Бодлого бүрт: даалгавар + шийдлийн дэс дараалал + хариулт заана.`;
+    } else if (isLang) {
+      exSection = `
+6. ДАСГАЛ АЖИЛ (eContent сурах бичгээс)
+   - Уншиж ойлгох дасгал: 1
+   - Хэлний дасгал (дүрэм): 2
+   - Бичгийн дасгал: 1
+   Дасгал бүрт зорилго, даалгавар, хүлээгдэх үр дүн.`;
+    } else {
+      exSection = `
+6. БАТАТГАХ ДАСГАЛ (eContent сурах бичгээс)
+   - Ойлголтоо шалгах: 3 асуулт
+   - Хэрэглээний даалгавар: 2
+   eContent сурах бичгийн холбогдох сэдвийн дасгалуудтай уялдуулна.`;
+    }
+  }
+
+  const prompt = `Монгол боловсролын стандартын дагуу ээлжит хичээлийн хөтөлбөр бичнэ үү.
+Анги: ${g}-р анги | Хичээл: ${s} | Сэдэв: ${topic}
+Хугацаа: ${time} минут | Блупринтийн түвшин: ${lvl}
+${goal?'Хичээлийн зорилго: '+goal:''}
+
+Дараах бүтцийн дагуу:
+1. ХИЧЭЭЛИЙН ЗОРИЛГО
+2. ХЭРЭГТЭЙ МАТЕРИАЛ
+3. ХИЧЭЭЛИЙН ЯВЦ
+   - Сэдэлжүүлэх (5 мин)
+   - Шинэ мэдлэг (${Math.round(parseInt(time)*0.4)} мин)
+   - Дадлага (${Math.round(parseInt(time)*0.35)} мин)
+   - Үнэлгээ (${Math.round(parseInt(time)*0.15)} мин)
+   - Дүгнэлт (5 мин)
+4. ГЭРИЙН ДААЛГАВАР
+5. ҮНЭЛГЭЭНИЙ ШАЛГУУР${exSection}
+
+${withEc?`eContent сурах бичгийн холбоос: https://econtent.edu.mn — ${g}-р ангийн ${s} хичээлийн сурах бичгийн ${topic} сэдэвтэй холбоотой дасгалуудыг харах боломжтой.`:''}
+Монгол хэлээр. Бодит, дэлгэрэнгүй байна.`;
+
+  document.getElementById('les-btn').setAttribute('data-label','✦ Ээлжит хичээл боловсруулах');
+  callAI(prompt, 'les-out', 'les-btn', 'les-actions');
+}
+
+async function genGame() {
+  const subject=document.getElementById('gm-subject').value;
+  const type=document.getElementById('gm-type').value;
+  const topic=document.getElementById('gm-topic').value;
+  const btn=document.getElementById('gm-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner-sm"></span> Үүсгэж байна...';
+
+  let prompt='';
+  if (type==='word') {
+    prompt=`${subject} хичээлийн ${topic||'үндсэн'} сэдвийн 10 нэр томъёо/үгийг JSON array буцаа. Зөвхөн: ["үг1","үг2",...] Монгол үгс.`;
+  } else if (type==='match') {
+    prompt=`${subject} хичээлийн ${topic||'үндсэн'} сэдвийн 6 хос үг/утга өгнө үү. Зөвхөн JSON: [{"term":"...","def":"..."},...] Монгол.`;
+  } else {
+    prompt=`${subject} хичээлийн ${topic||'үндсэн'} сэдвийн 5 сорилын асуулт. Зөвхөн JSON: [{"q":"...","opts":["А...","Б...","В...","Г..."],"ans":0},...] Монгол.`;
+  }
+
+  const res = await fetch('/api/teacher-ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+  const data = await res.json();
+  btn.disabled=false; btn.textContent='▶ Тоглоом үүсгэх';
+
+  if (data.error) { alert('❌ '+data.error); return; }
+
+  try {
+    const raw = data.result.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+    const parsed = JSON.parse(raw);
+    renderGame(type, parsed, subject, topic);
+  } catch(e) {
+    alert('JSON алдаа. Дахин оролдоно уу.');
+  }
+}
+
+function renderGame(type, data, subject, topic) {
+  const area = document.getElementById('game-area');
+  const cont = document.getElementById('game-content');
+  area.style.display='block';
+
+  if (type==='word') {
+    renderWordSearch(cont, data);
+  } else if (type==='match') {
+    renderMemory(cont, data);
+  } else {
+    renderQuizGame(cont, data);
+  }
+}
+
+// ── Word search ──
+function renderWordSearch(cont, words) {
+  const SIZE=9;
+  const grid=Array.from({length:SIZE},()=>Array(SIZE).fill(''));
+  const placed=[];
+  const DIRS=[[0,1],[1,0],[1,1],[0,-1],[-1,0]];
+  const ALPHA='АБВГДЕЁЖЗИЙКЛМНОӨПРСТУҮФХЦЧШЩЪЫЬЭЮЯ';
+
+  words.forEach(w=>{
+    const word=w.toUpperCase();
+    let ok=false;
+    for(let t=0;t<100&&!ok;t++){
+      const dir=DIRS[Math.floor(Math.random()*DIRS.length)];
+      const r=Math.floor(Math.random()*SIZE);
+      const c=Math.floor(Math.random()*SIZE);
+      let fits=true;
+      const cells=[];
+      for(let i=0;i<word.length;i++){
+        const nr=r+dir[0]*i, nc=c+dir[1]*i;
+        if(nr<0||nr>=SIZE||nc<0||nc>=SIZE||(grid[nr][nc]&&grid[nr][nc]!==word[i])){fits=false;break;}
+        cells.push([nr,nc,word[i]]);
+      }
+      if(fits){ cells.forEach(([nr,nc,ch])=>grid[nr][nc]=ch); placed.push(word); ok=true; }
+    }
+  });
+  for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++) if(!grid[r][c]) grid[r][c]=ALPHA[Math.floor(Math.random()*ALPHA.length)];
+
+  let selected=[], found=new Set();
+  cont.innerHTML=`<h3 style="font-size:.95rem;font-weight:800;margin-bottom:8px">Үг хайх — олсон: <span id="ws-found">0</span>/${placed.length}</h3>
+  <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:8px">${placed.map(w=>`<span id="w-${w}" style="margin-right:8px">${w}</span>`).join('')}</div>
+  <div class="word-grid" id="ws-grid"></div>`;
+  const gEl=document.getElementById('ws-grid');
+  for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
+    const cell=document.createElement('div');
+    cell.className='word-cell'; cell.textContent=grid[r][c];
+    cell.dataset.r=r; cell.dataset.c=c; cell.dataset.ch=grid[r][c];
+    cell.onclick=function(){
+      if(this.classList.contains('correct')) return;
+      this.classList.toggle('selected');
+      const idx=selected.indexOf(this);
+      if(idx>-1) selected.splice(idx,1); else selected.push(this);
+      // Үг таарах эсэх шалгах
+      const sel=selected.map(s=>s.dataset.ch).join('');
+      const match=placed.find(w=>w===sel||w===sel.split('').reverse().join(''));
+      if(match&&!found.has(match)){
+        found.add(match);
+        selected.forEach(s=>{ s.classList.remove('selected'); s.classList.add('correct'); });
+        selected=[];
+        document.getElementById('ws-found').textContent=found.size;
+        const wEl=document.getElementById('w-'+match);
+        if(wEl) wEl.style.textDecoration='line-through';
+      }
+    };
+    gEl.appendChild(cell);
+  }
+}
+
+// ── Memory match ──
+function renderMemory(cont, pairs) {
+  const cards=[];
+  pairs.forEach(p=>{ cards.push({text:p.term,pair:p.def,id:Math.random()}); cards.push({text:p.def,pair:p.term,id:Math.random()}); });
+  cards.sort(()=>Math.random()-.5);
+  let flipped=[],matched=0,lock=false;
+  cont.innerHTML=`<h3 style="font-size:.95rem;font-weight:800;margin-bottom:8px">Хос карт — олдсон: <span id="mm-found">0</span>/${pairs.length}</h3>
+  <div class="card-grid" id="mm-grid"></div>`;
+  const gEl=document.getElementById('mm-grid');
+  cards.forEach((card,i)=>{
+    const el=document.createElement('div');
+    el.className='match-card'; el.textContent=card.text; el.dataset.i=i; el.dataset.text=card.text; el.dataset.pair=card.pair;
+    el.onclick=function(){
+      if(lock||this.classList.contains('matched')||this.classList.contains('flipped')) return;
+      this.classList.add('flipped');
+      flipped.push(this);
+      if(flipped.length===2){
+        lock=true;
+        setTimeout(()=>{
+          if(flipped[0].dataset.pair===flipped[1].dataset.text&&flipped[1].dataset.pair===flipped[0].dataset.text){
+            flipped.forEach(c=>c.classList.replace('flipped','matched'));
+            matched++; document.getElementById('mm-found').textContent=matched;
+          } else {
+            flipped.forEach(c=>c.classList.remove('flipped'));
+          }
+          flipped=[]; lock=false;
+        },900);
+      }
+    };
+    gEl.appendChild(el);
+  });
+}
+
+// ── Quiz game ──
+function renderQuizGame(cont, questions) {
+  let cur=0, score=0;
+  function show() {
+    if(cur>=questions.length){ cont.innerHTML=`<div style="text-align:center;padding:1rem"><div class="quiz-score">${score}/${questions.length}</div><p>${score>=questions.length*.8?'🎉 Гайхалтай!':score>=questions.length*.5?'👍 Сайн!':'📚 Дахин давтаарай'}</p><button class="btn btn-primary" onclick="renderQuizGame(document.getElementById('game-content'),${JSON.stringify(questions)})">↻ Дахин</button></div>`; return; }
+    const q=questions[cur];
+    cont.innerHTML=`<p style="font-size:.78rem;color:var(--text-muted)">${cur+1}/${questions.length} · Оноо: ${score}</p>
+    <div class="quiz-q">${q.q}</div>
+    <div class="quiz-opts">${q.opts.map((o,i)=>`<div class="quiz-opt" onclick="checkAns(this,${i},${q.ans})">${o}</div>`).join('')}</div>
+    <button id="next-q" class="btn btn-primary btn-sm" style="display:none;margin-top:1rem" onclick="nextQ()">Дараагийнх →</button>`;
+  }
+  window.checkAns=function(el,i,ans){
+    document.querySelectorAll('.quiz-opt').forEach(o=>o.classList.add('disabled','quiz-opt'));
+    if(i===ans){ el.classList.add('correct'); score++; } else { el.classList.add('wrong'); document.querySelectorAll('.quiz-opt')[ans].classList.add('correct'); }
+    document.getElementById('next-q').style.display='inline-flex';
+  };
+  window.nextQ=function(){ cur++; show(); };
+  show();
+}
+
+async function genQuiz() {
+  const g=document.getElementById('qz-grade').value;
+  const s=document.getElementById('qz-subject').value;
+  const n=document.getElementById('qz-count').value;
+  const t=document.getElementById('qz-topic').value;
+  document.getElementById('qz-btn').setAttribute('data-label','✦ Сорил үүсгэх');
+  await callAI(`${g}-р ангийн ${s} хичээлийн ${t?t+' сэдвийн':''} ${n} асуулттай сорил.
+Хариулттай, оноотой дэлгэрэнгүй сорил гарга. Монгол хэлээр.`, 'qz-out','qz-btn', null);
+  document.getElementById('qz-print').style.display='inline-flex';
+  document.getElementById('qz-dl').style.display='inline-flex';
+}
+
+function printOut(id, title) {
+  const text = document.getElementById(id).textContent;
+  if (!text || text.startsWith('⏳')) return;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
+  <style>body{font-family:serif;font-size:12pt;line-height:1.7;padding:20mm;max-width:170mm;margin:0 auto}
+  h1{font-size:14pt;text-align:center;border-bottom:1px solid #000;padding-bottom:8px}
+  pre{white-space:pre-wrap;font-family:serif}
+  .no-print{display:none}@media print{.no-print{display:none}}</style></head>
+  <body><h1>ОРХОНТУУЛ ЕБС — ${title}</h1>
+  <button class="no-print" onclick="window.print()" style="margin:8px;padding:6px 16px">🖨 Хэвлэх</button>
+  <pre>${text}</pre></body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(),500);
+}
+
+function dlOut(id, name) {
+  const text = document.getElementById(id).textContent;
+  if (!text || text.startsWith('⏳')) return;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));
+  a.download=`${name}_${Date.now()}.txt`; a.click();
+}
+</script>
+{% endblock %}
