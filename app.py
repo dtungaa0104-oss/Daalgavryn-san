@@ -46,12 +46,16 @@ for eid, et in EXAM_TYPES.items():
 GRADE_EXAM_MAP[1] = "guitsegdel"
 
 SUBJECTS = {
-    "1-5":   ["Монгол хэл","Математик","Байгалийн ухаан","Нийгэм судлал"],
-    "6-9":   ["Монгол хэл","Монгол уран зохиол","Математик","Физик",
-               "Хими","Биологи","Газарзүй","Түүх","Англи хэл"],
-    "10-12": ["Монгол хэл","Монгол уран зохиол","Математик","Физик",
-               "Хими","Биологи","Газарзүй","Түүх","Англи хэл","Нийгмийн ухаан"]
+    "1-5":   ["Монгол хэл, уран зохиол","Математик","Байгалийн ухаан","Нийгэм судлал"],
+    "6-9":   ["Монгол хэл, уран зохиол","Физик","Хими","Биологи","Газарзүй","Түүх","Англи хэл"],
+    "10-12": ["Монгол хэл, уран зохиол","Математик","Физик","Хими","Биологи","Газарзүй","Түүх","Англи хэл","Нийгмийн ухаан"]
 }
+
+# Бүх хичээлийн нэгдсэн жагсаалт (давхардалгүй, дарааллаар)
+ALL_SUBJECTS = [
+    "Монгол хэл, уран зохиол","Математик","Байгалийн ухаан","Нийгэм судлал",
+    "Физик","Хими","Биологи","Газарзүй","Түүх","Англи хэл","Нийгмийн ухаан"
+]
 
 LEVELS      = ["Мэдлэг ойлголт","Чадвар","Хэрэглээ"]
 BLOOM       = ["Мэдлэг","Ойлголт","Хэрэглээ","Шинжилгээ","Үнэлгээ","Бүтээл"]
@@ -101,28 +105,33 @@ def login_required(f):
 @app.route("/")
 def index():
     return render_template("index.html", subjects=SUBJECTS,
+        all_subjects=ALL_SUBJECTS,
         exam_types=EXAM_TYPES, grade_exam_map=GRADE_EXAM_MAP)
 
 @app.route("/questions")
 def questions_page():
     return render_template("questions.html", subjects=SUBJECTS,
+        all_subjects=ALL_SUBJECTS,
         levels=LEVELS, blooms=BLOOM,
         exam_types=EXAM_TYPES, grade_exam_map=GRADE_EXAM_MAP)
 
 @app.route("/blueprint")
 def blueprint_page():
     return render_template("blueprint.html", subjects=SUBJECTS,
+        all_subjects=ALL_SUBJECTS,
         exam_types=EXAM_TYPES, levels=LEVELS,
         blooms=BLOOM, grade_exam_map=GRADE_EXAM_MAP)
 
 @app.route("/olympiad")
 def olympiad_page():
     return render_template("olympiad.html", subjects=SUBJECTS,
+        all_subjects=ALL_SUBJECTS,
         levels=LEVELS, blooms=BLOOM, grade_exam_map=GRADE_EXAM_MAP)
 
 @app.route("/interactive")
 def interactive_page():
     return render_template("interactive.html", subjects=SUBJECTS,
+        all_subjects=ALL_SUBJECTS,
         levels=LEVELS, blooms=BLOOM, grade_exam_map=GRADE_EXAM_MAP)
 
 # ══ БОСГО ШАЛГАЛТ ═════════════════════════════════════════
@@ -278,7 +287,8 @@ def admin_dashboard():
     recent=conn.execute("SELECT * FROM questions ORDER BY id DESC LIMIT 8").fetchall()
     conn.close()
     return render_template("admin_dashboard.html",total=total,by_level=by_level,
-        by_sub=by_sub,recent=recent,subjects=SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
+        by_sub=by_sub,recent=recent,subjects=SUBJECTS,
+        all_subjects=ALL_SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
 
 @app.route("/admin/add",methods=["GET","POST"])
 @login_required
@@ -294,7 +304,8 @@ def admin_add():
              f.get("answer"),score,f.get("topic","")))
         conn.commit(); conn.close(); return redirect(url_for("admin_list"))
     return render_template("admin_add.html",q=None,
-        subjects=SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
+        subjects=SUBJECTS,
+        all_subjects=ALL_SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
 
 @app.route("/admin/edit/<int:qid>",methods=["GET","POST"])
 @login_required
@@ -310,7 +321,8 @@ def admin_edit(qid):
         conn.commit(); conn.close(); return redirect(url_for("admin_list"))
     q=conn.execute("SELECT * FROM questions WHERE id=?",(qid,)).fetchone(); conn.close()
     return render_template("admin_add.html",q=q,
-        subjects=SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
+        subjects=SUBJECTS,
+        all_subjects=ALL_SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
 
 @app.route("/admin/list")
 @login_required
@@ -323,7 +335,8 @@ def admin_list():
     if lvl:     sql+=" AND level=?";   params.append(lvl)
     sql+=" ORDER BY id DESC"
     rows=conn.execute(sql,params).fetchall(); conn.close()
-    return render_template("admin_list.html",questions=rows,subjects=SUBJECTS,levels=LEVELS,
+    return render_template("admin_list.html",questions=rows,subjects=SUBJECTS,
+        all_subjects=ALL_SUBJECTS,levels=LEVELS,
         sel_grade=grade,sel_subject=subject,sel_level=lvl)
 
 @app.route("/admin/delete/<int:qid>",methods=["POST"])
@@ -366,7 +379,8 @@ def admin_import():
             return jsonify({"success":True,"saved":saved,"skipped":skipped,"preview":questions[:3]})
         except Exception as e:
             return jsonify({"error":f"Файл уншихад алдаа: {str(e)}"}),500
-    return render_template("admin_import.html",subjects=SUBJECTS,levels=LEVELS)
+    return render_template("admin_import.html",subjects=SUBJECTS,
+        all_subjects=ALL_SUBJECTS,levels=LEVELS)
 
 @app.route("/admin/ai-generate",methods=["GET","POST"])
 @login_required
@@ -418,7 +432,8 @@ def admin_ai_generate():
         except Exception as e:
             return jsonify({"error":str(e)}),500
     return render_template("admin_ai_generate.html",
-        subjects=SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
+        subjects=SUBJECTS,
+        all_subjects=ALL_SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
 
 # ══ START ══════════════════════════════════════════════════
 if __name__=="__main__":
