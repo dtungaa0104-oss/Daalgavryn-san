@@ -186,7 +186,7 @@ def generate_exam():
 Формат: [{{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","answer":"А"}}]
 Монгол хэлээр."""
                     client=anthropic.Anthropic(api_key=api_key)
-                    msg=client.messages.create(model="claude-sonnet-4-20250514",max_tokens=3000,
+                    msg=client.messages.create(model="claude-sonnet-4-5",max_tokens=3000,
                         messages=[{"role":"user","content":prompt}])
                     raw=msg.content[0].text.strip()
                     raw=re.sub(r'^```json\s*','',raw); raw=re.sub(r'^```\s*','',raw); raw=re.sub(r'\s*```$','',raw).strip()
@@ -381,7 +381,7 @@ def admin_ai_generate():
 Монгол хэлээр."""
         try:
             client=anthropic.Anthropic(api_key=api_key)
-            msg=client.messages.create(model="claude-sonnet-4-20250514",max_tokens=4000,
+            msg=client.messages.create(model="claude-sonnet-4-5",max_tokens=4000,
                 messages=[{"role":"user","content":prompt}])
             raw_text=msg.content[0].text.strip()
             raw_text=re.sub(r'^```json\s*','',raw_text)
