@@ -97,7 +97,29 @@ let currentExam   = null;
 
 window.onload = () => {
   const init = new URLSearchParams(location.search).get('exam') || Object.keys(EXAM_TYPES)[0];
-  selectExamType(init);
+  // Slider-г шууд тохируулах — selectExamType-с үл хамааран
+  currentExamId = init;
+  const bp = EXAM_TYPES[init] ? EXAM_TYPES[init].blueprint : {};
+  // Анги товчнуудыг тохируулах
+  const grades = EXAM_TYPES[init] ? EXAM_TYPES[init].grades : [];
+  for (let g=1;g<=12;g++) {
+    const btn=document.getElementById('gbtn-'+g);
+    if (btn) btn.classList.toggle('dimmed', !grades.includes(g));
+  }
+  document.getElementById('etbtn-'+init)?.classList.add('active');
+  // Анги сонгох
+  if (grades.length) {
+    currentGrade = grades[0];
+    document.getElementById('gbtn-'+grades[0])?.classList.add('active');
+    const et = EXAM_TYPES[GRADE_MAP[grades[0]]||init];
+    const info = document.getElementById('grade-exam-info');
+    if (info && et) info.innerHTML = `<span style="color:${et.color}">${et.icon} ${grades[0]}-р анги — ${et.name}</span>`;
+  }
+  // Slider ЭЦЭСТ тохируулах
+  const mo = bp['Мэдлэг ойлголт']||0;
+  const ch = bp['Чадвар']||0;
+  const he = bp['Хэрэглээ']||0;
+  setTimeout(() => setSliders(mo, ch, he), 50);
 };
 
 function selectExamType(eid) {
@@ -112,8 +134,9 @@ function selectExamType(eid) {
     if (btn) btn.classList.toggle('dimmed',!EXAM_TYPES[eid].grades.includes(g));
     if (btn && !EXAM_TYPES[eid].grades.includes(g)) btn.classList.remove('active');
   }
-  // Slider-г ЭХЛЭЭД тохируулах (selectGrade-аас өмнө)
-  setSliders(bp['Мэдлэг ойлголт']||0, bp['Чадвар']||0, bp['Хэрэглээ']||0);
+  // Slider-г setTimeout-оор тохируулах (DOM бэлэн болсны дараа)
+  const _mo=bp['Мэдлэг ойлголт']||0, _ch=bp['Чадвар']||0, _he=bp['Хэрэглээ']||0;
+  setTimeout(() => setSliders(_mo, _ch, _he), 30);
   document.getElementById('guitsegdel-note').style.display = eid==='guitsegdel'?'inline':'none';
   // Анги сонголт (slider-г дарж бичихгүйгээр)
   if (!currentGrade || !EXAM_TYPES[eid].grades.includes(currentGrade)) {
