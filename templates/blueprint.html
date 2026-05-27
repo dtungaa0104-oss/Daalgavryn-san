@@ -1,342 +1,369 @@
 {% extends "base.html" %}
 {% block title %}Блюпринт — Шалгалт үүсгэх{% endblock %}
 {% block content %}
+<style>
+.bp-wrap{display:grid;grid-template-columns:240px 1fr;min-height:80vh}
+.bp-panel{background:#fff;border-right:2px solid var(--green-100);padding:1.2rem;overflow-y:auto}
+.bp-main{padding:1.5rem;background:var(--green-50)}
+.panel-section{margin-bottom:1.2rem}
+.panel-title{font-size:.7rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem}
+.et-btn{width:100%;text-align:left;padding:.6rem .8rem;border-radius:8px;border:1.5px solid var(--green-100);background:#fff;cursor:pointer;margin-bottom:.4rem;transition:all .15s}
+.et-btn:hover{border-color:var(--teal-600)}
+.et-btn.active{border-color:var(--teal-600);background:var(--teal-50)}
+.et-name{font-size:.85rem;font-weight:700;color:var(--text-dark)}
+.et-sub{font-size:.72rem;color:var(--text-muted)}
+.grade-grid{display:flex;flex-wrap:wrap;gap:.3rem}
+.grade-btn{width:32px;height:32px;border-radius:6px;border:1.5px solid var(--green-200);background:#fff;cursor:pointer;font-size:.8rem;font-weight:700;color:var(--text-dark);transition:all .15s}
+.grade-btn:hover{border-color:var(--teal-600)}
+.grade-btn.active{background:var(--teal-600);color:#fff;border-color:var(--teal-600)}
+.grade-btn.dimmed{opacity:.3;pointer-events:none}
+.subject-select{width:100%;padding:.4rem .6rem;border:1.5px solid var(--green-100);border-radius:8px;font-size:.85rem;background:var(--green-50)}
+.slider-row{display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem}
+.bp-slider{flex:1;height:6px;accent-color:var(--teal-600)}
+.slider-val{min-width:24px;text-align:right;font-size:.85rem;font-weight:700;color:var(--teal-600)}
+.total-bar{background:var(--green-50);border:1.5px solid var(--green-100);border-radius:8px;padding:.5rem .8rem;font-size:.82rem;display:flex;gap:1rem;margin-top:.5rem}
+.grade-exam-info{font-size:.75rem;color:var(--text-muted);margin-top:.3rem;min-height:16px}
+.guitsegdel-note{font-size:.72rem;color:#ef4444;display:none}
 
-<div class="blueprint-layout">
-  <!-- ══ ЗҮҮН: Тохиргоо ══ -->
-  <div class="bp-config">
+/* Үр дүн */
+.exam-result{background:#fff;border-radius:12px;border:1.5px solid var(--green-100);padding:1.5rem}
+.exam-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.2rem;flex-wrap:wrap}
+.exam-meta{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.4rem}
+.exam-badge{font-size:.72rem;padding:2px 10px;border-radius:20px;background:var(--green-50);border:1px solid var(--green-100);color:var(--text-mid);font-weight:600}
+.exam-stats{text-align:right}
+.stat-num{font-size:2rem;font-weight:900;color:var(--teal-600);line-height:1}
+.stat-lbl{font-size:.72rem;color:var(--text-muted)}
+.exam-actions{display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0}
+.questions-list{display:flex;flex-direction:column;gap:.6rem}
+.q-item{background:#fff;border:1.5px solid var(--green-100);border-radius:8px;padding:.7rem 1rem;display:flex;gap:.8rem;align-items:flex-start}
+.q-num{min-width:28px;height:28px;border-radius:50%;background:var(--teal-600);color:#fff;font-size:.78rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.q-body{flex:1}
+.q-text{font-size:.88rem;line-height:1.5;color:var(--text-dark);margin-bottom:.3rem}
+.q-tags{display:flex;gap:.4rem;flex-wrap:wrap}
+.q-tag{font-size:.7rem;padding:1px 8px;border-radius:20px;font-weight:600}
+.q-score{font-size:.72rem;color:var(--text-muted);margin-left:auto;white-space:nowrap}
+.empty-result{text-align:center;padding:4rem 2rem;color:var(--text-muted)}
+.empty-icon{font-size:3rem;margin-bottom:.8rem}
 
-    <h2 class="panel-title">① Шалгалтын төрөл</h2>
-    <div class="exam-type-selector" id="exam-type-selector">
+/* Задгай */
+.zadgai-section{margin-top:1.2rem;border-top:2px solid var(--green-100);padding-top:1.2rem}
+.zadgai-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
+.ai-out{background:var(--green-50);border:1.5px solid var(--green-100);border-radius:8px;padding:1rem;font-size:.88rem;line-height:1.8;margin-top:.6rem;display:none;white-space:pre-wrap}
+.ai-out.show{display:block}
+
+@media(max-width:700px){.bp-wrap{grid-template-columns:1fr}.bp-panel{border-right:none;border-bottom:2px solid var(--green-100)}}
+</style>
+
+<div class="bp-wrap">
+  <!-- ЗҮҮН ПАНЕЛ -->
+  <div class="bp-panel">
+    <div class="panel-section">
+      <div class="panel-title">① Шалгалтын төрөл</div>
       {% for eid, et in exam_types.items() %}
-      <button class="et-select-btn" id="etbtn-{{ eid }}"
-              onclick="selectExamType('{{ eid }}')"
-              style="--et-color:{{ et.color }}">
-        <span class="etb-icon">{{ et.icon }}</span>
-        <div class="etb-info">
-          <strong>{{ et.name }}</strong>
-          <small>{{ et.blueprint.duration }} · {{ et.blueprint.total }} даалгавар</small>
-        </div>
+      <button class="et-btn" id="etbtn-{{ eid }}" onclick="pickExam('{{ eid }}')">
+        <div class="et-name">{{ et.icon }} {{ et.name }}</div>
+        <div class="et-sub">{{ et.blueprint.duration }} · {{ et.blueprint.total }} даалгавар</div>
       </button>
       {% endfor %}
     </div>
 
-    <h2 class="panel-title" style="margin-top:1.5rem">② Анги</h2>
-    <div class="grade-selector" id="grade-selector">
-      {% for g in range(1,13) %}
-      {% set et = exam_types[grade_exam_map.get(g, 'guitsegdel')] %}
-      <button class="grade-btn" id="gbtn-{{ g }}"
-              onclick="selectGrade({{ g }})"
-              style="--et-color:{{ et.color }}"
-              title="{{ et.name }}">{{ g }}</button>
-      {% endfor %}
-    </div>
-    <div class="grade-exam-info" id="grade-exam-info"></div>
-
-    <h2 class="panel-title" style="margin-top:1.5rem">③ Хичээл</h2>
-    <select id="bp-subject" class="styled-select">
-      {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
-    </select>
-
-    <h2 class="panel-title" style="margin-top:1.5rem">④ Блюпринт</h2>
-    <p class="hint">Түвшин тус бүрд хэдэн даалгавар оруулахыг тохируулна</p>
-
-    <div class="blueprint-sliders">
-      {% for lvl in levels %}
-      {% set lvl_css = lvl | replace(' ','') %}
-      <div class="slider-row">
-        <span class="q-level level-{{ lvl_css }}">{{ lvl }}</span>
-        <input type="range" min="0" max="25" value="0"
-               id="slider-{{ lvl }}" class="bp-slider"
-               oninput="updateSlider(this,'{{ lvl }}')">
-        <span class="slider-val" id="val-{{ lvl }}">0</span>
+    <div class="panel-section">
+      <div class="panel-title">② Анги</div>
+      <div class="grade-grid">
+        {% for g in range(1,13) %}
+        <button class="grade-btn" id="gbtn-{{ g }}" onclick="pickGrade({{ g }})">{{ g }}</button>
+        {% endfor %}
       </div>
-      {% endfor %}
+      <div class="grade-exam-info" id="grade-exam-info"></div>
     </div>
 
-    <div class="total-bar">
-      Нийт: <strong id="total-count">0</strong> даалгавар
-      &nbsp;|&nbsp; Оноо: <strong id="total-score">0</strong>
-      <span id="guitsegdel-note" style="display:none;color:var(--green);font-size:.78rem;margin-left:.5rem">(оноогүй)</span>
+    <div class="panel-section">
+      <div class="panel-title">③ Хичээл</div>
+      <select class="subject-select" id="subject-sel">
+        {% for s in subjects %}<option>{{ s }}</option>{% endfor %}
+      </select>
     </div>
 
-    <button class="btn btn-primary btn-full" style="margin-top:1rem" onclick="generateExam()">
+    <div class="panel-section">
+      <div class="panel-title">④ Блюпринт</div>
+      <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.5rem">Түвшин тус бүрд хэдэн даалгавар оруулахыг тохируулна</div>
+      <div class="blueprint-sliders">
+        {% for lvl in levels %}
+        {% set lvl_css = lvl | replace(' ','') %}
+        <div class="slider-row">
+          <span class="q-level level-{{ lvl_css }}" style="min-width:80px;font-size:.72rem">{{ lvl }}</span>
+          <input type="range" min="0" max="25" value="0"
+                 id="slider-{{ lvl }}" class="bp-slider"
+                 oninput="onSlider('{{ lvl }}',this.value)">
+          <span class="slider-val" id="val-{{ lvl }}">0</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="total-bar">
+        <span>Нийт: <strong id="total-q">0</strong> даалгавар</span>
+        <span>Оноо: <strong id="total-s">0</strong></span>
+      </div>
+      <span class="guitsegdel-note" id="guitsegdel-note">⚠ Гүйцэтгэлийн үнэлгээ оноогоор дүгнэхгүй</span>
+    </div>
+
+    <button class="btn btn-primary btn-full" style="margin-top:.5rem" onclick="doGenerate()">
       ✦ Шалгалт үүсгэх
     </button>
-
-    <div style="margin-top:.5rem;padding-top:.8rem;border-top:1.5px solid var(--green-100)">
-      <p style="font-size:.72rem;color:var(--text-muted);margin-bottom:.5rem">
-        Даалгавар хүрэлцэхгүй үед AI-аар нэмж үүсгэнэ:
-      </p>
-      <button class="btn btn-outline btn-full btn-sm" onclick="generateWithAI()">
-        🤖 AI-аар даалгавар нэмж үүсгэх
-      </button>
+    <div style="font-size:.72rem;color:var(--text-muted);margin-top:.4rem;text-align:center">
+      Даалгавар хүрэлцэхгүй үед AI-аар нэмж үүсгэнэ
     </div>
   </div>
 
-  <!-- ══ БАРУУН: Үр дүн ══ -->
-  <div class="bp-result" id="bp-result">
-    <div class="empty-state tall">
+  <!-- БАРУУН ХЭВ -->
+  <div class="bp-main">
+    <div id="exam-empty" class="empty-result">
       <div class="empty-icon">◈</div>
-      <p>Шалгалтын төрөл, анги, хичээлээ сонгоод<br>"Шалгалт үүсгэх" дарна уу</p>
+      <p>Шалгалтын төрөл, анги, хичээлээ сонгоод</p>
+      <p style="font-weight:700;margin-top:.3rem">"Шалгалт үүсгэх" дарна уу</p>
+    </div>
+    <div id="exam-result" style="display:none">
+      <div class="exam-result">
+        <div class="exam-header">
+          <div>
+            <h2 id="exam-title" style="font-size:1.1rem;font-weight:800;margin:0"></h2>
+            <div class="exam-meta" id="exam-meta"></div>
+          </div>
+          <div class="exam-stats">
+            <div class="stat-num" id="stat-q">0</div>
+            <div class="stat-lbl">Даалгавар</div>
+            <div class="stat-num" id="stat-s" style="color:#f0a500">0</div>
+            <div class="stat-lbl">Оноо</div>
+          </div>
+        </div>
+        <div class="exam-actions">
+          <button class="btn btn-primary" onclick="doPrint()">🖨 Хэвлэх</button>
+          <button class="btn btn-outline" onclick="doDownload()">⬇ Татах</button>
+          <button class="btn btn-outline" onclick="doGenerate()">↻ Дахин</button>
+        </div>
+        <div class="questions-list" id="questions-list"></div>
+        <!-- Задгай -->
+        <div id="zadgai-section" class="zadgai-section" style="display:none">
+          <div class="zadgai-head">
+            <h3 style="font-size:.95rem;font-weight:800;margin:0">📝 Задгай даалгавар (II хэсэг)</h3>
+            <button class="btn btn-sm btn-primary" onclick="genZadgai()">✦ AI-аар үүсгэх</button>
+          </div>
+          <div id="zadgai-info" style="font-size:.82rem;color:var(--text-muted)"></div>
+          <div id="zadgai-out" class="ai-out"></div>
+          <div id="zadgai-actions" style="display:none;margin-top:.5rem">
+            <button class="btn btn-sm btn-outline" onclick="printZadgai()">🖨 Хэвлэх</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-
 {% endblock %}
 {% block scripts %}
 <script>
-const EXAM_TYPES = {{ exam_types | tojson }};
-const GRADE_MAP  = {{ grade_exam_map | tojson }};
-const LEVELS     = {{ levels | tojson }};
-const LEVEL_SCORES = {"Мэдлэг ойлголт":1,"Чадвар":2,"Хэрэглээ":3};
+const ET = {{ exam_types | tojson }};
+const GM = {{ grade_exam_map | tojson }};
+const LEVELS = {{ levels | tojson }};
+const LEVEL_SCORE = {"Мэдлэг ойлголт":1,"Чадвар":2,"Хэрэглээ":3};
 
-let currentExamId = null;
-let currentGrade  = null;
-let currentExam   = null;
+var curExam = null, curGrade = null, curExamId = null, examData = null;
 
-window.onload = () => {
-  const init = new URLSearchParams(location.search).get('exam') || Object.keys(EXAM_TYPES)[0];
-  // Slider-г шууд тохируулах — selectExamType-с үл хамааран
-  currentExamId = init;
-  const bp = EXAM_TYPES[init] ? EXAM_TYPES[init].blueprint : {};
-  // Анги товчнуудыг тохируулах
-  const grades = EXAM_TYPES[init] ? EXAM_TYPES[init].grades : [];
-  for (let g=1;g<=12;g++) {
-    const btn=document.getElementById('gbtn-'+g);
-    if (btn) btn.classList.toggle('dimmed', !grades.includes(g));
-  }
-  document.getElementById('etbtn-'+init)?.classList.add('active');
-  // Анги сонгох
-  if (grades.length) {
-    currentGrade = grades[0];
-    document.getElementById('gbtn-'+grades[0])?.classList.add('active');
-    const et = EXAM_TYPES[GRADE_MAP[grades[0]]||init];
-    const info = document.getElementById('grade-exam-info');
-    if (info && et) info.innerHTML = `<span style="color:${et.color}">${et.icon} ${grades[0]}-р анги — ${et.name}</span>`;
-  }
-  // Slider ЭЦЭСТ тохируулах
-  const mo = bp['Мэдлэг ойлголт']||0;
-  const ch = bp['Чадвар']||0;
-  const he = bp['Хэрэглээ']||0;
-  setTimeout(() => setSliders(mo, ch, he), 50);
-};
+// ── INIT ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  var init = new URLSearchParams(location.search).get('exam') || Object.keys(ET)[0];
+  pickExam(init);
+});
 
-function selectExamType(eid) {
-  if (!EXAM_TYPES[eid]) return;
-  currentExamId = eid;
-  document.querySelectorAll('.et-select-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('etbtn-'+eid)?.classList.add('active');
-  const bp = EXAM_TYPES[eid].blueprint;
-  // Анги товчны dimmed/active тохируулах
-  for (let g=1;g<=12;g++) {
-    const btn=document.getElementById('gbtn-'+g);
-    if (btn) btn.classList.toggle('dimmed',!EXAM_TYPES[eid].grades.includes(g));
-    if (btn && !EXAM_TYPES[eid].grades.includes(g)) btn.classList.remove('active');
+// ── EXAM TYPE ────────────────────────────────────────
+function pickExam(eid) {
+  if (!ET[eid]) return;
+  curExamId = eid;
+  document.querySelectorAll('.et-btn').forEach(function(b){b.classList.remove('active')});
+  var eb = document.getElementById('etbtn-'+eid);
+  if (eb) eb.classList.add('active');
+  var bp = ET[eid].blueprint;
+  var grades = ET[eid].grades;
+  for (var g=1; g<=12; g++) {
+    var gb = document.getElementById('gbtn-'+g);
+    if (!gb) continue;
+    if (grades.indexOf(g) >= 0) {
+      gb.classList.remove('dimmed');
+    } else {
+      gb.classList.add('dimmed');
+      gb.classList.remove('active');
+    }
   }
-  // Slider-г setTimeout-оор тохируулах (DOM бэлэн болсны дараа)
-  const _mo=bp['Мэдлэг ойлголт']||0, _ch=bp['Чадвар']||0, _he=bp['Хэрэглээ']||0;
-  setTimeout(() => setSliders(_mo, _ch, _he), 30);
   document.getElementById('guitsegdel-note').style.display = eid==='guitsegdel'?'inline':'none';
-  // Анги сонголт (slider-г дарж бичихгүйгээр)
-  if (!currentGrade || !EXAM_TYPES[eid].grades.includes(currentGrade)) {
-    selectGradeOnly(EXAM_TYPES[eid].grades[0]);
-  }
-}
-
-// Зөвхөн анги сонгох (selectExamType дахин дуудахгүй)
-function selectGradeOnly(g) {
-  currentGrade = g;
-  document.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('gbtn-'+g)?.classList.add('active');
-  const eid=GRADE_MAP[g]||'devshih'; const et=EXAM_TYPES[eid];
-  document.getElementById('grade-exam-info').innerHTML =
-    `<span style="color:${et.color}">${et.icon} ${g}-р анги — ${et.name}</span>`;
-}
-
-function selectGrade(g) {
-  const eid=GRADE_MAP[g]||'devshih';
-  // Өөр шалгалтын ангилалд хамаарах анги сонговол шалгалтын төрлийг солих
-  if (currentExamId && !EXAM_TYPES[currentExamId]?.grades.includes(g)) {
-    selectExamType(eid);
-    selectGradeOnly(g);
-  } else {
-    selectGradeOnly(g);
-    const et=EXAM_TYPES[currentExamId||eid];
-    document.getElementById('grade-exam-info').innerHTML =
-      `<span style="color:${et.color}">${et.icon} ${g}-р анги — ${et.name}</span>`;
-  }
-}
-
-function setSliders(m, c, h) {
-  [['Мэдлэг ойлголт',m],['Чадвар',c],['Хэрэглээ',h]].forEach(([k,v])=>{
-    document.getElementById('slider-'+k).value=v;
-    document.getElementById('val-'+k).textContent=v;
-  });
+  // Slider утгуудыг тохируулах
+  var mo = bp['Мэдлэг ойлголт'] || 0;
+  var ch = bp['Чадвар'] || 0;
+  var he = bp['Хэрэглээ'] || 0;
+  setSlider('Мэдлэг ойлголт', mo);
+  setSlider('Чадвар', ch);
+  setSlider('Хэрэглээ', he);
   updateTotal();
+  // Анги
+  if (!curGrade || grades.indexOf(curGrade) < 0) {
+    pickGrade(grades[0]);
+  } else {
+    pickGrade(curGrade);
+  }
 }
 
-function updateSlider(el,key) {
-  document.getElementById('val-'+key).textContent=el.value;
+// ── GRADE ────────────────────────────────────────────
+function pickGrade(g) {
+  curGrade = g;
+  document.querySelectorAll('.grade-btn').forEach(function(b){b.classList.remove('active')});
+  var gb = document.getElementById('gbtn-'+g);
+  if (gb) gb.classList.add('active');
+  var eid = GM[g] || 'devshih';
+  var et = ET[eid];
+  var info = document.getElementById('grade-exam-info');
+  if (info && et) info.innerHTML = '<span style="color:'+et.color+'">'+et.icon+' '+g+'-р анги — '+et.name+'</span>';
+  // Шалгалтын төрлийг автоматаар солих
+  if (curExamId && ET[curExamId] && ET[curExamId].grades.indexOf(g) < 0) {
+    pickExam(eid);
+  }
+}
+
+// ── SLIDER ───────────────────────────────────────────
+function setSlider(key, val) {
+  var sl = document.getElementById('slider-'+key);
+  var vl = document.getElementById('val-'+key);
+  if (sl) sl.value = val;
+  if (vl) vl.textContent = val;
+}
+
+function onSlider(key, val) {
+  var vl = document.getElementById('val-'+key);
+  if (vl) vl.textContent = val;
   updateTotal();
 }
 
 function updateTotal() {
-  let total=0, score=0;
-  LEVELS.forEach(k => {
-    const v=+document.getElementById('slider-'+k).value;
-    total+=v; score+=v*(LEVEL_SCORES[k]||1);
+  var total = 0, score = 0;
+  LEVELS.forEach(function(k) {
+    var sl = document.getElementById('slider-'+k);
+    var v = sl ? parseInt(sl.value)||0 : 0;
+    total += v;
+    score += v * (LEVEL_SCORE[k]||1);
   });
-  document.getElementById('total-count').textContent=total;
-  document.getElementById('total-score').textContent=score;
+  var tq = document.getElementById('total-q');
+  var ts = document.getElementById('total-s');
+  if (tq) tq.textContent = total;
+  if (ts) ts.textContent = score;
 }
 
-async function generateExam() {
-  if (!currentGrade) { alert('Анги сонгоно уу'); return; }
-  const subject=document.getElementById('bp-subject').value;
-  const blueprint={};
-  LEVELS.forEach(k => blueprint[k]=+document.getElementById('slider-'+k).value);
-  const panel=document.getElementById('bp-result');
-  panel.innerHTML='<div class="loading"><div class="spinner"></div><p>Шалгалт үүсгэж байна...</p></div>';
-  const res=await fetch('/api/generate-exam',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({grade:currentGrade,subject,exam_id:currentExamId,blueprint})});
-  const exam=await res.json();
-  if (exam.error) {
-    panel.innerHTML=`<div class="empty-state tall"><div class="empty-icon">⚠</div>
-      <p>${exam.error}</p>
-      <p style="font-size:.85rem;color:var(--muted);margin-top:.5rem">
-        <a href="/admin/add">Admin → Даалгавар нэмэх →</a></p></div>`;
-    return;
-  }
-  currentExam = exam;
-  renderExam(exam);
-}
+// ── GENERATE ─────────────────────────────────────────
+async function doGenerate() {
+  var grade = curGrade || 9;
+  var subject = document.getElementById('subject-sel').value;
+  var blueprint = {};
+  LEVELS.forEach(function(k) {
+    var sl = document.getElementById('slider-'+k);
+    blueprint[k] = sl ? parseInt(sl.value)||0 : 0;
+  });
+  var total = LEVELS.reduce(function(s,k){return s+blueprint[k]}, 0);
+  if (total === 0) { alert('Блюпринтийн slider-г тохируулна уу'); return; }
 
-function renderExam(exam) {
-  const panel=document.getElementById('bp-result');
-  const et=EXAM_TYPES[exam.exam_id]||{};
-  const isG=exam.exam_id==='guitsegdel';
-  const lvlCounts={};
-  exam.questions.forEach(q=>{ const l=q.level||q.difficulty||''; lvlCounts[l]=(lvlCounts[l]||0)+1; });
+  document.getElementById('exam-empty').style.display = 'none';
+  document.getElementById('exam-result').style.display = 'block';
+  document.getElementById('questions-list').innerHTML =
+    '<div style="text-align:center;padding:2rem"><div class="spinner"></div><p style="margin-top:.5rem">Шалгалт үүсгэж байна...</p></div>';
 
-  panel.innerHTML=`
-    <div class="exam-result">
-      <div class="exam-header" style="border-left:3px solid ${et.color||'#f0a500'}">
-        <div class="exam-meta">
-          <div class="exam-type-tag" style="background:${et.color}22;color:${et.color};border:1px solid ${et.color}55">
-            ${et.icon||'📋'} ${exam.exam_type}</div>
-          <h2>${exam.title}</h2>
-          <div class="exam-badges">
-            <span class="badge">${exam.grade}-р анги</span>
-            <span class="badge">⏱ ${exam.duration}</span>
-            ${exam.note?`<span class="badge badge-note">⚠ ${exam.note}</span>`:''}
-            ${exam.ai_generated>0?`<span class="badge" style="background:#E8F5E9;color:#2E7D32;border-color:#A5D6A7">🤖 AI: ${exam.ai_generated} үүслээ</span>`:''}
-            ${exam.source_note?`<span class="badge" style="font-size:.68rem">${exam.source_note}</span>`:''}
-          </div>
-        </div>
-        <div class="exam-summary">
-          <div class="sum-item"><span>${exam.total_questions}</span><label>Даалгавар</label></div>
-          <div class="sum-item">
-            <span style="color:${et.color||'var(--accent)'}">${isG?'—':exam.total_score}</span>
-            <label>${isG?'Оноогүй':'Оноо'}</label>
-          </div>
-        </div>
-      </div>
-      ${isG?'<div class="info-banner green-banner">📝 Гүйцэтгэлийн үнэлгээ — оноогоор дүгнэхгүй. Багш ажиглалтын дэвтэр хөтөлнө.</div>':''}
-
-      <div class="blueprint-chart">
-        ${Object.entries(lvlCounts).map(([l,c])=>{
-          const css=l.replace(/ /g,'');
-          return `<div class="chart-bar-row">
-            <span class="q-level level-${css}" style="min-width:130px">${l}</span>
-            <div class="chart-bar-wrap">
-              <div class="chart-bar diff-bg-${css}" style="width:${(c/exam.total_questions*100).toFixed(0)}%">${c}</div>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-
-      <div class="exam-questions">
-        ${exam.questions.map((q,i)=>{
-          const lvl=q.level||q.difficulty||''; const css=lvl.replace(/ /g,'');
-          return `<div class="eq-item">
-            <div class="eq-num">${i+1}</div>
-            <div class="eq-content">
-              <div class="eq-tags">
-                <span class="q-level level-${css}">${lvl}</span>
-                <span class="q-bloom">${q.bloom||''}</span>
-                ${!isG?`<span class="q-score">${q.score}п</span>`:''}
-              </div>
-              <p>${q.question}</p>
-              ${q.options?`<div class="q-options">${q.options.map(o=>`<span class="q-opt">${o}</span>`).join('')}</div>`:''}
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-
-      <div class="exam-actions">
-        <button class="btn btn-primary" onclick="printExam()">🖨 Хэвлэх</button>
-        <div class="dl-btn-group">
-          <button class="btn btn-outline" onclick='dlExamTXT(currentExam)'>⬇ TXT</button>
-          <button class="btn btn-outline" onclick="showDownloadMenu(this, ()=>currentExam.questions, ()=>currentExam.title)">▾</button>
-        </div>
-        <button class="btn btn-outline" onclick="generateExam()">↻ Дахин</button>
-      </div>
-      <!-- Задгай даалгаврын хэсэг -->
-      <div id="zadgai-section" style="display:none;margin-top:1rem;border-top:2px solid var(--green-100);padding-top:1rem">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem">
-          <h3 style="font-size:.95rem;font-weight:800;color:var(--text-dark);margin:0">
-            📝 Задгай даалгавар (II хэсэг)
-          </h3>
-          <button class="btn btn-sm btn-primary" onclick="generateZadgai()">✦ AI-аар үүсгэх</button>
-        </div>
-        <div id="zadgai-info" style="font-size:.82rem;color:var(--text-muted);margin-bottom:.8rem"></div>
-        <div id="zadgai-out" class="ai-out"></div>
-        <div id="zadgai-actions" style="display:none;gap:.6rem;margin-top:.6rem">
-          <button class="btn btn-sm btn-outline" onclick="printZadgai()">🖨 Хэвлэх</button>
-        </div>
-      </div>
-    </div>`;
-}
-
-// Задгай даалгаврын хэсэг харуулах
-function showZadgaiSection(exam) {
-  var bp = exam.blueprint_info || {};
-  var zadgai = bp.zadgai || [];
-  if (!zadgai.length) return;
-  var sec = document.getElementById('zadgai-section');
-  var info = document.getElementById('zadgai-info');
-  if (sec) sec.style.display = 'block';
-  if (info) {
-    info.innerHTML = 'Нийт: <strong>' + bp.zadgai_total + '</strong> задгай даалгавар · ' +
-      '<strong>' + bp.zadgai_score + '</strong> оноо · ' +
-      zadgai.map(function(z){return z.num+' ('+z.score+' оноо)'}).join(', ');
+  try {
+    var res = await fetch('/api/generate-exam', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        grade: grade, subject: subject,
+        exam_id: curExamId||'devshih',
+        blueprint: blueprint, use_ai: true
+      })
+    });
+    var data = await res.json();
+    if (data.error) {
+      document.getElementById('questions-list').innerHTML =
+        '<p style="color:#c62828;padding:1rem">❌ '+data.error+'</p>';
+      return;
+    }
+    renderExam(data);
+  } catch(e) {
+    document.getElementById('questions-list').innerHTML =
+      '<p style="color:#c62828;padding:1rem">❌ Холболтын алдаа: '+e.message+'</p>';
   }
 }
 
-async function generateZadgai() {
-  if (!currentExam) return;
+function renderExam(data) {
+  examData = data;
+  document.getElementById('exam-title').textContent = data.title || '';
+  document.getElementById('stat-q').textContent = data.total_questions || 0;
+  document.getElementById('stat-s').textContent = data.total_score || 0;
+  var meta = document.getElementById('exam-meta');
+  meta.innerHTML =
+    '<span class="exam-badge">'+data.grade+'-р анги</span>' +
+    '<span class="exam-badge">⏱ '+data.duration+'</span>' +
+    (data.ai_generated ? '<span class="exam-badge">🤖 AI нэмсэн: '+data.ai_generated+'</span>' : '') +
+    (data.source_note ? '<span class="exam-badge">'+data.source_note+'</span>' : '');
+
+  var qs = data.questions || [];
+  var html = qs.map(function(q,i) {
+    var lvlCss = (q.level||'').replace(/ /g,'');
+    var opts = '';
+    if (q.options && q.options.length) {
+      opts = '<div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.3rem">' +
+        q.options.map(function(o){ return '<span class="q-tag" style="background:var(--green-50);border:1px solid var(--green-100);color:var(--text-mid)">'+o+'</span>'}).join('') +
+        '</div>';
+    }
+    return '<div class="q-item">' +
+      '<div class="q-num">'+(i+1)+'</div>' +
+      '<div class="q-body">' +
+        '<div class="q-text">'+q.question+'</div>'+opts+
+        '<div class="q-tags">' +
+          '<span class="q-tag q-level level-'+lvlCss+'">'+q.level+'</span>' +
+          '<span class="q-tag" style="background:#f0f9ff;border:1px solid #bae6fd;color:#0369a1">'+q.bloom+'</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="q-score">'+q.score+'п</div>' +
+    '</div>';
+  }).join('');
+  document.getElementById('questions-list').innerHTML = html || '<p style="color:var(--text-muted);padding:1rem">Даалгавар байхгүй</p>';
+
+  // KaTeX render
+  if (window.renderMathInElement) {
+    renderMathInElement(document.getElementById('questions-list'), {
+      delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
+      throwOnError:false
+    });
+  }
+
+  // Задгай хэсэг
+  var bp_info = data.blueprint_info || {};
+  var zs = document.getElementById('zadgai-section');
+  if (zs) {
+    if (bp_info.zadgai_total > 0) {
+      zs.style.display = 'block';
+      var zi = document.getElementById('zadgai-info');
+      if (zi) zi.textContent = 'Нийт '+bp_info.zadgai_total+' задгай даалгавар · '+bp_info.zadgai_score+' оноо';
+    } else {
+      zs.style.display = 'none';
+    }
+  }
+}
+
+// ── ЗАДГАЙ ───────────────────────────────────────────
+async function genZadgai() {
+  if (!examData) return;
   var out = document.getElementById('zadgai-out');
-  var btn = document.querySelector('#zadgai-section .btn-primary');
-  var grade = currentExam.grade;
-  var subject = currentExam.subject;
-  var origLabel = '✦ AI-аар үүсгэх';
+  var btn = event.target;
   out.className = 'ai-out show';
-  out.innerHTML = '⏳ Задгай даалгавар үүсгэж байна...';
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> Үүсгэж байна...'; }
+  out.textContent = '⏳ Задгай даалгавар үүсгэж байна...';
+  btn.disabled = true;
 
-  var prompt = grade + '-р ангийн ' + subject + ' хичээлийн УЛСЫН ШАЛГАЛТЫН задгай даалгавар (II хэсэг) зохио. ' +
-    '2025 оны шалгалтын жишгийн дагуу:
-' +
-    '2.1 — 3 дэд даалгавартай, нийт 3 оноо
-' +
-    '2.2 — 3 дэд даалгавартай, нийт 3 оноо
-' +
-    '2.3 — 3 дэд даалгавартай, нийт 3 оноо
-' +
-    'Математикийн томъёо, тэмдэгтүүдийг LaTeX ($...$) хэлбэрт бич.
-' +
-    'Монгол хэлээр, бодит шалгалтын хэлбэрээр. Зөвхөн даалгавар, тайлбаргүй.';
+  var prompt = examData.grade+'-р ангийн '+examData.subject+
+    ' хичээлийн улсын шалгалтын задгай даалгавар (II хэсэг) зохио.\n'+
+    '2.1 — 3 дэд даалгавар, 3 оноо\n'+
+    '2.2 — 3 дэд даалгавар, 3 оноо\n'+
+    '2.3 — 3 дэд даалгавар, 3 оноо\n'+
+    'Математикийн томъёог $...$ хэлбэрт бич. Монгол хэлээр. Зөвхөн даалгавар.';
 
   try {
     var res = await fetch('/api/chat', {
@@ -344,120 +371,72 @@ async function generateZadgai() {
       body: JSON.stringify({messages:[{role:'user',content:prompt}]})
     });
     var data = await res.json();
-    if (btn) { btn.disabled = false; btn.textContent = origLabel; }
-    if (data.error) { out.innerHTML = '❌ ' + data.error; return; }
+    btn.disabled = false;
+    if (data.error) { out.textContent = '❌ '+data.error; return; }
     var reply = data.reply || data.result || '';
     out.innerHTML = reply
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/
-/g,'<br>');
-    // KaTeX render
-    if (window.renderMathInElement) renderMathInElement(out, {
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\n/g,'<br>');
+    if (window.renderMathInElement) renderMathInElement(out,{
       delimiters:[{left:'$',right:'$',display:false},{left:'$$',right:'$$',display:true}],
       throwOnError:false
     });
     var acts = document.getElementById('zadgai-actions');
-    if (acts) acts.style.display = 'flex';
+    if (acts) acts.style.display = 'block';
   } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = origLabel; }
-    out.innerHTML = '❌ Алдаа: ' + e.message;
+    btn.disabled = false;
+    out.textContent = '❌ Алдаа: '+e.message;
   }
 }
 
 function printZadgai() {
-  var out = document.getElementById('zadgai-out');
-  if (!out || !out.textContent) return;
+  if (!document.getElementById('zadgai-out').textContent) return;
   var win = window.open('','_blank');
-  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' +
-    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">' +
-    '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></sc' + 'ript>' +
-    '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"' +
-    ' onload="renderMathInElement(document.body,{delimiters:[{left:'$',right:'$',display:false},{left:'$$',right:'$$',display:true}]})"></sc' + 'ript>' +
-    '<style>body{font-family:serif;font-size:12pt;line-height:1.8;padding:20mm}h2{font-size:13pt}br{margin:4px 0}</style></head>' +
-    '<body><h2>' + (currentExam ? currentExam.title : '') + ' — Задгай даалгавар</h2>' +
-    out.innerHTML + '</body></html>');
+  win.document.write('<html><head><meta charset="UTF-8">'+
+    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">'+
+    '<style>body{font-family:serif;font-size:12pt;line-height:1.8;padding:20mm}</style></head>'+
+    '<body><h2>'+(examData?examData.title:'')+'</h2>'+
+    document.getElementById('zadgai-out').innerHTML+'</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print()},600);
+}
+
+// ── ХЭВЛЭХ / ТАТАХ ───────────────────────────────────
+function doPrint() {
+  if (!examData) return;
+  var qs = examData.questions || [];
+  var win = window.open('','_blank');
+  var body = '<h2>'+examData.title+'</h2>'+
+    '<p>'+examData.grade+'-р анги · '+examData.subject+' · '+examData.duration+'</p><hr>'+
+    qs.map(function(q,i){
+      var opts = q.options ? q.options.map(function(o,j){return String.fromCharCode(65+j)+'. '+o}).join('   ') : '';
+      return '<p><b>'+(i+1)+'.</b> '+q.question+' /'+q.score+' оноо/</p>'+(opts?'<p>'+opts+'</p>':'');
+    }).join('');
+  win.document.write('<html><head><meta charset="UTF-8">'+
+    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">'+
+    '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"><\/script>'+
+    '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"'+
+    ' onload="renderMathInElement(document.body)"><\/script>'+
+    '<style>body{font-family:serif;font-size:12pt;line-height:1.8;padding:20mm}hr{margin:8px 0}@media print{button{display:none}}</style></head>'+
+    '<body><button onclick="window.print()">🖨 Хэвлэх</button>'+body+'</body></html>');
   win.document.close();
   setTimeout(function(){win.print()},800);
 }
 
-function printExam() {
-  if (!currentExam || !currentExam.questions) { alert('Шалгалт үүсгэнэ үү'); return; }
-  printQuestions(currentExam.questions, currentExam.title);
-}
-
-function dlExamTXT(exam) {
-  const isG=exam.exam_id==='guitsegdel';
-  let t=`${'═'.repeat(60)}\n   ОРХОНТУУЛ ЕБС\n   ${exam.title}\n${'═'.repeat(60)}\n\n`;
-  t+=`Шалгалт: ${exam.exam_type}   Даалгавар: ${exam.total_questions}   Хугацаа: ${exam.duration}\n`;
-  if(!isG) t+=`Нийт оноо: ${exam.total_score}\n`;
-  if(exam.note) t+=`Тэмдэглэл: ${exam.note}\n`;
-  t+=`\n${'─'.repeat(60)}\n\n`;
-  exam.questions.forEach((q,i)=>{
-    const lvl=q.level||q.difficulty||'';
-    t+=`${i+1}. [${lvl}]${isG?'':` (${q.score}п)`}\n${q.question}\n`;
-    if(q.options) q.options.forEach(o=>t+=`    ${o}\n`);
-    t+='\n';
+function doDownload() {
+  if (!examData) return;
+  var qs = examData.questions || [];
+  var txt = examData.title+'\n'+'='.repeat(40)+'\n\n';
+  qs.forEach(function(q,i){
+    txt += (i+1)+'. '+q.question+' /'+q.score+' оноо/\n';
+    if (q.options) q.options.forEach(function(o,j){txt += '   '+String.fromCharCode(65+j)+'. '+o+'\n'});
+    txt += '\n';
   });
-  if(!isG){ t+=`\n${'─'.repeat(60)}\nХАРИУЛТЫН ХУУДАС\n`;
-    exam.questions.forEach((q,i)=>t+=`${i+1}.${q.answer||'—'}  `); }
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([t],{type:'text/plain;charset=utf-8'}));
-  a.download=`${exam.exam_id}_${exam.grade}angi_${exam.subject}_${Date.now()}.txt`;
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([txt],{type:'text/plain;charset=utf-8'}));
+  a.download = (examData.grade+'_angi_'+examData.subject+'_shalgalt.txt').replace(/ /g,'_');
   a.click();
-}
-updateTotal();
-
-// ── AI-аар даалгавар нэмж үүсгэх ──
-async function generateWithAI() {
-  if (!currentGrade) { alert('Анги сонгоно уу'); return; }
-  const subject = document.getElementById('bp-subject').value;
-  const panel = document.getElementById('bp-result');
-
-  // Блюпринтийн тохиргооноос нийт тоог тодорхойлох
-  const blueprint = {};
-  LEVELS.forEach(k => blueprint[k] = +document.getElementById('slider-'+k).value);
-  const total = Object.values(blueprint).reduce((a,b)=>a+b,0);
-  if (total === 0) { alert('Блюпринтийн slider-г тохируулна уу'); return; }
-
-  panel.innerHTML = '<div class="loading"><div class="spinner"></div><p>AI даалгавар үүсгэж байна...</p></div>';
-
-  // Түвшин тус бүрд AI-аар даалгавар үүсгэх
-  let totalSaved = 0;
-  for (const [lvl, cnt] of Object.entries(blueprint)) {
-    if (cnt <= 0) continue;
-    const fd = new FormData();
-    fd.append('grade',   currentGrade);
-    fd.append('subject', subject);
-    fd.append('level',   lvl);
-    fd.append('bloom',   'Мэдлэг');
-    fd.append('q_type',  'Нэг сонголт');
-    fd.append('count',   cnt);
-    fd.append('topic',   '');
-    try {
-      const res  = await fetch('/admin/ai-generate', { method:'POST', body:fd });
-      const data = await res.json();
-      if (data.saved) totalSaved += data.saved;
-      if (data.error && data.error.includes('API_KEY')) {
-        panel.innerHTML = `<div class="empty-state tall"><div class="empty-icon">⚠</div>
-          <p>ANTHROPIC_API_KEY тохируулаагүй байна.</p>
-          <p style="font-size:.82rem;color:var(--text-muted);margin-top:.5rem">
-            Render → Environment → <code>ANTHROPIC_API_KEY</code> нэмнэ үү</p></div>`;
-        return;
-      }
-    } catch(e) { console.error(e); }
-  }
-
-  if (totalSaved > 0) {
-    panel.innerHTML = `<div style="padding:1.5rem;text-align:center">
-      <div style="font-size:3rem;margin-bottom:.5rem">✅</div>
-      <div style="font-size:1.5rem;font-weight:800;color:var(--teal-600);margin-bottom:.5rem">${totalSaved} даалгавар үүслээ</div>
-      <p style="color:var(--text-muted);margin-bottom:1rem">DB-д хадгалагдлаа. Одоо шалгалт үүсгэж болно.</p>
-      <button class="btn btn-primary" onclick="generateExam()">✦ Шалгалт үүсгэх</button>
-    </div>`;
-  } else {
-    panel.innerHTML = `<div class="empty-state tall"><div class="empty-icon">⚠</div>
-      <p>Даалгавар үүсгэж чадсангүй. API түлхүүр болон тохиргоогоо шалгана уу.</p></div>`;
-  }
 }
 </script>
 {% endblock %}
