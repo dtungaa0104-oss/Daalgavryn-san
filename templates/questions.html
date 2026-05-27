@@ -298,29 +298,56 @@ async function runUpload() {
   // Түвшин автоматаар тодорхойлогдоно
 
   try {
-    const res = await fetch('/api/upload', { method:'POST', body:fd });
+    // Эхлээд /api/upload оролдох, амжилтгүй бол /admin/import ашиглах
+    let res = await fetch('/api/upload', { method:'POST', body:fd });
+    let data = await res.json();
 
-    const data = await res.json();
+    // 401 → нэвтрэх шаардлагатай
+    if (res.status === 401 || data.error === 'teacher_login_required') {
+      clearInterval(timer); prog.style.display = 'none';
+      btn.disabled = false; btn.innerHTML = '⬆ Оруулах';
+      if (confirm('Даалгавар оруулахын тулд нэвтрэх шаардлагатай.\n👩‍🏫 Багш нэвтрэх хуудас руу очих уу?')) {
+        window.location.href = '/teacher-login';
+      }
+      return;
+    }
+
+    // 404 → хуучин app.py байна, /admin/import ашиглах
+    if (res.status === 404 || res.status === 405) {
+      fd.append('default_level', 'auto');
+      res  = await fetch('/admin/import', { method:'POST', body:fd });
+      if (res.redirected || res.url.includes('login')) {
+        clearInterval(timer); prog.style.display = 'none';
+        btn.disabled = false; btn.innerHTML = '⬆ Оруулах';
+        if (confirm('Admin нэвтрэх шаардлагатай.\nAdmin нэвтрэх хуудас руу очих уу?')) {
+          window.location.href = '/admin/login';
+        }
+        return;
+      }
+      data = await res.json();
+    }
+
     clearInterval(timer);
     bar.style.width = '100%';
     txt.textContent = 'Дууслаа!';
-
     setTimeout(() => { prog.style.display = 'none'; }, 800);
     btn.disabled = false; btn.innerHTML = '⬆ Оруулах';
 
     if (data.error) {
       box.innerHTML = `<div class="upload-result upload-err">❌ ${data.error}</div>`;
     } else {
+      const saved = data.saved || data.imported || 0;
+      const skipped = data.skipped || 0;
       box.innerHTML = `<div class="upload-result upload-ok">
-        ✅ <strong>${data.saved}</strong> даалгавар амжилттай хадгаллаа
-        ${data.skipped ? `<span style="color:var(--text-muted)"> · ${data.skipped} алгасав</span>` : ''}
+        ✅ <strong>${saved}</strong> даалгавар амжилттай хадгаллаа
+        ${skipped ? `<span style="color:var(--text-muted)"> · ${skipped} алгасав</span>` : ''}
       </div>`;
       setTimeout(() => loadQuestions(), 1000);
     }
   } catch(e) {
     clearInterval(timer); prog.style.display = 'none';
     btn.disabled = false; btn.innerHTML = '⬆ Оруулах';
-    box.innerHTML = `<div class="upload-result upload-err">❌ Холболтын алдаа. Дахин оролдоно уу.</div>`;
+    box.innerHTML = `<div class="upload-result upload-err">❌ Алдаа: ${e.message}<br><small>Дахин оролдох эсвэл admin/import ашиглана уу.</small></div>`;
   }
 }
 
