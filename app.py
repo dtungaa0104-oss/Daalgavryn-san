@@ -7,6 +7,15 @@ try:
 except ImportError:
     anthropic = None
 
+# Curriculum data
+import json as _json
+_curr_path = os.path.join(os.path.dirname(__file__), 'data', 'curriculum.json')
+try:
+    with open(_curr_path, 'r', encoding='utf-8') as _f:
+        CURRICULUM = _json.load(_f)
+except:
+    CURRICULUM = {"grades": {}, "periods": ["40","80","90"]}
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "orkhontul-ebs-2025")
 DB_PATH        = os.environ.get("DB_PATH", "questions.db")
@@ -488,7 +497,86 @@ def admin_ai_generate():
 def teacher_page():
     return render_template("teacher.html",
         subjects=SUBJECTS, all_subjects=ALL_SUBJECTS,
-        levels=LEVELS, blooms=BLOOM)
+        levels=LEVELS, blooms=BLOOM,
+        curriculum_grades=CURRICULUM.get("grades", {}),
+        curriculum_periods=CURRICULUM.get("periods", ["40","80","90"]))
+
+@app.route("/api/lesson-plan", methods=["POST"])
+def lesson_plan():
+    """Ээлжит хичээлийн хөтөлбөр үүсгэх — Teacher_Ej аргаар"""
+    data = request.json
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        return jsonify({"error": "API тохируулаагүй"}), 400
+    manager = data.get("manager_name", "")
+    teacher = data.get("teacher_name", "")
+    subject = data.get("subject", "")
+    topic = data.get("topic", "")
+    unit_title = data.get("unit_title", "")
+    grade = data.get("grade", "9")
+    period = data.get("period", "40")
+    objectives = data.get("objectives", "")
+    is_eeljit = data.get("is_eeljit", True)
+    grade_label = CURRICULUM.get("grades", {}).get(grade, {}).get("label", f"{grade}-р анги")
+    p = int(period)
+    intro = max(5, p // 8)
+    main_t = p // 3 + p // 4
+    end_t = p - intro - main_t
+    prompt = f"""Та Монгол ЕБС-ийн мэргэшсэн хичээлийн хөтөлбөр боловсруулагч AI байна.
+Дараах мэдээллээр БҮРЭН, ДЭЛГЭРЭНГҮЙ хичээлийн хөтөлбөр үүсгэнэ үү.
+
+МЭДЭЭЛЭЛ:
+- Сургалтын менежер: {manager or 'тодорхойгүй'}
+- Багш: {teacher or 'тодорхойгүй'}
+- Анги: {grade_label}
+- Хичээл: {subject}
+- {'Нэгж хичээл: ' + unit_title if unit_title else ''}
+- {'Ээлжит хичээлийн сэдэв: ' + topic if is_eeljit else 'Сэдэв: ' + topic}
+- Хугацаа: {period} минут
+- Нэмэлт зорилт: {objectives or 'байхгүй'}
+
+JSON ФОРМАТААР ХАРИУЛНА УУ (бусад текст огт оруулахгүй):
+{{
+  "header": {{"subject":"{subject}","topic":"{topic}","grade":"{grade_label}","period":"{period} минут","manager":"{manager}","teacher":"{teacher}"}},
+  "objectives": {{
+    "A": "Сурагч [{topic}]-ийн үндсэн ойлголтыг мэдэж чадна — мэдлэгийн зорилт",
+    "B": "Сурагч [{topic}]-ийг тайлбарлах, жишээ гаргах чадвартай болно",
+    "C": "Сурагч [{topic}]-ийг амьдралдаа хэрэглэж чадна"
+  }},
+  "design": {{
+    "method": "Дэлгэрэнгүй арга зүй",
+    "tools": "Тодорхой хэрэглэгдэхүүн",
+    "engagement": "Ангийн зохион байгуулалт"
+  }},
+  "stages": [
+    {{"name":"I. ЭХЛЭЛ","time":{intro},"purpose":"Урьдчилсан мэдлэг идэвхжүүлэлт","teacher_actions":"Тодорхой үйлдэл","student_actions":"Сурагчийн үйлдэл","assessment":"Үнэлгээ"}},
+    {{"name":"II. СУДЛАЛ","time":{main_t},"purpose":"Шинэ мэдлэг, практик","teacher_actions":"Explore-Explain-Practice","student_actions":"Бүлгийн ажил","assessment":"Бүлгийн үнэлгээ"}},
+    {{"name":"III. ДҮГНЭЛТ","time":{end_t},"purpose":"Бататгал, үнэлгээ","teacher_actions":"3-2-1 арга, Exit ticket","student_actions":"3-2-1 карт бөглөх","assessment":"Exit ticket"}}
+  ],
+  "differentiation": {{
+    "support": "Дэмжлэг хэрэгтэй сурагчдад тодорхой арга",
+    "advanced": "Дэвшилтэт сурагчдад нэмэлт даалгавар"
+  }},
+  "homework": "Тодорхой гэрийн даалгавар"
+}}
+Бүх талбарыг МОНГОЛ ХЭЛЭЭР, ДЭЛГЭРЭНГҮЙ бөглөнө үү. Зөвхөн JSON буцаана уу."""
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        full_text = []
+        with client.messages.stream(model="claude-sonnet-4-5", max_tokens=3000,
+            messages=[{"role":"user","content":prompt}]) as stream:
+            for text in stream.text_stream:
+                full_text.append(text)
+        raw = "".join(full_text).strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"): raw = raw[4:]
+        plan = _json.loads(raw.strip())
+        return jsonify({"plan": plan})
+    except Exception as e:
+        import traceback
+        print("LESSON PLAN ERROR:", traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/teacher-ai", methods=["POST"])
 def teacher_ai():
