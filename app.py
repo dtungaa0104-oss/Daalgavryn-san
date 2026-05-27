@@ -513,6 +513,7 @@ def teacher_ai():
 # ══ ЧАТБОТ ════════════════════════════════════════════════
 @app.route("/api/chat", methods=["POST"])
 def chatbot():
+    from flask import Response, stream_with_context
     data     = request.json
     messages = data.get("messages", [])
     api_key  = os.environ.get("ANTHROPIC_API_KEY","")
@@ -522,26 +523,21 @@ def chatbot():
         return jsonify({"error":"Мессеж хоосон"}), 400
     try:
         client = anthropic.Anthropic(api_key=api_key)
-        msg = client.messages.create(
+        # Streaming ашиглан timeout-аас сэргийлэх
+        full_text = []
+        with client.messages.stream(
             model="claude-sonnet-4-5",
-            max_tokens=3000,
-            system="""Та Орхонтуул ЕБС-ийн ухаалаг туслах чатбот.
-Сурагч, багш нарт дараах чиглэлээр туслана:
-- Математик, физик, хими, биологи, монгол хэл болон бусад хичээлийн тайлбар
-- Даалгавар бодоход тусламж (хариулт шууд өгөхгүй, зааварчилгаа өгнө)
-- Шалгалтад бэлтгэх зөвлөгөө
-- Ерөнхий боловсролын асуултанд хариулах
-- Багшид жилийн төлөвлөгөө, ээлжит хичээл, темперамент, мэргэжил сонголт,
-  сэтгэлзүйн зөвлөгөө бэлдэхэд туслана
-Монгол хэлээр дэлгэрэнгүй, найрсаг хариулна.""",
+            max_tokens=2000,
+            system="Та Орхонтуул ЕБС-ийн ухаалаг туслах. Багш, сурагчид Монгол хэлээр товч тодорхой хариулна.",
             messages=messages
-        )
-        return jsonify({"reply": msg.content[0].text})
+        ) as stream:
+            for text in stream.text_stream:
+                full_text.append(text)
+        return jsonify({"reply": "".join(full_text)})
     except Exception as e:
         import traceback
-        err_detail = traceback.format_exc()
-        print("CHAT ERROR:", err_detail)
-        return jsonify({"error": str(e), "detail": err_detail[-500:]}), 500
+        print("CHAT ERROR:", traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/teacher-login", methods=["GET", "POST"])
 def teacher_login_page():
