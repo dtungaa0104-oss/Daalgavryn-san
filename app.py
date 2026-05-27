@@ -521,9 +521,26 @@ def chatbot():
         print("CHAT ERROR:", err_detail)
         return jsonify({"error": str(e), "detail": err_detail[-500:]}), 500
 
+@app.route("/teacher-login", methods=["GET", "POST"])
+def teacher_login_page():
+    if request.method == "POST":
+        pw = request.form.get("password", "")
+        if pw == TEACHER_PASSWORD:
+            session["teacher_logged_in"] = True
+            return redirect(url_for("questions_page"))
+        return render_template("teacher_login.html", error="Нууц үг буруу байна")
+    return render_template("teacher_login.html", error=None)
+
+@app.route("/teacher-logout")
+def teacher_logout():
+    session.pop("teacher_logged_in", None)
+    return redirect(url_for("questions_page"))
+
 @app.route("/api/upload", methods=["POST"])
 def api_upload():
-    """Багш нарын нээлттэй upload route"""
+    """Багшийн upload route"""
+    if not session.get("teacher_logged_in") and not session.get("admin_logged_in"):
+        return jsonify({"error": "teacher_login_required", "redirect": "/teacher-login"}), 401
     from file_importer import extract_from_pdf, extract_from_docx, parse_raw_text
     f = request.files.get("file")
     grade = int(request.form.get("grade", 9))
@@ -574,6 +591,19 @@ def api_upload():
         return jsonify({"success": True, "saved": saved, "skipped": skipped})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# ══ БАГШИЙН НЭВТРЭЛТ ══════════════════════════════════════
+# Багш нар зөвхөн daалгавар upload хийх эрхтэй
+TEACHER_PASSWORD = os.environ.get("TEACHER_PASSWORD", "orkhontul-bagsh")
+
+def teacher_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if session.get("teacher_logged_in") or session.get("admin_logged_in"):
+            return f(*args, **kwargs)
+        return redirect(url_for("teacher_login_page"))
+    return decorated
+
 
 # ══ START ══════════════════════════════════════════════════
 if __name__=="__main__":

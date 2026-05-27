@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Багш нэвтрэх — Орхонтуул ЕБС{% endblock %}
+{% block content %}
+<style>
+.login-wrap{min-height:70vh;display:flex;align-items:center;justify-content:center;padding:2rem}
+.login-card{background:#fff;border-radius:16px;border:1.5px solid var(--green-100);padding:2.5rem;width:100%;max-width:400px;text-align:center}
+.login-icon{font-size:3rem;margin-bottom:.5rem}
+.login-title{font-size:1.3rem;font-weight:800;color:var(--text-dark);margin-bottom:.3rem}
+.login-sub{font-size:.85rem;color:var(--text-muted);margin-bottom:1.5rem}
+.login-input{width:100%;padding:10px 14px;border:1.5px solid var(--green-100);border-radius:8px;font-size:1rem;background:var(--green-50);outline:none;margin-bottom:.8rem;font-family:inherit;box-sizing:border-box}
+.login-input:focus{border-color:var(--teal-600)}
+.login-err{background:#FFEBEE;border:1px solid #FFCDD2;border-radius:8px;padding:.6rem 1rem;font-size:.85rem;color:#C62828;margin-bottom:.8rem}
+.login-info{margin-top:1rem;padding:.8rem;background:var(--green-50);border-radius:8px;font-size:.78rem;color:var(--text-muted)}
+</style>
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-icon">👩‍🏫</div>
+    <div class="login-title">Багш нэвтрэх</div>
+    <div class="login-sub">Даалгавар оруулах эрх авахын тулд нэвтэрнэ үү</div>
+    {% if error %}
+    <div class="login-err">❌ {{ error }}</div>
+    {% endif %}
+    <form method="POST">
+      <input type="password" name="password" class="login-input" placeholder="Багшийн нууц үг" autofocus required>
+      <button type="submit" class="btn btn-primary" style="width:100%;padding:11px;font-size:1rem">
+        → Нэвтрэх
+      </button>
+    </form>
+    <div class="login-info">
+      🔑 Нууц үгийг <strong>сургуулийн администратороос</strong> авна уу<br>
+      <a href="/admin/login" style="color:var(--teal-600);font-size:.75rem">Admin нэвтрэх →</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

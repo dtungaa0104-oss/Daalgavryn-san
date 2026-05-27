@@ -477,6 +477,11 @@
     <li><a href="/mongol-bichig" {% if request.path == '/mongol-bichig' %}class="active"{% endif %}>✍ Босго Шалгалт</a></li>
     <li><a href="/interactive" {% if request.path == '/interactive' %}class="active"{% endif %}>Интерактив</a></li>
   </ul>
+  {% if session.get('teacher_logged_in') %}
+  <a href="/teacher-logout" class="nav-badge" style="text-decoration:none;cursor:pointer">👩‍🏫 Гарах</a>
+  {% elif not session.get('admin_logged_in') %}
+  <a href="/teacher-login" class="nav-badge" style="text-decoration:none;background:rgba(255,255,255,.15)">👩‍🏫 Нэвтрэх</a>
+  {% endif %}
   <div class="nav-badge">1–12-р анги</div>
 </nav>
 
