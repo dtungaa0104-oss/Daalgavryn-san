@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 try:
     import anthropic
 except ImportError:
-    pass  # anthropic not available
+    anthropic = None
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "orkhontul-ebs-2025")
@@ -233,7 +233,6 @@ def generate_exam():
 {need} даалгавар зохио. Зөвхөн JSON array буцаа, тайлбаргүй.
 Формат: [{{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","answer":"А"}}]
 Монгол хэлээр."""
-                    import anthropic
                     client=anthropic.Anthropic(api_key=api_key)
                     msg=client.messages.create(model="claude-sonnet-4-5",max_tokens=3000,
                         messages=[{"role":"user","content":prompt}])
@@ -493,7 +492,6 @@ def teacher_page():
 
 @app.route("/api/teacher-ai", methods=["POST"])
 def teacher_ai():
-    import anthropic
     import json as _json
     data    = request.json
     prompt  = data.get("prompt","")
@@ -515,7 +513,6 @@ def teacher_ai():
 # ══ ЧАТБОТ ════════════════════════════════════════════════
 @app.route("/api/chat", methods=["POST"])
 def chatbot():
-    import anthropic
     data     = request.json
     messages = data.get("messages", [])
     api_key  = os.environ.get("ANTHROPIC_API_KEY","")
