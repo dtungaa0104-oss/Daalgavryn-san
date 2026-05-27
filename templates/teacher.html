@@ -318,8 +318,7 @@ async function callAI(prompt, outId, btnId, actionsId) {
     out.innerHTML = reply
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-      .replace(/
-/g,'<br>');
+      .split('\n').join('<br>');
     if (actionsId) {
       var actEl = document.getElementById(actionsId);
       if (actEl) actEl.style.display = 'flex';
