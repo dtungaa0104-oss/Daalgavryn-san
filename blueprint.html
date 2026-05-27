@@ -35,9 +35,7 @@
 
     <h2 class="panel-title" style="margin-top:1.5rem">③ Хичээл</h2>
     <select id="bp-subject" class="styled-select">
-      {% for key, subjs in subjects.items() %}
-        {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
-      {% endfor %}
+      {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
     </select>
 
     <h2 class="panel-title" style="margin-top:1.5rem">④ Блупринт</h2>
@@ -65,6 +63,15 @@
     <button class="btn btn-primary btn-full" style="margin-top:1rem" onclick="generateExam()">
       ✦ Шалгалт үүсгэх
     </button>
+
+    <div style="margin-top:.5rem;padding-top:.8rem;border-top:1.5px solid var(--green-100)">
+      <p style="font-size:.72rem;color:var(--text-muted);margin-bottom:.5rem">
+        Даалгавар хүрэлцэхгүй үед AI-аар нэмж үүсгэнэ:
+      </p>
+      <button class="btn btn-outline btn-full btn-sm" onclick="generateWithAI()">
+        🤖 AI-аар даалгавар нэмж үүсгэх
+      </button>
+    </div>
   </div>
 
   <!-- ══ БАРУУН: Үр дүн ══ -->
@@ -86,6 +93,7 @@ const LEVEL_SCORES = {"Мэдлэг ойлголт":1,"Чадвар":2,"Хэрэ
 
 let currentExamId = null;
 let currentGrade  = null;
+let currentExam   = null;
 
 window.onload = () => {
   const init = new URLSearchParams(location.search).get('exam') || Object.keys(EXAM_TYPES)[0];
@@ -158,6 +166,7 @@ async function generateExam() {
         <a href="/admin/add">Admin → Даалгавар нэмэх →</a></p></div>`;
     return;
   }
+  currentExam = exam;
   renderExam(exam);
 }
 
@@ -179,6 +188,8 @@ function renderExam(exam) {
             <span class="badge">${exam.grade}-р анги</span>
             <span class="badge">⏱ ${exam.duration}</span>
             ${exam.note?`<span class="badge badge-note">⚠ ${exam.note}</span>`:''}
+            ${exam.ai_generated>0?`<span class="badge" style="background:#E8F5E9;color:#2E7D32;border-color:#A5D6A7">🤖 AI: ${exam.ai_generated} үүслээ</span>`:''}
+            ${exam.source_note?`<span class="badge" style="font-size:.68rem">${exam.source_note}</span>`:''}
           </div>
         </div>
         <div class="exam-summary">
@@ -222,13 +233,117 @@ function renderExam(exam) {
       </div>
 
       <div class="exam-actions">
-        <button class="btn btn-primary" onclick='downloadExam(${JSON.stringify(exam).replace(/'/g,"\\'")})'> ⬇ Татаж авах</button>
-        <button class="btn btn-outline" onclick="generateExam()">↻ Дахин үүсгэх</button>
+        <button class="btn btn-primary" onclick="printExam()">🖨 Хэвлэх</button>
+        <div class="dl-btn-group">
+          <button class="btn btn-outline" onclick='dlExamTXT(currentExam)'>⬇ TXT</button>
+          <button class="btn btn-outline" onclick="showDownloadMenu(this, ()=>currentExam.questions, ()=>currentExam.title)">▾</button>
+        </div>
+        <button class="btn btn-outline" onclick="generateExam()">↻ Дахин</button>
+      </div>
+      <!-- Задгай даалгаврын хэсэг -->
+      <div id="zadgai-section" style="display:none;margin-top:1rem;border-top:2px solid var(--green-100);padding-top:1rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem">
+          <h3 style="font-size:.95rem;font-weight:800;color:var(--text-dark);margin:0">
+            📝 Задгай даалгавар (II хэсэг)
+          </h3>
+          <button class="btn btn-sm btn-primary" onclick="generateZadgai()">✦ AI-аар үүсгэх</button>
+        </div>
+        <div id="zadgai-info" style="font-size:.82rem;color:var(--text-muted);margin-bottom:.8rem"></div>
+        <div id="zadgai-out" class="ai-out"></div>
+        <div id="zadgai-actions" style="display:none;gap:.6rem;margin-top:.6rem">
+          <button class="btn btn-sm btn-outline" onclick="printZadgai()">🖨 Хэвлэх</button>
+        </div>
       </div>
     </div>`;
 }
 
-function downloadExam(exam) {
+// Задгай даалгаврын хэсэг харуулах
+function showZadgaiSection(exam) {
+  var bp = exam.blueprint_info || {};
+  var zadgai = bp.zadgai || [];
+  if (!zadgai.length) return;
+  var sec = document.getElementById('zadgai-section');
+  var info = document.getElementById('zadgai-info');
+  if (sec) sec.style.display = 'block';
+  if (info) {
+    info.innerHTML = 'Нийт: <strong>' + bp.zadgai_total + '</strong> задгай даалгавар · ' +
+      '<strong>' + bp.zadgai_score + '</strong> оноо · ' +
+      zadgai.map(function(z){return z.num+' ('+z.score+' оноо)'}).join(', ');
+  }
+}
+
+async function generateZadgai() {
+  if (!currentExam) return;
+  var out = document.getElementById('zadgai-out');
+  var btn = document.querySelector('#zadgai-section .btn-primary');
+  var grade = currentExam.grade;
+  var subject = currentExam.subject;
+  var origLabel = '✦ AI-аар үүсгэх';
+  out.className = 'ai-out show';
+  out.innerHTML = '⏳ Задгай даалгавар үүсгэж байна...';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> Үүсгэж байна...'; }
+
+  var prompt = grade + '-р ангийн ' + subject + ' хичээлийн УЛСЫН ШАЛГАЛТЫН задгай даалгавар (II хэсэг) зохио. ' +
+    '2025 оны шалгалтын жишгийн дагуу:
+' +
+    '2.1 — 3 дэд даалгавартай, нийт 3 оноо
+' +
+    '2.2 — 3 дэд даалгавартай, нийт 3 оноо
+' +
+    '2.3 — 3 дэд даалгавартай, нийт 3 оноо
+' +
+    'Математикийн томъёо, тэмдэгтүүдийг LaTeX ($...$) хэлбэрт бич.
+' +
+    'Монгол хэлээр, бодит шалгалтын хэлбэрээр. Зөвхөн даалгавар, тайлбаргүй.';
+
+  try {
+    var res = await fetch('/api/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({messages:[{role:'user',content:prompt}]})
+    });
+    var data = await res.json();
+    if (btn) { btn.disabled = false; btn.textContent = origLabel; }
+    if (data.error) { out.innerHTML = '❌ ' + data.error; return; }
+    var reply = data.reply || data.result || '';
+    out.innerHTML = reply
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/
+/g,'<br>');
+    // KaTeX render
+    if (window.renderMathInElement) renderMathInElement(out, {
+      delimiters:[{left:'$',right:'$',display:false},{left:'$$',right:'$$',display:true}],
+      throwOnError:false
+    });
+    var acts = document.getElementById('zadgai-actions');
+    if (acts) acts.style.display = 'flex';
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = origLabel; }
+    out.innerHTML = '❌ Алдаа: ' + e.message;
+  }
+}
+
+function printZadgai() {
+  var out = document.getElementById('zadgai-out');
+  if (!out || !out.textContent) return;
+  var win = window.open('','_blank');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">' +
+    '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></sc' + 'ript>' +
+    '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"' +
+    ' onload="renderMathInElement(document.body,{delimiters:[{left:'$',right:'$',display:false},{left:'$$',right:'$$',display:true}]})"></sc' + 'ript>' +
+    '<style>body{font-family:serif;font-size:12pt;line-height:1.8;padding:20mm}h2{font-size:13pt}br{margin:4px 0}</style></head>' +
+    '<body><h2>' + (currentExam ? currentExam.title : '') + ' — Задгай даалгавар</h2>' +
+    out.innerHTML + '</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print()},800);
+}
+
+function printExam() {
+  if (!currentExam || !currentExam.questions) { alert('Шалгалт үүсгэнэ үү'); return; }
+  printQuestions(currentExam.questions, currentExam.title);
+}
+
+function dlExamTXT(exam) {
   const isG=exam.exam_id==='guitsegdel';
   let t=`${'═'.repeat(60)}\n   ОРХОНТУУЛ ЕБС\n   ${exam.title}\n${'═'.repeat(60)}\n\n`;
   t+=`Шалгалт: ${exam.exam_type}   Даалгавар: ${exam.total_questions}   Хугацаа: ${exam.duration}\n`;
@@ -249,5 +364,58 @@ function downloadExam(exam) {
   a.click();
 }
 updateTotal();
+
+// ── AI-аар даалгавар нэмж үүсгэх ──
+async function generateWithAI() {
+  if (!currentGrade) { alert('Анги сонгоно уу'); return; }
+  const subject = document.getElementById('bp-subject').value;
+  const panel = document.getElementById('bp-result');
+
+  // Блупринтийн тохиргооноос нийт тоог тодорхойлох
+  const blueprint = {};
+  LEVELS.forEach(k => blueprint[k] = +document.getElementById('slider-'+k).value);
+  const total = Object.values(blueprint).reduce((a,b)=>a+b,0);
+  if (total === 0) { alert('Блупринтийн slider-г тохируулна уу'); return; }
+
+  panel.innerHTML = '<div class="loading"><div class="spinner"></div><p>AI даалгавар үүсгэж байна...</p></div>';
+
+  // Түвшин тус бүрд AI-аар даалгавар үүсгэх
+  let totalSaved = 0;
+  for (const [lvl, cnt] of Object.entries(blueprint)) {
+    if (cnt <= 0) continue;
+    const fd = new FormData();
+    fd.append('grade',   currentGrade);
+    fd.append('subject', subject);
+    fd.append('level',   lvl);
+    fd.append('bloom',   'Мэдлэг');
+    fd.append('q_type',  'Нэг сонголт');
+    fd.append('count',   cnt);
+    fd.append('topic',   '');
+    try {
+      const res  = await fetch('/admin/ai-generate', { method:'POST', body:fd });
+      const data = await res.json();
+      if (data.saved) totalSaved += data.saved;
+      if (data.error && data.error.includes('API_KEY')) {
+        panel.innerHTML = `<div class="empty-state tall"><div class="empty-icon">⚠</div>
+          <p>ANTHROPIC_API_KEY тохируулаагүй байна.</p>
+          <p style="font-size:.82rem;color:var(--text-muted);margin-top:.5rem">
+            Render → Environment → <code>ANTHROPIC_API_KEY</code> нэмнэ үү</p></div>`;
+        return;
+      }
+    } catch(e) { console.error(e); }
+  }
+
+  if (totalSaved > 0) {
+    panel.innerHTML = `<div style="padding:1.5rem;text-align:center">
+      <div style="font-size:3rem;margin-bottom:.5rem">✅</div>
+      <div style="font-size:1.5rem;font-weight:800;color:var(--teal-600);margin-bottom:.5rem">${totalSaved} даалгавар үүслээ</div>
+      <p style="color:var(--text-muted);margin-bottom:1rem">DB-д хадгалагдлаа. Одоо шалгалт үүсгэж болно.</p>
+      <button class="btn btn-primary" onclick="generateExam()">✦ Шалгалт үүсгэх</button>
+    </div>`;
+  } else {
+    panel.innerHTML = `<div class="empty-state tall"><div class="empty-icon">⚠</div>
+      <p>Даалгавар үүсгэж чадсангүй. API түлхүүр болон тохиргоогоо шалгана уу.</p></div>`;
+  }
+}
 </script>
 {% endblock %}
