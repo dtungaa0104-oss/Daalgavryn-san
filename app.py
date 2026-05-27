@@ -29,7 +29,7 @@ EXAM_TYPES = {
     },
     "devshih": {
         "id":"devshih","name":"Анги дэвших шалгалт","icon":"📋","color":"#3b82f6",
-        "grades":[3,4,6,7,8,10,11],
+        "grades":list(range(3,12)),
         "blueprint":{
             "total":25,"score":49,"duration":"60 минут",
             "Мэдлэг ойлголт":8,"Чадвар":10,"Хэрэглээ":7,
@@ -39,7 +39,7 @@ EXAM_TYPES = {
     },
     "guitsegdel": {
         "id":"guitsegdel","name":"Гүйцэтгэлийн үнэлгээ","icon":"📝","color":"#22c55e",
-        "grades":list(range(2,12)),
+        "grades":list(range(3,13)),
         "blueprint":{
             "total":10,"score":0,"duration":"30 минут",
             "Мэдлэг ойлголт":4,"Чадвар":4,"Хэрэглээ":2,
@@ -229,7 +229,7 @@ def generate_exam():
                     import json as _json
                     score=LEVEL_SCORE.get(lvl,1)
                     prompt=f"""Та Монгол боловсролын {grade}-р ангийн {subject} хичээлийн багш.
-Блупринтийн түвшин: {lvl}
+Блюпринтийн түвшин: {lvl}
 {need} даалгавар зохио. Зөвхөн JSON array буцаа, тайлбаргүй.
 Формат: [{{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","answer":"А"}}]
 Монгол хэлээр."""
@@ -446,7 +446,7 @@ def admin_ai_generate():
         score=LEVEL_SCORE.get(lvl,1)
         prompt=f"""Та Монгол боловсролын {grade}-р ангийн {subject} хичээлийн багш.
 {"Сэдэв: "+topic if topic else ""}
-Блупринтийн түвшин: {lvl} | Блумын шат: {bloom} | Төрөл: {q_type}
+Блюпринтийн түвшин: {lvl} | Блумын шат: {bloom} | Төрөл: {q_type}
 {count} даалгавар зохио. Зөвхөн JSON array буцаа, тайлбаргүй.
 Формат: [{{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","answer":"А","topic":"{topic or subject}"}}]
 {"Нээлттэй бол option_a..d = null." if not has_options else ""}
