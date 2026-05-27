@@ -63,6 +63,7 @@
   <div class="t-tab" onclick="showTab('lesson')">📖 Ээлжит хичээл</div>
   <div class="t-tab" onclick="showTab('game')">🎮 Алжаал тайлах тоглоом</div>
   <div class="t-tab" onclick="showTab('cls')">👨‍👧 Анги удирдсан багш</div>
+  <div class="t-tab" onclick="showTab('grade')">📊 Дүн тооцоологч</div>
 </div>
 
 <!-- ══ TAB 1: ЖИЛИЙН ТӨЛӨВЛӨГӨӨ ══ -->
@@ -263,6 +264,72 @@
 </div>
 
 <!-- ══ TAB 4: АНГИ УДИРДСАН БАГШ ══ -->
+
+<div class="t-panel" id="panel-grade">
+<style>
+.gc-wrap{padding:1.2rem}
+.gc-cfg{display:flex;gap:.8rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem;padding:.8rem;background:#fff;border-radius:10px;border:1.5px solid var(--green-100)}
+.gc-cfg label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);display:block;margin-bottom:.25rem}
+.gc-cfg input,.gc-cfg select{padding:6px 10px;border:1.5px solid var(--green-100);border-radius:8px;font-size:.82rem;background:var(--green-50)}
+.gc-table-wrap{overflow-x:auto}
+.gct{width:100%;border-collapse:collapse;font-size:.78rem}
+.gct th{background:var(--teal-600);color:#fff;padding:7px 8px;white-space:nowrap;font-size:.7rem;font-weight:700}
+.gct th.left{text-align:left}
+.gct td{padding:5px 6px;border-bottom:1px solid var(--green-50);text-align:center;vertical-align:middle}
+.gct tr:hover td{background:var(--green-50)}
+.sc-inp{width:44px;padding:3px 4px;border:1.5px solid var(--green-100);border-radius:5px;text-align:center;font-size:.72rem}
+.sc-inp:focus{border-color:var(--teal-600);outline:none}
+.pbar{height:5px;border-radius:3px;background:var(--green-100);overflow:hidden;margin-top:2px}
+.pbar-fill{height:100%;border-radius:3px}
+.gc-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.6rem;margin:.8rem 0}
+.gc-card{background:#fff;border:1.5px solid var(--green-100);border-radius:10px;padding:.7rem;text-align:center}
+.gc-card .v{font-size:1.5rem;font-weight:900;color:var(--teal-600)}
+.gc-card .l{font-size:.68rem;color:var(--text-muted);margin-top:.15rem}
+.ptabs{display:flex;gap:.3rem;margin-bottom:.6rem;flex-wrap:wrap}
+.ptab{padding:4px 12px;border-radius:99px;font-size:.75rem;font-weight:600;border:1.5px solid var(--green-200);background:#fff;color:var(--text-mid);cursor:pointer}
+.ptab.on{background:var(--teal-600);color:#fff;border-color:var(--teal-600)}
+.impr-btn{background:#fff8e1;border:1.5px solid #ffc107;color:#e65100;border-radius:7px;padding:3px 9px;font-size:.72rem;font-weight:600;cursor:pointer}
+.impr-btn:hover{background:#ff9800;color:#fff;border-color:#ff9800}
+</style>
+<div class="gc-wrap">
+  <div class="gc-cfg">
+    <div><label>Анги</label>
+      <select id="gc-grade">
+        {% for g in range(1,13) %}<option value="{{ g }}">{{ g }}-р анги</option>{% endfor %}
+      </select></div>
+    <div><label>Улирал</label>
+      <select id="gc-ulirl">
+        <option value="q1">1-р улирал (9-11-р сар)</option>
+        <option value="q2">2-р улирал (12-2-р сар)</option>
+        <option value="q3">3-р улирал (3-5-р сар)</option>
+        <option value="h1">1-р хагас жил</option>
+        <option value="h2">2-р хагас жил</option>
+        <option value="yr">Жилийн дүн</option>
+      </select></div>
+    <div><label>Сурагчийн тоо</label>
+      <input type="number" id="gc-n" value="30" min="1" max="50" style="width:70px"></div>
+    <button class="btn btn-primary btn-sm" onclick="gcInit()">✦ Хүснэгт</button>
+    <button class="btn btn-outline btn-sm" onclick="gcDemo()">⚡ Жишиг</button>
+    <button class="btn btn-outline btn-sm" onclick="gcPrint()">🖨 Хэвлэх</button>
+  </div>
+  <div class="ptabs" id="gc-ptabs"></div>
+  <div class="gc-sum" id="gc-sum" style="display:none"></div>
+  <div class="gc-table-wrap">
+    <table class="gct" id="gc-tbl">
+      <tbody><tr><td colspan="11" style="padding:2rem;color:var(--text-muted)">
+        ↑ Тохируулаад "Хүснэгт" дарна уу</td></tr></tbody>
+    </table>
+  </div>
+  <div id="gc-ai" style="display:none;margin-top:1rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+      <strong style="font-size:.9rem">🤖 AI зөвлөмж</strong>
+      <button class="btn btn-sm btn-primary" onclick="gcClassAdvice()">✦ Ангийн зөвлөмж</button>
+    </div>
+    <div class="ai-out" id="gc-ai-out"></div>
+  </div>
+</div>
+</div>
+
 <div class="t-panel" id="panel-cls">
   <div style="background:var(--teal-600);padding:16px 32px;border-bottom:2px solid var(--green-200)">
     <h2 style="color:#fff;font-size:1rem;font-weight:800;margin:0">👨‍👧 Анги удирдсан багшид зориулсан хэрэгслүүд</h2>
@@ -322,7 +389,7 @@
 // ══ TAB ════════════════════════════════════════════
 function showTab(tab) {
   document.querySelectorAll('.t-tab').forEach(function(t,i){
-    t.classList.toggle('active', ['plan','lesson','game','cls'][i] === tab);
+    t.classList.toggle('active', ['plan','lesson','game','cls','grade'][i] === tab);
   });
   document.querySelectorAll('.t-panel').forEach(function(p){
     p.classList.remove('active');
@@ -332,6 +399,236 @@ function showTab(tab) {
 }
 
 // ══ AI ДУУДАХ ════════════════════════════════════════
+
+// ══ ДҮН ТООЦООЛОГЧ ════════════════════════════════════
+var GC = {
+  students: [],
+  months: [],
+  PERIODS: {
+    q1:['9','10','11'], q2:['12','1','2'], q3:['3','5','4'],
+    h1:['9','10','11','12','1','2'], h2:['3','4','5','6'],
+    yr:['9','10','11','12','1','2','3','4','5']
+  },
+  MNAMES: {'9':'9-р','10':'10-р','11':'11-р','12':'12-р','1':'1-р','2':'2-р','3':'3-р','4':'4-р','5':'5-р','6':'6-р'},
+  FIELDS: ['irts','idwh','gd','bd'],
+  WEIGHTS: [0.2, 0.2, 0.2, 0.4],
+  FLABELS: ['Ирц','Идэвх','ГД','БД']
+};
+
+function gcInit() {
+  var n = parseInt(document.getElementById('gc-n').value) || 30;
+  var per = document.getElementById('gc-ulirl').value;
+  GC.months = (GC.PERIODS[per] || ['9','10','11']).slice();
+  GC.students = [];
+  for (var i = 0; i < n; i++) {
+    var mo = {};
+    ['9','10','11','12','1','2','3','4','5','6'].forEach(function(m) {
+      mo[m] = {irts:0, idwh:0, gd:0, bd:0};
+    });
+    GC.students.push({name:'', mo:mo});
+  }
+  gcRenderTabs();
+  gcRenderTable();
+  document.getElementById('gc-ai').style.display = 'block';
+}
+
+function gcRenderTabs() {
+  var per = document.getElementById('gc-ulirl').value;
+  var months = GC.PERIODS[per] || GC.months;
+  document.getElementById('gc-ptabs').innerHTML = months.map(function(m) {
+    var isActive = GC.months.indexOf(m) >= 0 ? 'on' : '';
+    return '<div class="ptab ' + isActive + '" data-m="' + m + '" onclick="gcTabClick(this)">' + GC.MNAMES[m] + ' сар</div>';
+  }).join('');
+}
+
+function gcTabClick(el) {
+  el.classList.toggle('on');
+  var m = el.getAttribute('data-m');
+  var idx = GC.months.indexOf(m);
+  if (idx >= 0) GC.months.splice(idx, 1);
+  else GC.months.push(m);
+  gcRenderTable();
+}
+
+function gcCalc(st) {
+  var avgs = GC.FIELDS.map(function(f) {
+    if (!GC.months.length) return 0;
+    var sum = GC.months.reduce(function(a, m) { return a + (st.mo[m] ? (st.mo[m][f] || 0) : 0); }, 0);
+    return sum / GC.months.length;
+  });
+  var yawts = avgs.reduce(function(a, v, i) { return a + v * GC.WEIGHTS[i]; }, 0);
+  return {avgs: avgs, yawts: yawts};
+}
+
+function gcGrade(v) {
+  if (v >= 90) return {t:'VIII', lbl:'Дээд', bg:'#1b5e20', fg:'#fff'};
+  if (v >= 80) return {t:'VII',  lbl:'Өндөр', bg:'#2e7d32', fg:'#fff'};
+  if (v >= 70) return {t:'VI',   lbl:'Дунджаас дээш', bg:'#43a047', fg:'#fff'};
+  if (v >= 60) return {t:'V',    lbl:'Дундаж', bg:'#9ccc65', fg:'#1b5e20'};
+  if (v >= 50) return {t:'IV',   lbl:'Дунджаас доош', bg:'#ffca28', fg:'#5d4037'};
+  if (v >= 40) return {t:'III',  lbl:'Бага', bg:'#ffa726', fg:'#fff'};
+  if (v >= 30) return {t:'II',   lbl:'Маш бага', bg:'#ef5350', fg:'#fff'};
+  return {t:'I', lbl:'Хангалтгүй', bg:'#b71c1c', fg:'#fff'};
+}
+
+function gcRenderTable() {
+  if (!GC.students.length) return;
+  // Дүн тооцоолж rank хийх
+  var calcs = GC.students.map(function(st) { return gcCalc(st); });
+  var sorted = calcs.map(function(c, i) { return {i:i, v:c.yawts}; }).sort(function(a,b){return b.v-a.v;});
+  var ranks = new Array(GC.students.length);
+  sorted.forEach(function(s, r) { ranks[s.i] = r + 1; });
+
+  var thead = '<thead><tr>' +
+    '<th style="width:28px">#</th>' +
+    '<th class="left" style="min-width:120px">Нэр</th>' +
+    GC.FLABELS.map(function(l, i) {
+      return '<th>' + l + '<br><span style="font-weight:400;font-size:.65rem">' +
+        (GC.WEIGHTS[i]*100).toFixed(0) + '%</span></th>';
+    }).join('') +
+    '<th style="background:#1b5e20">Явц %</th>' +
+    '<th style="background:#1b5e20">Улирал</th>' +
+    '<th style="background:#1b5e20">Үнэлгээ</th>' +
+    '<th>Зөвлөмж</th>' +
+    '</tr></thead>';
+
+  var tbody = '<tbody>' + GC.students.map(function(st, i) {
+    var ca = calcs[i];
+    var g = gcGrade(ca.yawts);
+    var rank = ranks[i];
+    var rankHtml = rank <= 3
+      ? '<span style="width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:800;background:' + ['#FFD700','#C0C0C0','#CD7F32'][rank-1] + ';color:' + ['#5D4037','#333','#fff'][rank-1] + '">' + rank + '</span>'
+      : '<span style="color:var(--text-muted);font-size:.75rem">' + rank + '</span>';
+
+    var fieldCells = GC.FIELDS.map(function(f, fi) {
+      var avg = ca.avgs[fi];
+      var color = avg >= 70 ? '#43a047' : avg >= 50 ? '#fb8c00' : '#e53935';
+      var monthInputs = GC.months.map(function(m) {
+        var val = (st.mo[m] && st.mo[m][f]) || 0;
+        return '<input type="number" class="sc-inp" value="' + val + '" min="0" max="100"' +
+          ' title="' + GC.MNAMES[m] + ' сар"' +
+          ' onchange="gcSet(' + i + ',\'' + m + '\',\'' + f + '\',+this.value)">';
+      }).join('');
+      return '<td><div style="font-size:.75rem;font-weight:700;color:' + color + '">' + avg.toFixed(0) + '%</div>' +
+        '<div class="pbar"><div class="pbar-fill" style="width:' + Math.min(avg,100) + '%;background:' + color + '"></div></div>' +
+        '<div style="display:flex;gap:2px;flex-wrap:wrap;margin-top:2px">' + monthInputs + '</div></td>';
+    }).join('');
+
+    return '<tr>' +
+      '<td>' + rankHtml + '</td>' +
+      '<td style="text-align:left"><input type="text" value="' + (st.name||'') + '" placeholder="' + (i+1) + '-р сурагч"' +
+        ' style="border:none;background:transparent;width:100%;font-size:.78rem;font-weight:600"' +
+        ' onchange="GC.students[' + i + '].name=this.value"></td>' +
+      fieldCells +
+      '<td id="gcy-' + i + '" style="font-weight:800;font-size:.88rem">' + ca.yawts.toFixed(1) + '</td>' +
+      '<td id="gcq-' + i + '" style="font-weight:700">' + ca.yawts.toFixed(1) + '</td>' +
+      '<td><span style="padding:2px 8px;border-radius:99px;font-size:.72rem;font-weight:800;background:' + g.bg + ';color:' + g.fg + '" title="' + g.lbl + '">' + g.t + ' түвшин</span></td>' +
+      '<td><button class="impr-btn" onclick="gcAdvice(' + i + ')">💡</button></td>' +
+      '</tr>';
+  }).join('') + '</tbody>';
+
+  document.getElementById('gc-tbl').innerHTML = thead + tbody;
+  gcUpdateSum(calcs);
+}
+
+function gcSet(i, m, f, v) {
+  if (!GC.students[i] || !GC.students[i].mo[m]) return;
+  GC.students[i].mo[m][f] = v;
+  // Тухайн мөрийг дахин тооцоолж харуулах
+  var ca = gcCalc(GC.students[i]);
+  var g = gcGrade(ca.yawts);
+  var yEl = document.getElementById('gcy-' + i);
+  var qEl = document.getElementById('gcq-' + i);
+  if (yEl) yEl.textContent = ca.yawts.toFixed(1);
+  if (qEl) qEl.textContent = ca.yawts.toFixed(1);
+  // Summary шинэчлэх
+  var calcs = GC.students.map(function(st) { return gcCalc(st); });
+  gcUpdateSum(calcs);
+}
+
+function gcUpdateSum(calcs) {
+  var vals = calcs.map(function(c) { return c.yawts; });
+  var avg = vals.reduce(function(a,b){return a+b},0) / (vals.length||1);
+  var above70 = vals.filter(function(v){return v>=70}).length;
+  var below60 = vals.filter(function(v){return v<60}).length;
+  var g = gcGrade(avg);
+  var el = document.getElementById('gc-sum');
+  el.style.display = 'grid';
+  el.innerHTML =
+    '<div class="gc-card"><div class="v">' + avg.toFixed(1) + '%</div><div class="l">Ангийн дундаж</div></div>' +
+    '<div class="gc-card"><div class="v" style="color:#2e7d32">' + above70 + '</div><div class="l">70%+ сурагч</div></div>' +
+    '<div class="gc-card"><div class="v" style="color:#c62828">' + below60 + '</div><div class="l">60% доош</div></div>' +
+    '<div class="gc-card"><div class="v" style="font-size:1rem;background:' + g.bg + ';color:' + g.fg + ';border-radius:8px;padding:4px 10px">' + g.t + ' түвшин</div><div class="l">' + g.lbl + '</div></div>';
+}
+
+function gcAdvice(i) {
+  var st = GC.students[i];
+  var ca = gcCalc(st);
+  var name = st.name || ((i+1) + '-р сурагч');
+  var weak = GC.FIELDS.map(function(f, fi) {
+    if (!GC.months.length) return null;
+    var sum = GC.months.reduce(function(a,m){return a+(st.mo[m]?st.mo[m][f]:0);},0);
+    var a = sum / GC.months.length;
+    return a < 70 ? GC.FLABELS[fi] + ' (' + a.toFixed(0) + '%)' : null;
+  }).filter(Boolean);
+  var prompt = name + ' сурагчийн явцын дүн: ' + ca.yawts.toFixed(1) + '%.\n' +
+    (weak.length ? 'Сул тал: ' + weak.join(', ') + '.\n' : 'Бүх үзүүлэлт хангалттай.\n') +
+    'Анги удирдсан багшид энэ сурагчийн идэвхийг нэмэгдүүлэх 3 практик зөвлөмж өгнө үү. Монгол хэлээр товч.';
+  var out = document.getElementById('gc-ai-out');
+  out.className = 'ai-out show';
+  out.innerHTML = '⏳ ' + name + '-д зориулсан зөвлөмж...';
+  callAI(prompt, 'gc-ai-out', null, null);
+}
+
+function gcClassAdvice() {
+  var calcs = GC.students.map(function(st) { return gcCalc(st); });
+  var vals = calcs.map(function(c) { return c.yawts; });
+  var avg = vals.reduce(function(a,b){return a+b},0) / (vals.length||1);
+  var below = GC.students.filter(function(st,i){return vals[i]<60;}).map(function(st,i){return st.name||(i+1)+'-р';});
+  var grade = document.getElementById('gc-grade').value;
+  var ulirl = document.getElementById('gc-ulirl').options[document.getElementById('gc-ulirl').selectedIndex].text;
+  var prompt = grade + '-р анги, ' + ulirl + ' дүнгийн тойм:\n' +
+    'Ангийн дундаж: ' + avg.toFixed(1) + '%\n' +
+    '60% доош: ' + (below.length ? below.join(', ') : 'байхгүй') + '\n' +
+    'Нийт сурагч: ' + GC.students.length + '\n\n' +
+    'Анги удирдсан багшид:\n1. Ерөнхий дүгнэлт\n2. Доогуур дүнтэй сурагчдыг идэвхжүүлэх 3-4 арга\n3. Ирц, идэвхийг сайжруулах санал\nМонгол хэлээр товч тодорхой.';
+  callAI(prompt, 'gc-ai-out', null, null);
+}
+
+function gcDemo() {
+  gcInit();
+  var names = ['Б.Болд','Д.Дулам','Н.Нансал','Э.Энхжин','О.Оюун','Т.Туяа','Г.Гантулга','А.Амгалан',
+    'Х.Хишиг','М.Мөнхзул','Б.Баттөгс','Д.Даваасүрэн','Ж.Жавхлан','Т.Тэнгис','С.Сувд',
+    'Г.Гэрэл','Б.Батбаяр','О.Одбаяр','Н.Номин','Э.Эрдэнэ'];
+  GC.students.forEach(function(st, i) {
+    st.name = names[i % names.length];
+    GC.months.forEach(function(m) {
+      st.mo[m].irts = 70 + Math.floor(Math.random()*30);
+      st.mo[m].idwh = 55 + Math.floor(Math.random()*45);
+      st.mo[m].gd   = 60 + Math.floor(Math.random()*40);
+      st.mo[m].bd   = 50 + Math.floor(Math.random()*50);
+    });
+  });
+  gcRenderTable();
+}
+
+function gcPrint() {
+  var win = window.open('','_blank');
+  var grade = document.getElementById('gc-grade').value;
+  var ulirl = document.getElementById('gc-ulirl').options[document.getElementById('gc-ulirl').selectedIndex].text;
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Дүн</title>' +
+    '<style>body{font-family:sans-serif;font-size:9pt;padding:10mm}' +
+    'table{width:100%;border-collapse:collapse}th{background:#1b5e20;color:#fff;padding:4px;font-size:8pt}' +
+    'td{padding:3px 5px;border:1px solid #ccc;text-align:center}h2{font-size:13pt}' +
+    '@media print{button{display:none}}</style></head><body>' +
+    '<h2>' + grade + '-р анги — ' + ulirl + ' Дүн</h2>' +
+    document.getElementById('gc-tbl').outerHTML +
+    '</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print();},400);
+}
+// ══ ДҮН ТООЦООЛОГЧ ТӨГСӨВ ════════════════════════════
+
 // VERSION: 2025-teacher-v3-fixed
 async function callAI(prompt, outId, btnId, actionsId) {
   var btn = btnId ? document.getElementById(btnId) : null;
