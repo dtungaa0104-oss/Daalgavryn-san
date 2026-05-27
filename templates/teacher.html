@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Багш танд — Орхонтуул ЕБС{% endblock %}
+{# v2025-teacher-fixed #}
 {% block content %}
 <style>
 .teacher-tabs{display:flex;background:var(--teal-600);border-bottom:3px solid var(--green-200);overflow-x:auto}
@@ -288,11 +289,11 @@ function showTab(tab) {
 }
 
 // ══ AI ДУУДАХ ════════════════════════════════════════
-// VERSION: 2025-blueprint-fix
+// VERSION: 2025-teacher-v3-fixed
 async function callAI(prompt, outId, btnId, actionsId) {
   var btn = btnId ? document.getElementById(btnId) : null;
   var out = document.getElementById(outId);
-  if (!out) return;
+  if (!out) { console.error('callAI: out element not found:', outId); return; }
   var origLabel = btn ? (btn.getAttribute('data-label') || btn.textContent) : '';
   if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> AI боловсруулж байна...'; }
   out.className = 'ai-out show';
@@ -303,35 +304,28 @@ async function callAI(prompt, outId, btnId, actionsId) {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({messages: [{role: 'user', content: prompt}]})
     });
-    if (!res.ok) {
-      var txt = await res.text();
-      // JSON алдаа байвал detail харуулах
-      var errMsg = txt;
-      try {
-        var errJson = JSON.parse(txt);
-        errMsg = errJson.error || errJson.detail || txt;
-      } catch(e2) {}
-      out.innerHTML = '❌ ' + res.status + ': ' + errMsg.slice(0, 500);
-      if (btn) { btn.disabled = false; btn.textContent = origLabel; } return;
-    }
     var data = await res.json();
     if (btn) { btn.disabled = false; btn.textContent = origLabel; }
-    if (data.error) { out.innerHTML = '❌ ' + data.error; return; }
+    if (!res.ok || data.error) {
+      out.innerHTML = '❌ Алдаа: ' + (data.error || 'HTTP ' + res.status);
+      return;
+    }
     var reply = data.reply || data.result || '⚠️ Хариулт хоосон';
-    // Мөр таслалт → <br> болгон HTML render хийх
     out.innerHTML = reply
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-      .replace(/\n/g,'<br>');
+      .replace(/
+/g,'<br>');
     if (actionsId) {
       var actEl = document.getElementById(actionsId);
-      if (actEl) { actEl.style.display = 'flex'; }
+      if (actEl) actEl.style.display = 'flex';
     }
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = origLabel; }
-    out.innerHTML = '❌ ' + (e.name === 'AbortError' ? 'Хугацаа дуусав. Дахин оролдоно уу.' : 'Алдаа: ' + e.message);
+    out.innerHTML = '❌ Холболтын алдаа: ' + e.message;
   }
 }
+
 
 // ══ ЖИЛИЙН ТӨЛӨВЛӨГӨӨ ═══════════════════════════════
 function genPlan() {
