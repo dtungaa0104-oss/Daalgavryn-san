@@ -49,7 +49,7 @@ EXAM_TYPES = {
     },
     "elselt": {
         "id":"elselt","name":"Элсэлтийн шалгалт","icon":"🎓","color":"#a855f7",
-        "grades":[12],
+        "grades":list(range(11,13)),
         "blueprint":{
             "total":40,"score":100,"duration":"90 минут",
             "Мэдлэг ойлголт":10,"Чадвар":18,"Хэрэглээ":12,
