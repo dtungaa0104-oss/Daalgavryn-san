@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Блупринт — Шалгалт үүсгэх{% endblock %}
+{% block title %}Блюпринт — Шалгалт үүсгэх{% endblock %}
 {% block content %}
 
 <div class="blueprint-layout">
@@ -38,7 +38,7 @@
       {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
     </select>
 
-    <h2 class="panel-title" style="margin-top:1.5rem">④ Блупринт</h2>
+    <h2 class="panel-title" style="margin-top:1.5rem">④ Блюпринт</h2>
     <p class="hint">Түвшин тус бүрд хэдэн даалгавар оруулахыг тохируулна</p>
 
     <div class="blueprint-sliders">
@@ -106,24 +106,43 @@ function selectExamType(eid) {
   document.querySelectorAll('.et-select-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('etbtn-'+eid)?.classList.add('active');
   const bp = EXAM_TYPES[eid].blueprint;
+  // Анги товчны dimmed/active тохируулах
   for (let g=1;g<=12;g++) {
     const btn=document.getElementById('gbtn-'+g);
     if (btn) btn.classList.toggle('dimmed',!EXAM_TYPES[eid].grades.includes(g));
-    btn?.classList.remove('active');
+    if (btn && !EXAM_TYPES[eid].grades.includes(g)) btn.classList.remove('active');
   }
-  selectGrade(EXAM_TYPES[eid].grades[0]);
+  // Slider-г ЭХЛЭЭД тохируулах (selectGrade-аас өмнө)
   setSliders(bp['Мэдлэг ойлголт']||0, bp['Чадвар']||0, bp['Хэрэглээ']||0);
   document.getElementById('guitsegdel-note').style.display = eid==='guitsegdel'?'inline':'none';
+  // Анги сонголт (slider-г дарж бичихгүйгээр)
+  if (!currentGrade || !EXAM_TYPES[eid].grades.includes(currentGrade)) {
+    selectGradeOnly(EXAM_TYPES[eid].grades[0]);
+  }
 }
 
-function selectGrade(g) {
+// Зөвхөн анги сонгох (selectExamType дахин дуудахгүй)
+function selectGradeOnly(g) {
   currentGrade = g;
   document.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('gbtn-'+g)?.classList.add('active');
-  const eid=GRADE_MAP[g]||'guitsegdel'; const et=EXAM_TYPES[eid];
+  const eid=GRADE_MAP[g]||'devshih'; const et=EXAM_TYPES[eid];
   document.getElementById('grade-exam-info').innerHTML =
     `<span style="color:${et.color}">${et.icon} ${g}-р анги — ${et.name}</span>`;
-  if (currentExamId && !EXAM_TYPES[currentExamId]?.grades.includes(g)) selectExamType(eid);
+}
+
+function selectGrade(g) {
+  const eid=GRADE_MAP[g]||'devshih';
+  // Өөр шалгалтын ангилалд хамаарах анги сонговол шалгалтын төрлийг солих
+  if (currentExamId && !EXAM_TYPES[currentExamId]?.grades.includes(g)) {
+    selectExamType(eid);
+    selectGradeOnly(g);
+  } else {
+    selectGradeOnly(g);
+    const et=EXAM_TYPES[currentExamId||eid];
+    document.getElementById('grade-exam-info').innerHTML =
+      `<span style="color:${et.color}">${et.icon} ${g}-р анги — ${et.name}</span>`;
+  }
 }
 
 function setSliders(m, c, h) {
@@ -371,11 +390,11 @@ async function generateWithAI() {
   const subject = document.getElementById('bp-subject').value;
   const panel = document.getElementById('bp-result');
 
-  // Блупринтийн тохиргооноос нийт тоог тодорхойлох
+  // Блюпринтийн тохиргооноос нийт тоог тодорхойлох
   const blueprint = {};
   LEVELS.forEach(k => blueprint[k] = +document.getElementById('slider-'+k).value);
   const total = Object.values(blueprint).reduce((a,b)=>a+b,0);
-  if (total === 0) { alert('Блупринтийн slider-г тохируулна уу'); return; }
+  if (total === 0) { alert('Блюпринтийн slider-г тохируулна уу'); return; }
 
   panel.innerHTML = '<div class="loading"><div class="spinner"></div><p>AI даалгавар үүсгэж байна...</p></div>';
 
