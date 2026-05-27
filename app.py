@@ -18,7 +18,6 @@ EXAM_TYPES = {
         "blueprint":{
             "total":20,"score":35,"duration":"80 минут",
             "Мэдлэг ойлголт":6,"Чадвар":8,"Хэрэглээ":6,
-            # Задгай даалгавар тусдаа
             "zadgai_total":3,"zadgai_score":9,
             "zadgai": [
                 {"num":"2.1","score":3,"desc":"Харьцаа, пропорц"},
