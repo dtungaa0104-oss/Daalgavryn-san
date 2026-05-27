@@ -299,11 +299,15 @@ async function callAI(prompt, outId, btnId, actionsId) {
   out.className = 'ai-out show';
   out.innerHTML = '⏳ Боловсруулж байна... (30-60 секунд)';
   try {
+    var controller = new AbortController();
+    var timeout = setTimeout(function(){ controller.abort(); }, 55000);
     var res = await fetch('/api/chat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({messages: [{role: 'user', content: prompt}]})
+      body: JSON.stringify({messages: [{role: 'user', content: prompt}]}),
+      signal: controller.signal
     });
+    clearTimeout(timeout);
     var data = await res.json();
     if (btn) { btn.disabled = false; btn.textContent = origLabel; }
     if (!res.ok || data.error) {
