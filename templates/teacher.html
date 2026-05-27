@@ -123,72 +123,115 @@
 
 <!-- ══ TAB 2: ЭЭЛЖИТ ХИЧЭЭЛ ══ -->
 <div class="t-panel" id="panel-lesson">
-  <div class="tool-wrap">
-    <div class="tool-card">
-      <h3>📖 Ээлжит хичээлийн хөтөлбөр боловсруулагч</h3>
-      <div class="form-grid">
-        <div class="field-group">
-          <label>Анги <span class="req">*</span></label>
-          <select id="les-grade">{% for g in range(1,13) %}<option value="{{ g }}" {% if g==9 %}selected{% endif %}>{{ g }}-р анги</option>{% endfor %}</select>
-        </div>
-        <div class="field-group">
-          <label>Хичээл <span class="req">*</span></label>
-          <select id="les-subject">{% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select>
-        </div>
-        <div class="field-group">
-          <label>Хугацаа (минут)</label>
-          <select id="les-time">
-            <option value="40" selected>40 минут</option>
-            <option value="45">45 минут</option>
-            <option value="80">80 минут</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label>Түвшин</label>
-          <select id="les-level">{% for l in levels %}<option value="{{ l }}">{{ l }}</option>{% endfor %}</select>
-        </div>
+  <div class="tool-wrap" style="display:grid;grid-template-columns:300px 1fr;gap:0;min-height:70vh">
+
+    <!-- ЗҮҮН ПАНЕЛ: маягт -->
+    <div style="background:#fff;border-right:2px solid var(--green-100);padding:1.2rem;overflow-y:auto">
+      <div style="font-size:.7rem;font-weight:700;letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:1rem">📖 Хичээлийн мэдээлэл</div>
+
+      <div class="field-group" style="margin-bottom:.7rem">
+        <label style="font-size:.7rem;font-weight:700;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase">Сургалтын менежер</label>
+        <input type="text" id="les-manager" class="form-input" placeholder="Жишээ: Б.Цэцэг" style="width:100%;margin-top:.3rem">
       </div>
-      <div class="field-group" style="margin-top:.8rem">
-        <label>Хичээлийн сэдэв <span class="req">*</span></label>
-        <input type="text" id="les-topic" placeholder="Жишээ: Шугаман тэгшитгэл..." oninput="updateMedleLink(this.value)">
+      <div class="field-group" style="margin-bottom:.7rem">
+        <label style="font-size:.7rem;font-weight:700;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase">Багшийн нэр</label>
+        <input type="text" id="les-teacher" class="form-input" placeholder="Жишээ: Д.Бат" style="width:100%;margin-top:.3rem">
       </div>
-      <div class="field-group" style="margin-top:.5rem">
-        <label>Хичээлийн зорилго</label>
-        <input type="text" id="les-goal" placeholder="Жишээ: Сурагч тэгшитгэлийг бодож чадна...">
+
+      <hr style="border:none;border-top:1px dashed var(--green-100);margin:.8rem 0">
+
+      <div class="field-group" style="margin-bottom:.7rem">
+        <label style="font-size:.7rem;font-weight:700;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase">Анги</label>
+        <select id="les-grade-sel" class="subject-select" style="width:100%;margin-top:.3rem" onchange="lesOnGrade()">
+          <option value="">— Анги сонгох —</option>
+          {% for gnum, gdata in curriculum_grades.items() %}
+          <option value="{{ gnum }}">{{ gdata.label }}</option>
+          {% endfor %}
+        </select>
       </div>
-      <div style="margin-top:.8rem;padding:.7rem 1rem;background:#E3F2FD;border:1.5px solid #90CAF9;border-radius:8px;font-size:.82rem;color:#1565C0">
-        💡 <strong>medle.mn</strong>-с жишиг хичээл харах:
-        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.4rem" id="medle-links">
-          <a href="https://medle.mn/lesson" target="_blank" class="medle-link blue">🔍 Хичээл хайх →</a>
-          <a href="https://medle.mn" target="_blank" class="medle-link blue">🌐 medle.mn →</a>
+
+      <div class="field-group" style="margin-bottom:.7rem">
+        <label style="font-size:.7rem;font-weight:700;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase">Хичээл</label>
+        <select id="les-subj-sel" class="subject-select" style="width:100%;margin-top:.3rem" onchange="lesOnSubject()" disabled>
+          <option value="">— Эхлээд анги сонгоно уу —</option>
+        </select>
+      </div>
+
+      <div class="field-group" style="margin-bottom:.7rem">
+        <label style="font-size:.7rem;font-weight:600;color:var(--teal-600);font-size:.72rem">Нэгж хичээлийн сэдэв</label>
+        <select id="les-unit-sel" class="subject-select" style="width:100%;margin-top:.3rem" onchange="lesOnUnit()" disabled>
+          <option value="">— Эхлээд хичээл сонгоно уу —</option>
+        </select>
+      </div>
+
+      <div id="les-lesson-wrap" style="display:none;margin-bottom:.7rem">
+        <label style="font-size:.7rem;font-weight:600;color:var(--teal-600);font-size:.72rem">Ээлжит хичээлийн сэдэв</label>
+        <select id="les-lesson-sel" class="subject-select" style="width:100%;margin-top:.3rem" disabled>
+          <option value="">— Ээлжит хичээл сонгоно уу —</option>
+        </select>
+      </div>
+
+      <div class="field-group" style="margin-bottom:.7rem">
+        <label style="font-size:.7rem;color:var(--text-muted);font-style:italic">Эсвэл өөрийн сэдэв бичнэ үү</label>
+        <input type="text" id="les-custom" class="form-input" placeholder="Жишээ: Цахим аюулгүй байдал..." style="width:100%;margin-top:.3rem">
+      </div>
+
+      <div class="field-group" style="margin-bottom:.7rem">
+        <label style="font-size:.7rem;font-weight:700;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase">Хугацаа</label>
+        <select id="les-period" class="subject-select" style="width:100%;margin-top:.3rem">
+          {% for p in curriculum_periods %}
+          <option value="{{ p }}">{{ p }} минут{% if p in ['80','90'] %} (давхар){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field-group" style="margin-bottom:.8rem">
+        <label style="font-size:.7rem;font-weight:700;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase">Суралцахуйн зорилт (нэмэлт)</label>
+        <textarea id="les-objectives" class="form-input" rows="3" style="width:100%;margin-top:.3rem;resize:vertical"
+          placeholder="Сурагч энэ хичээлийн дараа юуг мэдэж, хийж чадах болох..."></textarea>
+      </div>
+
+      <div style="margin-bottom:.5rem;font-size:.8rem">
+        <label style="cursor:pointer"><input type="checkbox" id="les-zorilgo" checked> Суралцахуйн зорилт нэмэх</label>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;padding:11px" id="les-btn"
+        data-label="✦ Ээлжит хичээлийн хөтөлбөр үүсгэх" onclick="genLesson()">
+        ✦ Ээлжит хичээлийн хөтөлбөр үүсгэх
+      </button>
+    </div>
+
+    <!-- БАРУУН ПАНЕЛ: үр дүн -->
+    <div style="background:var(--green-50);overflow-y:auto;padding:0">
+      <div id="les-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:3rem;color:var(--text-muted)">
+        <div style="font-size:3rem;margin-bottom:1rem;opacity:.4">📄</div>
+        <h3 style="font-size:1.1rem;font-weight:600;color:var(--text-mid);margin-bottom:.5rem">Хөтөлбөр үүсгэхэд бэлэн</h3>
+        <p style="font-size:.85rem;line-height:1.7">Зүүн талын маягтыг бөглөөд<br><strong>товч дарна уу</strong></p>
+      </div>
+      <div id="les-loading" style="display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:1rem;color:var(--text-muted)">
+        <div class="spinner"></div>
+        <p style="font-weight:600">AI хөтөлбөр боловсруулж байна...</p>
+        <p style="font-size:.8rem;max-width:280px;text-align:center;line-height:1.6">Bloom-ийн таксономи, Discovery Learning аргаар дэлгэрэнгүй хөтөлбөр үүсгэж байна</p>
+      </div>
+      <div id="les-result" style="display:none">
+        <div style="position:sticky;top:0;z-index:10;display:flex;gap:.5rem;padding:.7rem 1.5rem;background:rgba(244,246,251,.95);border-bottom:1px solid var(--green-100)">
+          <button class="btn btn-sm btn-primary" onclick="printOut('les-plan-content','Ээлжит хичээлийн хөтөлбөр')">🖨 Хэвлэх</button>
+          <button class="btn btn-sm btn-outline" onclick="copyLessonPlan()">📋 Хуулах</button>
+          <button class="btn btn-sm btn-outline" onclick="resetLesson()">↻ Шинэчлэх</button>
         </div>
-      </div>
-      <div style="margin-top:.8rem;padding:.7rem 1rem;background:#FFF8E1;border:1.5px solid #FFE082;border-radius:8px;font-size:.82rem;color:#E65100">
-        📚 Дасгал бодлого:
-        <label style="margin-left:8px;cursor:pointer;font-weight:600">
-          <input type="checkbox" id="les-include-exercises" checked> Дасгал нэмэх
-        </label>
-        <label style="margin-left:12px;cursor:pointer;font-weight:600">
-          <input type="checkbox" id="les-include-econtent"> eContent линк
-        </label>
-        <div id="econtent-link-box" style="display:none;margin-top:.5rem">
-          <a id="econtent-link" href="https://econtent.edu.mn" target="_blank" style="color:#1565C0;font-weight:700;font-size:.82rem">📗 eContent сурах бичиг →</a>
-        </div>
-      </div>
-      <div style="margin-top:.5rem;font-size:.8rem;color:var(--text-muted)">
-  <label style="cursor:pointer"><input type="checkbox" id="les-zorilgo" checked> Суралцахуйн зорилт нэмэх</label>
-</div>
-<button class="btn btn-primary" style="margin-top:.5rem" id="les-btn" data-label="✦ Ээлжит хичээл боловсруулах" onclick="genLesson()">✦ Ээлжит хичээл боловсруулах</button>
-      <div class="ai-out" id="les-out"></div>
-      <div id="les-actions" style="display:none;gap:.6rem;margin-top:.8rem">
-        <button class="btn btn-sm btn-outline" onclick="printOut('les-out','Ээлжит хичээлийн хөтөлбөр')">🖨 Хэвлэх</button>
-        <button class="btn btn-sm btn-outline" onclick="dlOut('les-out','lesson')">⬇ Татах</button>
+        <div id="les-plan-content" style="max-width:800px;margin:1.5rem auto;padding:0 1.5rem 3rem"></div>
       </div>
     </div>
   </div>
+
+  <!-- Хуучин les-out (callAI-тай нийцтэй байхын тулд) -->
+  <div class="ai-out" id="les-out" style="display:none"></div>
+  <div id="les-actions" style="display:none;gap:.6rem;margin-top:.8rem">
+    <button class="btn btn-sm btn-outline" onclick="printOut('les-out','Ээлжит хичээлийн хөтөлбөр')">🖨 Хэвлэх</button>
+    <button class="btn btn-sm btn-outline" onclick="dlOut('les-out','lesson')">⬇ Татах</button>
+  </div>
 </div>
 
-<!-- ══ TAB 3: ТОГЛООМ ══ -->
 <div class="t-panel" id="panel-game">
   <div class="tool-wrap">
     <div class="tool-card">
@@ -358,23 +401,276 @@ document.addEventListener('DOMContentLoaded', function() {
     if (box) box.style.display = this.checked ? 'block' : 'none';
   });
 });
-function genLesson() {
-  var g     = document.getElementById('les-grade').value;
-  var s     = document.getElementById('les-subject').value;
-  var time  = document.getElementById('les-time').value;
-  var lvl   = document.getElementById('les-level').value;
-  var topic = document.getElementById('les-topic').value;
-  var goal  = document.getElementById('les-goal').value;
-  var withEx= document.getElementById('les-include-exercises').checked;
-  if (!topic) { alert('Хичээлийн сэдэв оруулна уу'); return; }
-  var exSection = withEx ? '\n6. ДАСГАЛ БОДЛОГО\n   Мэдлэг ойлголт: 2 энгийн дасгал\n   Чадвар: 2 дунд бодлого\n   Хэрэглээ: 1 амьдралтай холбоотой бодлого' : '';
-  var prompt = g + '-р ангийн ' + s + ' хичээл. Сэдэв: ' + topic + '\nХугацаа: ' + time + ' мин | Түвшин: ' + lvl + (goal ? '\nЗорилго: ' + goal : '') + '\n\nЭЭЛЖИТ ХИЧЭЭЛИЙН ХӨТӨЛБӨР:\n1. ХИЧЭЭЛИЙН ЗОРИЛГО\n2. ХЭРЭГТЭЙ МАТЕРИАЛ\n3. ХИЧЭЭЛИЙН ЯВЦ\n   - Сэдэлжүүлэх (5 мин)\n   - Шинэ мэдлэг (' + Math.round(time*0.4) + ' мин)\n   - Дадлага (' + Math.round(time*0.35) + ' мин)\n   - Үнэлгээ (' + Math.round(time*0.15) + ' мин)\n   - Дүгнэлт (5 мин)\n4. ГЭРИЙН ДААЛГАВАР\n5. ҮНЭЛГЭЭНИЙ ШАЛГУУР' + exSection + '\nМонгол хэлээр.';
-  var lesZorilgo = document.getElementById('les-zorilgo')?.checked;
-  if (lesZorilgo) {
-    prompt += '\n6. СУРАЛЦАХУЙН ЗОРИЛТ\n   - Мэдлэг: Сурагч ... -г мэдэх болно\n   - Чадвар: Сурагч ... -г чадах болно\n   - Хандлага: Сурагч ... -д хандах болно';
-  }
-  callAI(prompt, 'les-out', 'les-btn', 'les-actions');
+// ══ CURRICULUM NAVIGATION ════════════════════════
+const LES_CURR = {{ curriculum_grades | tojson }};
+
+function lesOnGrade() {
+  var grade = document.getElementById('les-grade-sel').value;
+  var subSel = document.getElementById('les-subj-sel');
+  subSel.innerHTML = '<option value="">— Сонгох —</option>';
+  subSel.disabled = !grade;
+  lesResetTopics();
+  if (!grade || !LES_CURR[grade]) return;
+  Object.keys(LES_CURR[grade].subjects).forEach(function(s) {
+    var o = document.createElement('option');
+    o.value = s; o.textContent = s;
+    subSel.appendChild(o);
+  });
 }
+
+function lesOnSubject() {
+  lesResetTopics();
+  var grade = document.getElementById('les-grade-sel').value;
+  var subj = document.getElementById('les-subj-sel').value;
+  if (!grade || !subj) return;
+  var units = LES_CURR[grade].subjects[subj].units;
+  var u = document.getElementById('les-unit-sel');
+  u.innerHTML = '<option value="">— Нэгж сонгоно уу —</option>';
+  units.forEach(function(unit, i) {
+    var o = document.createElement('option');
+    o.value = i; o.textContent = unit.title;
+    u.appendChild(o);
+  });
+  u.disabled = false;
+}
+
+function lesOnUnit() {
+  var grade = document.getElementById('les-grade-sel').value;
+  var subj = document.getElementById('les-subj-sel').value;
+  var idx = document.getElementById('les-unit-sel').value;
+  var lSel = document.getElementById('les-lesson-sel');
+  var lWrap = document.getElementById('les-lesson-wrap');
+  lSel.innerHTML = '<option value="">— Ээлжит хичээл сонгоно уу —</option>';
+  lSel.disabled = true;
+  lWrap.style.display = 'none';
+  if (idx === '' || !grade || !subj) return;
+  var lessons = LES_CURR[grade].subjects[subj].units[idx].lessons;
+  lessons.forEach(function(l) {
+    var o = document.createElement('option');
+    o.value = l; o.textContent = l;
+    lSel.appendChild(o);
+  });
+  lSel.disabled = false;
+  lWrap.style.display = 'block';
+}
+
+function lesResetTopics() {
+  var u = document.getElementById('les-unit-sel');
+  u.innerHTML = '<option value="">— Эхлээд хичээл сонгоно уу —</option>';
+  u.disabled = true;
+  var ls = document.getElementById('les-lesson-sel');
+  ls.innerHTML = '<option value="">— Ээлжит хичээл сонгоно уу —</option>';
+  ls.disabled = true;
+  document.getElementById('les-lesson-wrap').style.display = 'none';
+}
+
+function lesGetTopic() {
+  var custom = document.getElementById('les-custom').value.trim();
+  if (custom) return { topic: custom, unitTitle: '', isEeljit: false };
+  var grade = document.getElementById('les-grade-sel').value;
+  var subj = document.getElementById('les-subj-sel').value;
+  if (!grade || !subj) return null;
+  var unitIdx = document.getElementById('les-unit-sel').value;
+  var lesson = document.getElementById('les-lesson-sel').value;
+  if (unitIdx === '') return null;
+  var unitTitle = LES_CURR[grade].subjects[subj].units[unitIdx].title;
+  if (lesson) return { topic: lesson, unitTitle: unitTitle, isEeljit: true };
+  return { topic: unitTitle, unitTitle: '', isEeljit: false };
+}
+
+// ══ ХӨТӨЛБӨР ҮҮСГЭХ ══════════════════════════════
+async function genLesson() {
+  var grade = document.getElementById('les-grade-sel').value;
+  var subj = document.getElementById('les-subj-sel').value;
+  var topicInfo = lesGetTopic();
+  var custom = document.getElementById('les-custom').value.trim();
+  if (!topicInfo && !custom) {
+    alert('Анги, хичээл болон сэдвийг сонгоно уу!');
+    return;
+  }
+  if (!topicInfo) topicInfo = { topic: custom, unitTitle: '', isEeljit: false };
+  if (!subj && !custom) { alert('Хичээл сонгоно уу!'); return; }
+
+  var btn = document.getElementById('les-btn');
+  var origLabel = btn.getAttribute('data-label');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-sm"></span> Боловсруулж байна...';
+
+  // UI шилжүүлэх
+  document.getElementById('les-empty').style.display = 'none';
+  document.getElementById('les-loading').style.display = 'flex';
+  document.getElementById('les-result').style.display = 'none';
+
+  var zorilgo = document.getElementById('les-zorilgo')?.checked;
+
+  try {
+    var res = await fetch('/api/lesson-plan', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        manager_name: document.getElementById('les-manager').value,
+        teacher_name: document.getElementById('les-teacher').value,
+        subject: subj || custom,
+        topic: topicInfo.topic,
+        unit_title: topicInfo.unitTitle,
+        is_eeljit: topicInfo.isEeljit,
+        grade: grade || '9',
+        period: document.getElementById('les-period').value,
+        objectives: document.getElementById('les-objectives').value,
+        add_zorilgo: zorilgo
+      })
+    });
+    var data = await res.json();
+    btn.disabled = false; btn.textContent = origLabel;
+    document.getElementById('les-loading').style.display = 'none';
+    if (data.error) {
+      document.getElementById('les-empty').style.display = 'flex';
+      document.getElementById('les-empty').innerHTML =
+        '<div style="color:#c62828;padding:1rem">❌ ' + data.error + '</div>';
+      return;
+    }
+    renderLessonPlan(data.plan, topicInfo);
+    document.getElementById('les-result').style.display = 'block';
+  } catch(e) {
+    btn.disabled = false; btn.textContent = origLabel;
+    document.getElementById('les-loading').style.display = 'none';
+    document.getElementById('les-empty').style.display = 'flex';
+    document.getElementById('les-empty').innerHTML =
+      '<div style="color:#c62828">❌ Холболтын алдаа: ' + e.message + '</div>';
+  }
+}
+
+function renderLessonPlan(plan, topicInfo) {
+  var h = plan.header || {};
+  var typeTag = topicInfo.isEeljit
+    ? '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:#e8f4fd;color:#1a6fa8;font-weight:600;margin-left:8px">Ээлжит хичээл</span>'
+    : '<span style="font-size:10px;padding:2px 8px;border-radius:99px;background:#eef0ff;color:#3a52c8;font-weight:600;margin-left:8px">Нэгж хичээл</span>';
+  var unitLine = topicInfo.isEeljit && topicInfo.unitTitle
+    ? '<div style="font-size:11px;color:var(--text-muted);margin-top:2px">Нэгж: ' + topicInfo.unitTitle + '</div>' : '';
+  var obj = plan.objectives || {};
+  var des = plan.design || {};
+  var stages = plan.stages || [];
+  var diff = plan.differentiation || {};
+
+  var html = '<div style="background:#fff;border:1px solid var(--green-100);border-radius:12px;padding:1.5rem;margin-bottom:1rem">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--green-100)">' +
+      '<div><div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.3rem">' +
+        (h.manager ? 'Сургалтын менежер: <strong>' + h.manager + '</strong>' : '') +
+        (h.teacher ? ' &nbsp;|&nbsp; Багш: <strong>' + h.teacher + '</strong>' : '') +
+      '</div>' +
+      '<div style="font-size:1.1rem;font-weight:800;color:var(--text-dark)">' + (h.subject||'') + ' — ' + (h.topic||'') + typeTag + '</div>' +
+      unitLine + '</div>' +
+      '<span style="background:var(--teal-600);color:#fff;padding:4px 12px;border-radius:99px;font-size:.72rem;font-weight:700;white-space:nowrap">ХИЧЭЭЛИЙН ХӨТӨЛБӨР</span>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem">' +
+      lesMetaItem('Хичээл', h.subject||'') + lesMetaItem('Анги', h.grade||'') +
+      lesMetaItem('Сэдэв', h.topic||'') + lesMetaItem('Хугацаа', h.period||'') +
+    '</div></div>' +
+
+  // Зорилт
+  '<div style="background:#fff;border:1px solid var(--green-100);border-radius:12px;margin-bottom:1rem;overflow:hidden">' +
+    '<div style="display:flex;align-items:center;gap:.8rem;padding:.8rem 1.2rem;border-bottom:1px solid var(--green-100);background:#f8f9fc">' +
+      '<span style="width:26px;height:26px;border-radius:6px;background:rgba(192,57,43,.12);color:#c0392b;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">1</span>' +
+      '<span style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Суралцахуйн зорилт (Bloom)</span>' +
+    '</div>' +
+    '<div style="padding:1rem;display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem">' +
+      lesBloomCard('А — Мэдлэг','Мэдэх (Know)', obj.A||'', 'a') +
+      lesBloomCard('Б — Чадвар','Ойлгох (Understand)', obj.B||'', 'b') +
+      lesBloomCard('В — Бүтээлч','Хэрэглэх (Apply)', obj.C||'', 'c') +
+    '</div></div>' +
+
+  // Дизайн
+  '<div style="background:#fff;border:1px solid var(--green-100);border-radius:12px;margin-bottom:1rem;overflow:hidden">' +
+    '<div style="display:flex;align-items:center;gap:.8rem;padding:.8rem 1.2rem;border-bottom:1px solid var(--green-100);background:#f8f9fc">' +
+      '<span style="width:26px;height:26px;border-radius:6px;background:rgba(36,113,163,.12);color:#2471a3;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">2</span>' +
+      '<span style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Хичээлийн бэлтгэл ба дизайн</span>' +
+    '</div>' +
+    '<div style="padding:1rem;display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem">' +
+      lesDesignCard('Арга зүй', des.method||'') +
+      lesDesignCard('Хэрэглэгдэхүүн', des.tools||'') +
+      lesDesignCard('Ангийн зохион байгуулалт', des.engagement||'') +
+    '</div></div>' +
+
+  // Үе шат
+  '<div style="background:#fff;border:1px solid var(--green-100);border-radius:12px;margin-bottom:1rem;overflow:hidden">' +
+    '<div style="display:flex;align-items:center;gap:.8rem;padding:.8rem 1.2rem;border-bottom:1px solid var(--green-100);background:#f8f9fc">' +
+      '<span style="width:26px;height:26px;border-radius:6px;background:rgba(30,132,73,.12);color:#1e8449;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">3</span>' +
+      '<span style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Хичээлийн үйл ажиллагааны урсгал</span>' +
+    '</div>' +
+    '<div style="overflow-x:auto">' +
+    '<table style="width:100%;border-collapse:collapse">' +
+    '<thead><tr>' +
+      ['Үе шат','Зорилго','Багшийн үйл ажиллагаа','Сурагчийн үйл ажиллагаа','Үнэлгээ'].map(function(h) {
+        return '<th style="font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);padding:.6rem .8rem;text-align:left;border-bottom:1px solid var(--green-100);background:#f8f9fc;white-space:nowrap">' + h + '</th>';
+      }).join('') +
+    '</tr></thead><tbody>' +
+    stages.map(function(s) {
+      return '<tr><td style="padding:.8rem;font-size:.82rem;vertical-align:top;border-bottom:1px solid var(--green-50)">' +
+        '<div style="font-weight:700;color:var(--text-dark)">' + s.name + '</div>' +
+        '<div style="font-size:.72rem;color:var(--text-muted);font-family:monospace">' + s.time + ' мин</div></td>' +
+        '<td style="padding:.8rem;font-size:.82rem;vertical-align:top;border-bottom:1px solid var(--green-50);color:var(--text-mid)">' + (s.purpose||'') + '</td>' +
+        '<td style="padding:.8rem;font-size:.82rem;vertical-align:top;border-bottom:1px solid var(--green-50);color:var(--text-mid);line-height:1.6">' + (s.teacher_actions||'').split('\n').join('<br>') + '</td>' +
+        '<td style="padding:.8rem;font-size:.82rem;vertical-align:top;border-bottom:1px solid var(--green-50);color:var(--text-mid);line-height:1.6">' + (s.student_actions||'').split('\n').join('<br>') + '</td>' +
+        '<td style="padding:.8rem;font-size:.82rem;vertical-align:top;border-bottom:1px solid var(--green-50);color:var(--text-mid)">' + (s.assessment||'') + '</td>' +
+        '</tr>';
+    }).join('') +
+    '</tbody></table></div></div>' +
+
+  // Нэмэлт
+  '<div style="background:#fff;border:1px solid var(--green-100);border-radius:12px;overflow:hidden">' +
+    '<div style="display:flex;align-items:center;gap:.8rem;padding:.8rem 1.2rem;border-bottom:1px solid var(--green-100);background:#f8f9fc">' +
+      '<span style="width:26px;height:26px;border-radius:6px;background:rgba(211,84,0,.12);color:#d35400;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">4</span>' +
+      '<span style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Нэмэлт үйл ажиллагаа & Ялгавартай хандлага</span>' +
+    '</div>' +
+    '<div style="padding:1rem;display:grid;grid-template-columns:1fr 1fr;gap:.8rem">' +
+      '<div style="background:#f8f9fc;border-radius:8px;padding:.8rem;border:1px solid var(--green-100)">' +
+        '<div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem">📝 Гэрийн даалгавар</div>' +
+        '<div style="font-size:.82rem;color:var(--text-mid);line-height:1.7">' + (plan.homework||'') + '</div>' +
+      '</div>' +
+      '<div style="background:#f8f9fc;border-radius:8px;padding:.8rem;border:1px solid var(--green-100)">' +
+        '<div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem">📊 Ялгавартай хандлага</div>' +
+        '<div style="font-size:.82rem;color:var(--text-mid);line-height:1.7">' +
+          '<strong style="color:#66bb6a;font-size:.72rem">🟢 Дэмжлэг хэрэгтэй:</strong><br>' + (diff.support||'') + '<br><br>' +
+          '<strong style="color:#ffa726;font-size:.72rem">🟠 Дэвшилтэт:</strong><br>' + (diff.advanced||'') +
+        '</div>' +
+      '</div>' +
+    '</div></div>';
+
+  document.getElementById('les-plan-content').innerHTML = html;
+}
+
+function lesMetaItem(label, value) {
+  return '<div><div style="font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)">' + label + '</div><div style="font-size:.88rem;font-weight:700;color:var(--text-dark);margin-top:.2rem">' + value + '</div></div>';
+}
+
+function lesBloomCard(label, name, text, type) {
+  var colors = {a:'background:#f0faf1;border-color:#a8d5ab', b:'background:#eef5ff;border-color:#9ec4f5', c:'background:#fff8ee;border-color:#f5c87a'};
+  var tc = {a:'color:#2e7d32', b:'color:#1565c0', c:'color:#e65100'};
+  return '<div style="border-radius:8px;padding:.8rem;border:1px solid;' + (colors[type]||'') + '">' +
+    '<div style="font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.3rem;' + (tc[type]||'') + '">' + label + '</div>' +
+    '<div style="font-size:.72rem;font-weight:600;color:var(--text-mid);margin-bottom:.4rem">' + name + '</div>' +
+    '<div style="font-size:.78rem;color:var(--text-mid);line-height:1.6">' + text + '</div></div>';
+}
+
+function lesDesignCard(label, text) {
+  return '<div style="background:#f8f9fc;border-radius:8px;padding:.8rem;border:1px solid var(--green-100)">' +
+    '<div style="font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-600);margin-bottom:.4rem">' + label + '</div>' +
+    '<div style="font-size:.78rem;color:var(--text-mid);line-height:1.7">' + text + '</div></div>';
+}
+
+function copyLessonPlan() {
+  var text = document.getElementById('les-plan-content')?.innerText || '';
+  navigator.clipboard.writeText(text).then(function() {
+    alert('Хөтөлбөр хуулагдлаа!');
+  });
+}
+
+function resetLesson() {
+  document.getElementById('les-empty').style.display = 'flex';
+  document.getElementById('les-empty').innerHTML = '<div style="font-size:3rem;margin-bottom:1rem;opacity:.4">📄</div><h3 style="font-size:1.1rem;font-weight:600;color:var(--text-mid);margin-bottom:.5rem">Хөтөлбөр үүсгэхэд бэлэн</h3><p style="font-size:.85rem;line-height:1.7">Зүүн талын маягтыг бөглөөд<br><strong>товч дарна уу</strong></p>';
+  document.getElementById('les-result').style.display = 'none';
+}
+
 
 // ══ ТОГЛООМ ══════════════════════════════════════════
 async function genGame() {
