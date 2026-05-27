@@ -107,7 +107,10 @@
           <a href="https://medle.mn/lesson" target="_blank" class="medle-link">🌐 Бүгд →</a>
         </div>
       </div>
-      <button class="btn btn-primary" style="margin-top:.8rem" id="plan-btn" data-label="✦ Жилийн төлөвлөгөө гаргах" onclick="genPlan()">✦ Жилийн төлөвлөгөө гаргах</button>
+      <div style="margin-top:.5rem;font-size:.8rem;color:var(--text-muted)">
+  <label style="cursor:pointer"><input type="checkbox" id="plan-zorilgo" checked> Суралцахуйн зорилт нэмэх</label>
+</div>
+<button class="btn btn-primary" style="margin-top:.5rem" id="plan-btn" data-label="✦ Жилийн төлөвлөгөө гаргах" onclick="genPlan()">✦ Жилийн төлөвлөгөө гаргах</button>
       <div class="ai-out" id="plan-out"></div>
       <div id="plan-actions" style="display:none;gap:.6rem;margin-top:.8rem">
         <button class="btn btn-sm btn-outline" onclick="printOut('plan-out','Жилийн төлөвлөгөө')">🖨 Хэвлэх</button>
@@ -171,7 +174,10 @@
           <a id="econtent-link" href="https://econtent.edu.mn" target="_blank" style="color:#1565C0;font-weight:700;font-size:.82rem">📗 eContent сурах бичиг →</a>
         </div>
       </div>
-      <button class="btn btn-primary" style="margin-top:.8rem" id="les-btn" data-label="✦ Ээлжит хичээл боловсруулах" onclick="genLesson()">✦ Ээлжит хичээл боловсруулах</button>
+      <div style="margin-top:.5rem;font-size:.8rem;color:var(--text-muted)">
+  <label style="cursor:pointer"><input type="checkbox" id="les-zorilgo" checked> Суралцахуйн зорилт нэмэх</label>
+</div>
+<button class="btn btn-primary" style="margin-top:.5rem" id="les-btn" data-label="✦ Ээлжит хичээл боловсруулах" onclick="genLesson()">✦ Ээлжит хичээл боловсруулах</button>
       <div class="ai-out" id="les-out"></div>
       <div id="les-actions" style="display:none;gap:.6rem;margin-top:.8rem">
         <button class="btn btn-sm btn-outline" onclick="printOut('les-out','Ээлжит хичээлийн хөтөлбөр')">🖨 Хэвлэх</button>
@@ -333,7 +339,9 @@ function genPlan() {
   var h = document.getElementById('plan-hours').value;
   var t = document.getElementById('plan-terms').value;
   var n = document.getElementById('plan-note').value;
-  callAI('Монгол боловсролын стандартын дагуу ' + g + '-р ангийн ' + s + ' хичээлийн жилийн төлөвлөгөө гарга.\n7 хоногт ' + h + ' цаг. ' + t + ' улирал. ' + (n ? 'Нэмэлт: ' + n : '') + '\nХүснэгт: Улирал | Цаг | Сэдэв | Агуулга | Үнэлгээ\nМонгол хэлээр, бодит дэлгэрэнгүй.', 'plan-out', 'plan-btn', 'plan-actions');
+  var zorilgo = document.getElementById('plan-zorilgo')?.checked;
+  var planPrompt = 'Монгол боловсролын стандартын дагуу ' + g + '-р ангийн ' + s + ' хичээлийн жилийн төлөвлөгөө гарга. 7 хоногт ' + h + ' цаг. ' + t + ' улирал.' + (n ? ' ' + n + '.' : '') + ' Хүснэгт хэлбэрээр: Улирал | Долоо хоног | Сэдэв | Агуулга | Үнэлгээ' + (zorilgo ? ' | Суралцахуйн зорилт' : '') + '. Монгол хэлээр, товч тодорхой.';
+  callAI(planPrompt, 'plan-out', 'plan-btn', 'plan-actions');
 }
 
 // ══ ЭЭЛЖИТ ХИЧЭЭЛ ════════════════════════════════════
@@ -363,6 +371,10 @@ function genLesson() {
   if (!topic) { alert('Хичээлийн сэдэв оруулна уу'); return; }
   var exSection = withEx ? '\n6. ДАСГАЛ БОДЛОГО\n   Мэдлэг ойлголт: 2 энгийн дасгал\n   Чадвар: 2 дунд бодлого\n   Хэрэглээ: 1 амьдралтай холбоотой бодлого' : '';
   var prompt = g + '-р ангийн ' + s + ' хичээл. Сэдэв: ' + topic + '\nХугацаа: ' + time + ' мин | Түвшин: ' + lvl + (goal ? '\nЗорилго: ' + goal : '') + '\n\nЭЭЛЖИТ ХИЧЭЭЛИЙН ХӨТӨЛБӨР:\n1. ХИЧЭЭЛИЙН ЗОРИЛГО\n2. ХЭРЭГТЭЙ МАТЕРИАЛ\n3. ХИЧЭЭЛИЙН ЯВЦ\n   - Сэдэлжүүлэх (5 мин)\n   - Шинэ мэдлэг (' + Math.round(time*0.4) + ' мин)\n   - Дадлага (' + Math.round(time*0.35) + ' мин)\n   - Үнэлгээ (' + Math.round(time*0.15) + ' мин)\n   - Дүгнэлт (5 мин)\n4. ГЭРИЙН ДААЛГАВАР\n5. ҮНЭЛГЭЭНИЙ ШАЛГУУР' + exSection + '\nМонгол хэлээр.';
+  var lesZorilgo = document.getElementById('les-zorilgo')?.checked;
+  if (lesZorilgo) {
+    prompt += '\n6. СУРАЛЦАХУЙН ЗОРИЛТ\n   - Мэдлэг: Сурагч ... -г мэдэх болно\n   - Чадвар: Сурагч ... -г чадах болно\n   - Хандлага: Сурагч ... -д хандах болно';
+  }
   callAI(prompt, 'les-out', 'les-btn', 'les-actions');
 }
 

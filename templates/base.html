@@ -606,7 +606,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </style>
 
 <!-- Чатбот товч -->
-<button id="chat-btn" onclick="toggleChat()" title="Ухаалаг туслах">
+<button id="chat-btn" title="Ухаалаг туслах">
   <span id="chat-icon">💬</span>
   <div class="notif" id="chat-notif"></div>
 </button>
@@ -619,7 +619,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <strong>Ухаалаг Туслах</strong>
       <span>Орхонтуул ЕБС · AI чатбот</span>
     </div>
-    <button class="chat-close" onclick="toggleChat()">✕</button>
+    <button class="chat-close">✕</button>
   </div>
 
   <div id="chat-messages">
@@ -630,110 +630,21 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 
   <div class="quick-btns" id="quick-btns">
-    <button class="quick-btn" onclick="quickSend('Математикийн бодлого бодоход туслаач')">📐 Математик</button>
-    <button class="quick-btn" onclick="quickSend('Шалгалтад бэлтгэх зөвлөгөө өгөөч')">📝 Шалгалт</button>
-    <button class="quick-btn" onclick="quickSend('Физикийн томъёог тайлбарлаач')">⚡ Физик</button>
-    <button class="quick-btn" onclick="quickSend('Монгол хэлний дүрэм тайлбарлаач')">📖 Монгол хэл</button>
+    <button class="quick-btn" data-msg="Математикийн бодлого бодоход туслаач">📐 Математик</button>
+    <button class="quick-btn" data-msg="Шалгалтад бэлтгэх зөвлөгөө өгөөч">📝 Шалгалт</button>
+    <button class="quick-btn" data-msg="Физикийн томъёог тайлбарлаач">⚡ Физик</button>
+    <button class="quick-btn" data-msg="Монгол хэлний дүрэм тайлбарлаач">📖 Монгол хэл</button>
   </div>
 
   <div id="chat-form">
     <textarea id="chat-input" placeholder="Асуулт бичнэ үү..." rows="1"
-      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
-      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
-    <button id="chat-send" onclick="sendChat()">➤</button>
+      
+      ></textarea>
+    <button id="chat-send">➤</button>
   </div>
 </div>
 
-<script>
-let chatHistory = [];
-let chatOpen = false;
-
-function toggleChat() {
-  chatOpen = !chatOpen;
-  document.getElementById('chat-window').classList.toggle('open', chatOpen);
-  document.getElementById('chat-icon').textContent = chatOpen ? '✕' : '💬';
-  document.getElementById('chat-notif').style.display = 'none';
-  if (chatOpen) document.getElementById('chat-input').focus();
-}
-
-function quickSend(text) {
-  document.getElementById('quick-btns').style.display = 'none';
-  document.getElementById('chat-input').value = text;
-  sendChat();
-}
-
-async function sendChat() {
-  const input = document.getElementById('chat-input');
-  const text  = input.value.trim();
-  if (!text) return;
-
-  input.value = ''; input.style.height = 'auto';
-  document.getElementById('chat-send').disabled = true;
-  document.getElementById('quick-btns').style.display = 'none';
-
-  addMsg('user', text);
-  chatHistory.push({role:'user', content:text});
-
-  // Typing indicator
-  const typing = document.createElement('div');
-  typing.className = 'chat-msg bot'; typing.id = 'typing';
-  typing.innerHTML = '<div class="msg-avatar bot">🤖</div><div class="chat-typing"><span></span><span></span><span></span></div>';
-  document.getElementById('chat-messages').appendChild(typing);
-  scrollChat();
-
-  try {
-    const res  = await fetch('/api/chat', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({messages: chatHistory})
-    });
-    const data = await res.json();
-    document.getElementById('typing')?.remove();
-
-    if (data.error) {
-      addMsg('bot', '❌ ' + (data.error.includes('API') ? 'API тохируулаагүй байна.' : data.error));
-    } else {
-      addMsg('bot', data.reply);
-      chatHistory.push({role:'assistant', content:data.reply});
-      // 10-аас дээш мессеж болбол хуучныг арилга
-      if (chatHistory.length > 20) chatHistory = chatHistory.slice(-16);
-    }
-  } catch(e) {
-    document.getElementById('typing')?.remove();
-    addMsg('bot', '❌ Холболтын алдаа. Дахин оролдоно уу.');
-  }
-  document.getElementById('chat-send').disabled = false;
-}
-
-function addMsg(role, text) {
-  const msgs = document.getElementById('chat-messages');
-  const div  = document.createElement('div');
-  div.className = 'chat-msg ' + role;
-  const av   = role==='bot' ? '<div class="msg-avatar bot">🤖</div>' : '<div class="msg-avatar user">👤</div>';
-  // Markdown-г энгийн болгох
-  const html = text
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/
-/g,'<br>');
-  div.innerHTML = role==='bot'
-    ? `${av}<div class="msg-bubble">${html}</div>`
-    : `<div class="msg-bubble">${html}</div>${av}`;
-  msgs.appendChild(div);
-  scrollChat();
-}
-
-function scrollChat() {
-  const msgs = document.getElementById('chat-messages');
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
-// Хуудас нээгдэхэд 3 секундын дараа анхааруулга
-setTimeout(()=>{
-  if(!chatOpen) {
-    document.getElementById('chat-notif').style.display='block';
-  }
-}, 3000);
-</script>
+<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
 
 </body>
 </html>

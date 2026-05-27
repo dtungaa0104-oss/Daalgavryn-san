@@ -35,9 +35,7 @@
 
     <h2 class="panel-title" style="margin-top:1.5rem">③ Хичээл</h2>
     <select id="bp-subject" class="styled-select">
-      {% for key, subjs in subjects.items() %}
-        {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
-      {% endfor %}
+      {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
     </select>
 
     <h2 class="panel-title" style="margin-top:1.5rem">④ Блупринт</h2>
@@ -235,14 +233,19 @@ function renderExam(exam) {
       </div>
 
       <div class="exam-actions">
+        <button class="btn btn-primary" onclick="printExam()">🖨 Хэвлэх</button>
         <div class="dl-btn-group">
-          <button class="btn btn-primary" onclick='dlExamTXT(currentExam)'>⬇ TXT татах</button>
-          <button class="btn btn-primary" onclick="showDownloadMenu(this, ()=>currentExam.questions, ()=>currentExam.title)">▾</button>
+          <button class="btn btn-outline" onclick='dlExamTXT(currentExam)'>⬇ TXT</button>
+          <button class="btn btn-outline" onclick="showDownloadMenu(this, ()=>currentExam.questions, ()=>currentExam.title)">▾</button>
         </div>
-        <button class="btn btn-outline" onclick="printQuestions(currentExam.questions, currentExam.title)">🖨 Хэвлэх</button>
-        <button class="btn btn-outline" onclick="generateExam()">↻ Дахин үүсгэх</button>
+        <button class="btn btn-outline" onclick="generateExam()">↻ Дахин</button>
       </div>
     </div>`;
+}
+
+function printExam() {
+  if (!currentExam || !currentExam.questions) { alert('Шалгалт үүсгэнэ үү'); return; }
+  printQuestions(currentExam.questions, currentExam.title);
 }
 
 function dlExamTXT(exam) {

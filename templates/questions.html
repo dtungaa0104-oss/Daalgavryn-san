@@ -298,18 +298,7 @@ async function runUpload() {
   // Түвшин автоматаар тодорхойлогдоно
 
   try {
-    const res = await fetch('/admin/import', { method:'POST', body:fd });
-
-    // Admin нэвтрээгүй бол redirect ирнэ
-    if (res.redirected || res.url.includes('/admin/login')) {
-      clearInterval(timer); prog.style.display = 'none';
-      btn.disabled = false; btn.innerHTML = '⬆ Оруулах';
-      box.innerHTML = `<div class="upload-result upload-err">
-        🔒 Зөвхөн Admin оруулах боломжтой.
-        <a href="/admin/login" style="color:var(--teal-600);font-weight:700" target="_blank"> Admin нэвтрэх →</a>
-      </div>`;
-      return;
-    }
+    const res = await fetch('/api/upload', { method:'POST', body:fd });
 
     const data = await res.json();
     clearInterval(timer);

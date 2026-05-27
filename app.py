@@ -216,6 +216,7 @@ def generate_exam():
 {need} даалгавар зохио. Зөвхөн JSON array буцаа, тайлбаргүй.
 Формат: [{{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","answer":"А"}}]
 Монгол хэлээр."""
+                    import anthropic
                     client=anthropic.Anthropic(api_key=api_key)
                     msg=client.messages.create(model="claude-sonnet-4-5",max_tokens=3000,
                         messages=[{"role":"user","content":prompt}])
@@ -238,7 +239,8 @@ def generate_exam():
                                 selected.append(row_to_dict(saved))
                                 ai_generated+=1
                         except: pass
-                except: pass
+                except Exception as ai_err:
+                    print(f"AI generate error: {ai_err}")
     conn.close()
     if not selected:
         api_key=os.environ.get("ANTHROPIC_API_KEY","")
@@ -518,6 +520,60 @@ def chatbot():
         err_detail = traceback.format_exc()
         print("CHAT ERROR:", err_detail)
         return jsonify({"error": str(e), "detail": err_detail[-500:]}), 500
+
+@app.route("/api/upload", methods=["POST"])
+def api_upload():
+    """Багш нарын нээлттэй upload route"""
+    from file_importer import extract_from_pdf, extract_from_docx, parse_raw_text
+    f = request.files.get("file")
+    grade = int(request.form.get("grade", 9))
+    subject = request.form.get("subject", "Математик")
+    lvl = request.form.get("default_level", "auto")
+    if not f or f.filename == "":
+        return jsonify({"error": "Файл сонгоогүй байна"}), 400
+    file_bytes = f.read()
+    fname = f.filename.lower()
+    try:
+        if fname.endswith(".pdf"):
+            raw = extract_from_pdf(file_bytes)
+        elif fname.endswith((".docx", ".doc")):
+            raw = extract_from_docx(file_bytes)
+        elif fname.endswith(".txt"):
+            raw = file_bytes.decode("utf-8", errors="ignore")
+        elif fname.endswith((".jpg", ".jpeg", ".png")):
+            import base64, anthropic
+            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+            if not api_key:
+                return jsonify({"error": "API key байхгүй"}), 400
+            b64 = base64.b64encode(file_bytes).decode()
+            mt = "image/jpeg" if fname.endswith((".jpg", ".jpeg")) else "image/png"
+            cl = anthropic.Anthropic(api_key=api_key)
+            msg = cl.messages.create(model="claude-sonnet-4-5", max_tokens=3000,
+                messages=[{"role": "user", "content": [
+                    {"type": "image", "source": {"type": "base64", "media_type": mt, "data": b64}},
+                    {"type": "text", "text": "Даалгаваруудыг задлан дугаарлан жагсаа."}
+                ]}])
+            raw = msg.content[0].text
+        else:
+            return jsonify({"error": "PDF, Word, JPG эсвэл TXT файл оруулна уу"}), 400
+        questions = parse_raw_text(raw, grade, subject, lvl)
+        if not questions:
+            return jsonify({"error": "Даалгавар илрүүлж чадсангүй"}), 400
+        conn = get_db(); saved = skipped = 0
+        for q in questions:
+            try:
+                conn.execute("""INSERT INTO questions(q_code,grade,subject,level,bloom,q_type,
+                    question,option_a,option_b,option_c,option_d,answer,score,topic)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (q['q_code'],q['grade'],q['subject'],q.get('level',lvl),q['bloom'],
+                     q['q_type'],q['question'],q['option_a'],q['option_b'],
+                     q['option_c'],q['option_d'],q['answer'],q['score'],q['topic']))
+                saved += 1
+            except: skipped += 1
+        conn.commit(); conn.close()
+        return jsonify({"success": True, "saved": saved, "skipped": skipped})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # ══ START ══════════════════════════════════════════════════
 if __name__=="__main__":

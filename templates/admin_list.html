@@ -26,9 +26,7 @@
       </select>
       <select name="subject">
         <option value="">Бүх хичээл</option>
-        {% for key,subjs in subjects.items() %}{% for s in subjs %}
-        <option value="{{ s }}" {% if sel_subject==s %}selected{% endif %}>{{ s }}</option>
-        {% endfor %}{% endfor %}
+        {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
       </select>
       <select name="level">
         <option value="">Бүх түвшин</option>

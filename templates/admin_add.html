@@ -31,11 +31,7 @@
         <div class="field-group">
           <label>Хичээл <span class="req">*</span></label>
           <select name="subject" required>
-            {% for key, subjs in subjects.items() %}
-              {% for s in subjs %}
-              <option value="{{ s }}" {% if q and q.subject==s %}selected{% endif %}>{{ s }}</option>
-              {% endfor %}
-            {% endfor %}
+            {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
           </select>
         </div>
         <div class="field-group">

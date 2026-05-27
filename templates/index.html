@@ -3,132 +3,124 @@
 
 {% block content %}
 <style>
-/* ══ НҮҮР ХУУДАСНЫ ТУСГАЙ STYLE ══════════════════════ */
-
-/* Hero */
 .hero {
   background: var(--teal-600);
   position: relative; overflow: hidden;
-  padding: clamp(20px,4vh,48px) 24px clamp(16px,3vh,36px); text-align: center;
+  padding: clamp(16px,3vh,40px) 20px clamp(12px,2.5vh,28px);
+  text-align: center;
 }
 .hero::before {
-  content:'';position:absolute;inset:0;
+  content:''; position:absolute; inset:0;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='70'%3E%3Cpolygon points='40,3 76,22 76,60 40,79 4,60 4,22' fill='none' stroke='rgba(151,196,89,0.2)' stroke-width='1'/%3E%3C/svg%3E");
   background-size:80px 70px;
 }
-.hero-inner { position:relative; z-index:2; max-width:640px; margin:0 auto; }
+.hero-inner { position:relative; z-index:2; max-width:580px; margin:0 auto; }
 .hero-badge {
-  display:inline-flex; align-items:center; gap:6px;
+  display:inline-flex; align-items:center; gap:5px;
   background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
-  color:#d4efb8; font-size:11px; font-weight:700; letter-spacing:1.5px;
-  padding:5px 16px; border-radius:99px; margin-bottom:18px; text-transform:uppercase;
+  color:#d4efb8; font-size:10px; font-weight:700; letter-spacing:1px;
+  padding:4px 14px; border-radius:99px; margin-bottom:10px; text-transform:uppercase;
 }
 .hero h1 {
-  font-size:clamp(1.4rem,4vw,3rem); font-weight:900; color:#fff;
-  line-height:1.1; margin-bottom:10px; letter-spacing:-0.5px;
-  white-space:nowrap;
+  font-size:clamp(1.6rem,5vw,3rem); font-weight:900; color:#fff;
+  line-height:1.1; margin-bottom:8px; letter-spacing:-0.5px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .hero h1 span { color:var(--green-100); }
 .hero p {
-  font-size:clamp(12px,1.8vw,14px); color:rgba(255,255,255,.78);
-  max-width:440px; margin:0 auto 16px; line-height:1.5;
+  font-size:clamp(11px,1.6vw,14px); color:rgba(255,255,255,.78);
+  max-width:420px; margin:0 auto 12px; line-height:1.5;
 }
-.hero-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:20px; }
+.hero-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:16px; }
 .btn-hero-primary {
   background:#fff; color:var(--teal-600);
-  padding:9px 20px; border-radius:8px; font-size:13px; font-weight:700;
-  text-decoration:none; transition:all .2s;
+  padding:8px 18px; border-radius:8px; font-size:13px; font-weight:700;
+  text-decoration:none; transition:all .2s; white-space:nowrap;
 }
-.btn-hero-primary:hover { background:var(--green-50); transform:translateY(-1px); }
+.btn-hero-primary:hover { background:var(--green-50); }
 .btn-hero-ghost {
   background:rgba(255,255,255,.12); color:#fff;
-  padding:9px 20px; border-radius:8px; font-size:13px; font-weight:600;
-  text-decoration:none; border:1px solid rgba(255,255,255,.3); transition:all .2s;
+  padding:8px 18px; border-radius:8px; font-size:13px; font-weight:600;
+  text-decoration:none; border:1px solid rgba(255,255,255,.3); transition:all .2s; white-space:nowrap;
 }
 .btn-hero-ghost:hover { background:rgba(255,255,255,.22); }
 
-/* Stats */
-.hero-stats { display:flex; gap:1px; background:rgba(255,255,255,.15); border-radius:10px; overflow:hidden; max-width:400px; margin:0 auto; }
-.stat-card  { flex:1; background:rgba(0,0,0,.12); padding:10px 8px; text-align:center; }
-.stat-num   { display:block; font-size:clamp(1.2rem,3vw,1.6rem); font-weight:900; color:#fff; line-height:1; }
-.stat-label { display:block; font-size:9px; color:rgba(255,255,255,.65); margin-top:2px; text-transform:uppercase; letter-spacing:.06em; }
+.hero-stats { display:flex; gap:1px; background:rgba(255,255,255,.15); border-radius:10px; overflow:hidden; max-width:380px; margin:0 auto; }
+.stat-card  { flex:1; background:rgba(0,0,0,.12); padding:8px 6px; text-align:center; }
+.stat-num   { display:block; font-size:clamp(1rem,2.5vw,1.5rem); font-weight:900; color:#fff; line-height:1; }
+.stat-label { display:block; font-size:8px; color:rgba(255,255,255,.65); margin-top:2px; text-transform:uppercase; letter-spacing:.05em; }
 
-/* Section */
-.home-section { padding:44px 32px; }
+.home-section { padding:clamp(20px,3vh,40px) clamp(16px,3vw,32px); }
 .home-section.alt { background:#fff; border-top:2px solid var(--green-50); border-bottom:2px solid var(--green-50); }
-.section-head { text-align:center; margin-bottom:28px; }
-.section-title { font-size:11px; font-weight:700; letter-spacing:2px; color:var(--text-muted); text-transform:uppercase; }
-.section-h2 { font-size:1.5rem; font-weight:800; color:var(--text-dark); margin-top:6px; }
+.section-head { text-align:center; margin-bottom:20px; }
+.section-title { font-size:10px; font-weight:700; letter-spacing:2px; color:var(--text-muted); text-transform:uppercase; }
+.section-h2 { font-size:clamp(1.1rem,2.5vw,1.5rem); font-weight:800; color:var(--text-dark); margin-top:4px; }
 .section-h2 span { color:var(--teal-600); }
-.section-sub { font-size:13px; color:var(--text-muted); margin-top:4px; }
 
-/* Exam cards */
-.exam-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
+.exam-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
 .exam-card {
-  background:#fff; border-radius:14px; padding:22px 18px;
+  background:#fff; border-radius:12px; padding:16px 14px;
   border:2px solid var(--green-50); text-decoration:none; color:var(--text-dark);
   display:block; transition:all .2s; position:relative; overflow:hidden;
 }
-.exam-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:var(--et-color,var(--teal-600)); }
-.exam-card:hover { border-color:var(--green-100); transform:translateY(-3px); box-shadow:0 8px 24px rgba(15,110,86,.12); }
-.ec-icon  { font-size:26px; margin-bottom:8px; display:block; }
-.ec-name  { font-size:15px; font-weight:800; color:var(--text-dark); margin-bottom:6px; }
-.ec-grades{
-  display:inline-flex; flex-wrap:wrap; gap:4px; margin-bottom:10px;
-}
-.ec-grade-pill {
-  font-size:10px; background:var(--green-50); color:var(--teal-600);
-  padding:2px 8px; border-radius:99px; font-weight:600; border:1px solid var(--green-100);
-}
-.ec-meta  { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
-.ec-tag   { font-size:11px; background:#f0f7e8; color:var(--text-mid); padding:3px 8px; border-radius:5px; border:1px solid var(--green-100); }
-.ec-note  { font-size:11px; color:var(--text-muted); padding-top:8px; border-top:1px dashed var(--green-100); margin-bottom:10px; }
-.ec-link  { font-size:12px; font-weight:700; color:var(--teal-600); }
+.exam-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--et-color,var(--teal-600)); }
+.exam-card:hover { border-color:var(--green-100); transform:translateY(-2px); box-shadow:0 6px 20px rgba(15,110,86,.1); }
+.ec-icon  { font-size:22px; margin-bottom:6px; display:block; }
+.ec-name  { font-size:13px; font-weight:800; color:var(--text-dark); margin-bottom:5px; }
+.ec-grades{ display:inline-flex; flex-wrap:wrap; gap:3px; margin-bottom:8px; }
+.ec-grade-pill { font-size:9px; background:var(--green-50); color:var(--teal-600); padding:2px 7px; border-radius:99px; font-weight:600; border:1px solid var(--green-100); }
+.ec-meta  { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
+.ec-tag   { font-size:10px; background:#f0f7e8; color:var(--text-mid); padding:2px 7px; border-radius:5px; border:1px solid var(--green-100); }
+.ec-note  { font-size:10px; color:var(--text-muted); padding-top:6px; border-top:1px dashed var(--green-100); margin-bottom:8px; }
+.ec-link  { font-size:11px; font-weight:700; color:var(--teal-600); }
 
-/* Extra cards */
-.extra-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+.extra-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
 .extra-card {
-  background:#fff; border-radius:14px; padding:22px 18px;
+  background:#fff; border-radius:12px; padding:16px 14px;
   border:2px solid var(--green-100); text-decoration:none; color:var(--text-dark);
-  display:flex; flex-direction:column; gap:8px; transition:all .2s;
+  display:flex; flex-direction:column; gap:6px; transition:all .2s;
 }
-.extra-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(15,110,86,.12); }
+.extra-card:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(15,110,86,.1); }
 .olympiad-card    { border-color:#A5D6A7; }
-.olympiad-card:hover { border-color:#43A047; }
 .interactive-card { border-color:#80CBC4; }
-.interactive-card:hover { border-color:var(--teal-600); }
-.extra-icon { font-size:2rem; line-height:1; }
-.extra-card h3 { font-size:1.05rem; font-weight:800; color:var(--text-dark); }
-.extra-card p  { font-size:13px; color:var(--text-muted); line-height:1.5; flex:1; }
-.extra-tags { display:flex; gap:5px; flex-wrap:wrap; }
-.extra-tags span { font-size:11px; padding:2px 8px; border-radius:20px; background:var(--green-50); color:var(--text-mid); border:1px solid var(--green-100); }
-.extra-link { font-size:12px; font-weight:700; color:var(--teal-600); }
+.extra-icon { font-size:1.6rem; line-height:1; }
+.extra-card h3 { font-size:.95rem; font-weight:800; color:var(--text-dark); }
+.extra-card p  { font-size:12px; color:var(--text-muted); line-height:1.4; flex:1; }
+.extra-tags { display:flex; gap:4px; flex-wrap:wrap; }
+.extra-tags span { font-size:10px; padding:2px 7px; border-radius:20px; background:var(--green-50); color:var(--text-mid); border:1px solid var(--green-100); }
+.extra-link { font-size:11px; font-weight:700; color:var(--teal-600); }
 
-/* Grade grid */
-.grade-grid { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+.grade-grid { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
 .grade-box  {
   display:flex; flex-direction:column; align-items:center;
-  width:72px; padding:10px 8px; border-radius:10px; text-decoration:none;
+  width:60px; padding:8px 6px; border-radius:8px; text-decoration:none;
   border:2px solid; transition:all .15s;
   background:color-mix(in srgb, var(--et-color) 10%, #fff);
   border-color:color-mix(in srgb, var(--et-color) 30%, #fff);
   color:var(--text-dark);
 }
-.grade-box:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.1); }
-.grade-num   { font-size:18px; font-weight:900; line-height:1; color:var(--et-color); }
-.grade-label { font-size:9px; color:var(--text-muted); margin-top:2px; }
-.grade-type-badge { font-size:9px; margin-top:3px; text-align:center; color:var(--et-color); font-weight:600; line-height:1.2; }
+.grade-box:hover { transform:translateY(-2px); }
+.grade-num   { font-size:16px; font-weight:900; line-height:1; color:var(--et-color); }
+.grade-label { font-size:8px; color:var(--text-muted); margin-top:2px; }
+.grade-type-badge { font-size:8px; margin-top:2px; text-align:center; color:var(--et-color); font-weight:600; line-height:1.2; }
 
-/* Ticker */
-.ticker-wrap { background:var(--green-700); border-top:2px solid var(--green-600); border-bottom:2px solid var(--green-600); overflow:hidden; white-space:nowrap; height:40px; display:flex; align-items:center; }
-.ticker-label { flex-shrink:0; background:var(--green-200); color:var(--green-800); font-size:11px; font-weight:800; letter-spacing:1.5px; padding:0 18px; height:100%; display:flex; align-items:center; text-transform:uppercase; }
+.ticker-wrap { background:var(--green-700); border-top:2px solid var(--green-600); border-bottom:2px solid var(--green-600); overflow:hidden; white-space:nowrap; height:36px; display:flex; align-items:center; }
+.ticker-label { flex-shrink:0; background:var(--green-200); color:var(--green-800); font-size:10px; font-weight:800; letter-spacing:1px; padding:0 14px; height:100%; display:flex; align-items:center; text-transform:uppercase; }
 .ticker-track { display:flex; align-items:center; animation:ticker-scroll 32s linear infinite; will-change:transform; }
 .ticker-track:hover { animation-play-state:paused; }
 @keyframes ticker-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-.ticker-item { display:inline-flex; align-items:center; gap:8px; padding:0 32px; font-size:13px; font-weight:600; color:var(--green-50); white-space:nowrap; }
-.ticker-item a { color:var(--green-100); text-decoration:none; transition:color .15s; }
+.ticker-item { display:inline-flex; align-items:center; gap:6px; padding:0 24px; font-size:12px; font-weight:600; color:var(--green-50); white-space:nowrap; }
+.ticker-item a { color:var(--green-100); text-decoration:none; }
 .ticker-item a:hover { color:#fff; text-decoration:underline; }
-.ticker-sep { color:var(--green-400); font-size:16px; flex-shrink:0; }
+.ticker-sep { color:var(--green-400); font-size:14px; flex-shrink:0; }
+
+@media (max-width:600px) {
+  .hero h1 { font-size:clamp(1.3rem,7vw,2rem); white-space:normal; }
+  .home-section { padding:16px; }
+  .exam-grid { grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  .extra-grid { grid-template-columns:1fr 1fr; gap:10px; }
+  .grade-box { width:52px; }
+}
 </style>
 
 <!-- ══ HERO ══ -->
@@ -192,7 +184,6 @@
     <h2 class="section-h2">Монгол ЕБС-ийн <span>стандарт шалгалтууд</span></h2>
   </div>
   <div class="exam-grid">
-
     <a href="/blueprint?exam=ulsiin" class="exam-card" style="--et-color:#f0a500">
       <span class="ec-icon">🏆</span>
       <div class="ec-name">Улсын шалгалт</div>
@@ -202,13 +193,12 @@
         <span class="ec-grade-pill">12-р анги</span>
       </div>
       <div class="ec-meta">
-        <span class="ec-tag">⏱ 90 минут</span>
+        <span class="ec-tag">⏱ 90 мин</span>
         <span class="ec-tag">📊 40 даалгавар</span>
         <span class="ec-tag">🎯 72 оноо</span>
       </div>
       <div class="ec-link">Шалгалт үүсгэх →</div>
     </a>
-
     <a href="/blueprint?exam=devshih" class="exam-card" style="--et-color:#3b82f6">
       <span class="ec-icon">📋</span>
       <div class="ec-name">Анги дэвших шалгалт</div>
@@ -218,42 +208,35 @@
         <span class="ec-grade-pill">10, 11-р анги</span>
       </div>
       <div class="ec-meta">
-        <span class="ec-tag">⏱ 60 минут</span>
+        <span class="ec-tag">⏱ 60 мин</span>
         <span class="ec-tag">📊 25 даалгавар</span>
         <span class="ec-tag">🎯 49 оноо</span>
       </div>
       <div class="ec-link">Шалгалт үүсгэх →</div>
     </a>
-
     <a href="/blueprint?exam=guitsegdel" class="exam-card" style="--et-color:#22c55e">
       <span class="ec-icon">📝</span>
       <div class="ec-name">Гүйцэтгэлийн үнэлгээ</div>
-      <div class="ec-grades">
-        <span class="ec-grade-pill">2–11-р анги</span>
-      </div>
+      <div class="ec-grades"><span class="ec-grade-pill">2–11-р анги</span></div>
       <div class="ec-meta">
-        <span class="ec-tag">⏱ 30 минут</span>
+        <span class="ec-tag">⏱ 30 мин</span>
         <span class="ec-tag">📊 10 даалгавар</span>
       </div>
       <div class="ec-note">Оноогүй — ажиглалтаар дүгнэнэ</div>
       <div class="ec-link">Шалгалт үүсгэх →</div>
     </a>
-
     <a href="/blueprint?exam=elselt" class="exam-card" style="--et-color:#a855f7">
       <span class="ec-icon">🎓</span>
       <div class="ec-name">Элсэлтийн шалгалт</div>
-      <div class="ec-grades">
-        <span class="ec-grade-pill">12-р анги</span>
-      </div>
+      <div class="ec-grades"><span class="ec-grade-pill">12-р анги</span></div>
       <div class="ec-meta">
-        <span class="ec-tag">⏱ 90 минут</span>
+        <span class="ec-tag">⏱ 90 мин</span>
         <span class="ec-tag">📊 40 даалгавар</span>
         <span class="ec-tag">🎯 100 оноо</span>
       </div>
       <div class="ec-note">1 буруу = −0.2 оноо</div>
       <div class="ec-link">Шалгалт үүсгэх →</div>
     </a>
-
   </div>
 </div>
 
@@ -261,51 +244,35 @@
 <div class="home-section alt">
   <div class="section-head">
     <div class="section-title">Нэмэлт хэсгүүд</div>
-    <h2 class="section-h2">Олимпиад & <span>Интерактив дасгал</span></h2>
+    <h2 class="section-h2">Багш, сурагчдад <span>зориулсан хэрэгслүүд</span></h2>
   </div>
   <div class="extra-grid">
     <a href="/olympiad" class="extra-card olympiad-card">
       <span class="extra-icon">🏅</span>
       <h3>Олимпиадын даалгавар</h3>
-      <p>Сургуулийн, аймгийн, улсын олимпиадын даалгаварууд. Шатаар ангилж хайна.</p>
-      <div class="extra-tags">
-        <span>🎯 Сургуулийн шат</span>
-        <span>🎯 Аймгийн шат</span>
-        <span>🎯 Улсын шат</span>
-      </div>
-      <span class="extra-link">Даалгавар хайх →</span>
+      <p>Сургуулийн, аймгийн, улсын олимпиадын даалгаварууд.</p>
+      <div class="extra-tags"><span>🎯 Сургуулийн</span><span>🎯 Аймгийн</span><span>🎯 Улсын</span></div>
+      <span class="extra-link">Хайх →</span>
     </a>
-    <a href="/teacher" class="extra-card" style="border-color:#97C459;background:linear-gradient(135deg,#fff 60%,#EAF3DE)">
+    <a href="/teacher" class="extra-card" style="border-color:#97C459">
       <span class="extra-icon">👩‍🏫</span>
       <h3>Багш танд</h3>
-      <p>Жилийн төлөвлөгөө, ээлжит хичээл, алжаал тайлах тоглоом, сорил — AI-аар автоматаар.</p>
-      <div class="extra-tags">
-        <span>📅 Жилийн төлөвлөгөө</span>
-        <span>📖 Ээлжит хичээл</span>
-        <span>🎮 Тоглоом</span>
-      </div>
+      <p>Жилийн төлөвлөгөө, ээлжит хичээл, тоглоом, сорил.</p>
+      <div class="extra-tags"><span>📅 Төлөвлөгөө</span><span>📖 Ээлжит</span><span>🎮 Тоглоом</span></div>
       <span class="extra-link" style="color:#3B6D11">Нэвтрэх →</span>
     </a>
-    <a href="/mongol-bichig" class="extra-card" style="border-color:#CE93D8;background:linear-gradient(135deg,#fff 60%,#F3E5F5)">
+    <a href="/mongol-bichig" class="extra-card" style="border-color:#CE93D8">
       <span class="extra-icon">✍</span>
-      <h3>Монгол Хэл Бичгийн Босго Шалгалт</h3>
-      <p>Өмнөх жилийн даалгаварууд, үнэлгээний төвийн линкүүд, AI-аар даалгавар үүсгэх.</p>
-      <div class="extra-tags">
-        <span>📝 Өмнөх жилийн даалгавар</span>
-        <span>🌐 Үнэлгээний төв</span>
-        <span>🤖 AI үүсгэгч</span>
-      </div>
+      <h3>Босго Шалгалт</h3>
+      <p>Өмнөх жилийн даалгавар, үнэлгээний төвийн линк.</p>
+      <div class="extra-tags"><span>📝 Даалгавар</span><span>🌐 Линк</span><span>🤖 AI</span></div>
       <span class="extra-link" style="color:#6A1B9A">Нэвтрэх →</span>
     </a>
     <a href="/interactive" class="extra-card interactive-card">
       <span class="extra-icon">⚡</span>
       <h3>Интерактив дасгал</h3>
-      <p>Даалгавар бодоод хариултаа шалгана. Оноо тооцогдоно, явц харагдана.</p>
-      <div class="extra-tags">
-        <span>✓ Хариулт шалгана</span>
-        <span>📊 Оноо тооцоолно</span>
-        <span>🔄 Дахин оролдоно</span>
-      </div>
+      <p>Хариулт шалгана, оноо тооцоолно, явц харагдана.</p>
+      <div class="extra-tags"><span>✓ Шалгана</span><span>📊 Оноо</span><span>🔄 Дахин</span></div>
       <span class="extra-link">Дасгал хийх →</span>
     </a>
   </div>
@@ -333,20 +300,14 @@
 {% block scripts %}
 <script>
 fetch('/api/stats').then(r=>r.json()).then(d=>{
-  const q = document.getElementById('stat-q');
-  const s = document.getElementById('stat-s');
-  if(q) animateNum(q, d.total_questions||0);
-  if(s) s.textContent = d.subjects||0;
+  const q=document.getElementById('stat-q');
+  const s=document.getElementById('stat-s');
+  if(q) animateNum(q,d.total_questions||0);
+  if(s) s.textContent=d.subjects||0;
 }).catch(()=>{});
-
-function animateNum(el, target) {
-  let cur = 0;
-  const step = Math.ceil(target/60);
-  const t = setInterval(()=>{
-    cur = Math.min(cur+step, target);
-    el.textContent = cur.toLocaleString();
-    if(cur>=target) clearInterval(t);
-  }, 25);
+function animateNum(el,target){
+  let cur=0; const step=Math.ceil(target/60);
+  const t=setInterval(()=>{ cur=Math.min(cur+step,target); el.textContent=cur.toLocaleString(); if(cur>=target)clearInterval(t); },25);
 }
 </script>
 {% endblock %}

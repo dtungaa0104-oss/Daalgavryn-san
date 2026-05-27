@@ -49,9 +49,7 @@
       <label>Хичээл</label>
       <select id="f-subject">
         <option value="">Бүх хичээл</option>
-        {% for key, subjs in subjects.items() %}
-          {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
-        {% endfor %}
+        {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
       </select>
     </div>
     <div class="filter-group">

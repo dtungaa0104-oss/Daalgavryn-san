@@ -224,9 +224,7 @@
         <div class="field-group">
           <label>Хичээл <span class="req">*</span></label>
           <select id="ai-subject">
-            {% for key, subjs in subjects.items() %}
-              {% for s in subjs %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
-            {% endfor %}
+            {% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
           </select>
         </div>
         <div class="field-group">
