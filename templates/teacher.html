@@ -64,6 +64,7 @@
   <div class="t-tab" onclick="showTab('game')">🎮 Алжаал тайлах тоглоом</div>
   <div class="t-tab" onclick="showTab('cls')">👨‍👧 Анги удирдсан багш</div>
   <div class="t-tab" onclick="showTab('grade')">📊 Дүн тооцоологч</div>
+  <div class="t-tab" onclick="showTab('workplan')">📋 Ажлын төлөвлөгөө</div>
 </div>
 
 <!-- ══ TAB 1: ЖИЛИЙН ТӨЛӨВЛӨГӨӨ ══ -->
@@ -413,12 +414,151 @@
 </div>
 
 {% endblock %}
+<div class="t-panel" id="panel-workplan">
+<style>
+.wp-wrap{display:grid;grid-template-columns:280px 1fr;min-height:75vh}
+.wp-left{background:#fff;border-right:2px solid var(--green-100);padding:1.2rem;overflow-y:auto}
+.wp-right{background:var(--green-50);overflow-y:auto}
+.wp-sec-title{font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:.4rem;margin-top:.8rem}
+.wp-field{margin-bottom:.7rem}
+.wp-field label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);display:block;margin-bottom:.25rem}
+.wp-field input,.wp-field select,.wp-field textarea{width:100%;padding:6px 9px;border:1.5px solid var(--green-100);border-radius:7px;font-size:.82rem;background:var(--green-50)}
+.wp-field textarea{resize:vertical;min-height:60px}
+.wp-cats{display:flex;flex-direction:column;gap:.35rem;margin:.5rem 0}
+.wp-cat{display:flex;align-items:center;gap:.5rem;padding:.45rem .6rem;border-radius:7px;border:1.5px solid var(--green-100);background:#fff;cursor:pointer;transition:all .15s}
+.wp-cat:hover{border-color:var(--teal-600)}
+.wp-cat.selected{border-color:var(--teal-600);background:var(--teal-50)}
+.wp-cat input[type=checkbox]{accent-color:var(--teal-600)}
+.wp-cat-icon{font-size:1rem}
+.wp-cat-name{font-size:.78rem;font-weight:600;color:var(--text-dark)}
+.wp-cat-desc{font-size:.65rem;color:var(--text-muted)}
+/* Үр дүн */
+.wp-result{max-width:800px;margin:1.2rem auto;padding:0 1.2rem 3rem}
+.wp-section{background:#fff;border:1.5px solid var(--green-100);border-radius:12px;margin-bottom:1rem;overflow:hidden}
+.wp-section-head{display:flex;align-items:center;gap:.8rem;padding:.75rem 1.1rem;border-bottom:1px solid var(--green-100)}
+.wp-section-head .num{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0}
+.wp-section-head .title{font-size:.82rem;font-weight:800;color:var(--text-dark)}
+.wp-section-body{padding:1rem}
+.wp-goal-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.wp-goal-table th{background:var(--green-50);padding:6px 10px;text-align:left;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);border-bottom:1px solid var(--green-100)}
+.wp-goal-table td{padding:8px 10px;border-bottom:1px solid var(--green-50);vertical-align:top;line-height:1.6}
+.wp-goal-table tr:last-child td{border-bottom:none}
+.wp-tag{display:inline-block;padding:1px 7px;border-radius:99px;font-size:.65rem;font-weight:700;margin-right:3px}
+</style>
+
+<div class="wp-wrap">
+  <!-- ЗҮҮН ПАНЕЛ -->
+  <div class="wp-left">
+    <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:.8rem">📋 Ажлын төлөвлөгөө</div>
+
+    <div class="wp-field">
+      <label>Багшийн нэр</label>
+      <input type="text" id="wp-teacher" placeholder="Жишээ: Д.Батзориг">
+    </div>
+    <div class="wp-field">
+      <label>Хичээлийн жил</label>
+      <select id="wp-year">
+        <option>2025-2026</option>
+        <option>2026-2027</option>
+        <option>2024-2025</option>
+      </select>
+    </div>
+    <div class="wp-field">
+      <label>Заах хичээл / Анги</label>
+      <input type="text" id="wp-subject" placeholder="Жишээ: Математик, 7А анги">
+    </div>
+    <div class="wp-field">
+      <label>Туршлага (жил)</label>
+      <select id="wp-exp">
+        <option value="1">1-3 жил (залуу)</option>
+        <option value="2">4-10 жил (туршлагатай)</option>
+        <option value="3" selected>10+ жил (ахлах)</option>
+      </select>
+    </div>
+
+    <div class="wp-sec-title" style="margin-top:1rem">Хэсгүүд сонгох</div>
+    <div class="wp-cats" id="wp-cats">
+      <label class="wp-cat selected">
+        <input type="checkbox" value="surgalt" checked>
+        <span class="wp-cat-icon">📚</span>
+        <div><div class="wp-cat-name">Сургалт</div>
+        <div class="wp-cat-desc">Хичээлийн чанар, арга зүй</div></div>
+      </label>
+      <label class="wp-cat selected">
+        <input type="checkbox" value="hugzhil" checked>
+        <span class="wp-cat-icon">🌱</span>
+        <div><div class="wp-cat-name">Өөрийгөө хөгжүүлэх</div>
+        <div class="wp-cat-desc">Мэргэжлийн өсөлт</div></div>
+      </label>
+      <label class="wp-cat selected">
+        <input type="checkbox" value="ecej" checked>
+        <span class="wp-cat-icon">👨‍👩‍👧</span>
+        <div><div class="wp-cat-name">Асран хамгаалагчтай</div>
+        <div class="wp-cat-desc">Эцэг эхтэй хамтрах</div></div>
+      </label>
+      <label class="wp-cat selected">
+        <input type="checkbox" value="niigem" checked>
+        <span class="wp-cat-icon">🏘️</span>
+        <div><div class="wp-cat-name">Иргэд, олон нийт</div>
+        <div class="wp-cat-desc">Нийгэмд оролцох</div></div>
+      </label>
+      <label class="wp-cat selected">
+        <input type="checkbox" value="yos" checked>
+        <span class="wp-cat-icon">⚖️</span>
+        <div><div class="wp-cat-name">Ёс зүй</div>
+        <div class="wp-cat-desc">Мэргэжлийн ёс зүй</div></div>
+      </label>
+      <label class="wp-cat selected">
+        <input type="checkbox" value="huuhded" checked>
+        <span class="wp-cat-icon">🛡️</span>
+        <div><div class="wp-cat-name">Хүүхэд хамгаалал</div>
+        <div class="wp-cat-desc">Хүүхдийн эрх, аюулгүй байдал</div></div>
+      </label>
+    </div>
+
+    <div class="wp-field" style="margin-top:.8rem">
+      <label>Нэмэлт мэдээлэл (заавал биш)</label>
+      <textarea id="wp-extra" placeholder="Жишээ: Олимпиадын сургалт, тусгай хөтөлбөр..."></textarea>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%;padding:10px;margin-top:.5rem"
+      id="wp-btn" data-label="✦ Ажлын төлөвлөгөө боловсруулах"
+      onclick="genWorkPlan()">
+      ✦ Ажлын төлөвлөгөө боловсруулах
+    </button>
+  </div>
+
+  <!-- БАРУУН ПАНЕЛ -->
+  <div class="wp-right" id="wp-right-panel">
+    <div id="wp-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:3rem;color:var(--text-muted)">
+      <div style="font-size:3rem;margin-bottom:1rem;opacity:.4">📋</div>
+      <h3 style="font-size:1rem;font-weight:600;color:var(--text-mid)">Ажлын төлөвлөгөө үүсгэхэд бэлэн</h3>
+      <p style="font-size:.82rem;line-height:1.7;margin-top:.5rem">Зүүн талын маягтыг бөглөөд<br><strong>"Боловсруулах" товч дарна уу</strong></p>
+    </div>
+    <div id="wp-loading" style="display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:1rem;color:var(--text-muted)">
+      <div class="spinner"></div>
+      <p style="font-weight:600">AI ажлын төлөвлөгөө боловсруулж байна...</p>
+      <p style="font-size:.78rem;max-width:260px;text-align:center;line-height:1.6">Багшийн ажлын 6 чиглэлд тулгуурлан жилийн төлөвлөгөө гаргаж байна</p>
+    </div>
+    <div id="wp-result" style="display:none">
+      <div style="position:sticky;top:0;z-index:10;display:flex;gap:.5rem;padding:.6rem 1.2rem;background:rgba(244,246,251,.95);border-bottom:1px solid var(--green-100)">
+        <button class="btn btn-sm btn-primary" onclick="wpPrint()">🖨 Хэвлэх</button>
+        <button class="btn btn-sm btn-outline" onclick="wpCopy()">📋 Хуулах</button>
+        <button class="btn btn-sm btn-outline" onclick="wpReset()">↻ Дахин</button>
+      </div>
+      <div class="wp-result" id="wp-result-body"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+
 {% block scripts %}
 <script>
 // ══ TAB ════════════════════════════════════════════
 function showTab(tab) {
   document.querySelectorAll('.t-tab').forEach(function(t,i){
-    t.classList.toggle('active', ['plan','lesson','game','cls','grade'][i] === tab);
+    t.classList.toggle('active', ['plan','lesson','game','cls','grade','workplan'][i] === tab);
   });
   document.querySelectorAll('.t-panel').forEach(function(p){
     p.classList.remove('active');
@@ -726,6 +866,196 @@ function gcExport() {
 }
 // ══ ДҮН ТООЦООЛОГЧ v2 ТӨГСӨВ ═══════════════════════
 
+
+// ══ АЖЛЫН ТӨЛӨВЛӨГӨӨ ════════════════════════════════
+var WP_CATS = {
+  surgalt:  {icon:'📚', name:'Сургалт',                    color:'#1b5e20', bg:'#e8f5e9'},
+  hugzhil:  {icon:'🌱', name:'Өөрийгөө хөгжүүлэх',        color:'#0d47a1', bg:'#e3f2fd'},
+  ecej:     {icon:'👨‍👩‍👧', name:'Асран хамгаалагчтай хамтрах', color:'#4a148c', bg:'#f3e5f5'},
+  niigem:   {icon:'🏘️', name:'Иргэд, олон нийттэй ажиллах', color:'#e65100', bg:'#fff8e1'},
+  yos:      {icon:'⚖️', name:'Ёс зүй',                     color:'#880e4f', bg:'#fce4ec'},
+  huuhded:  {icon:'🛡️', name:'Хүүхэд хамгаалал',           color:'#1a237e', bg:'#e8eaf6'}
+};
+
+// Checkbox toggle
+document.querySelectorAll('.wp-cat').forEach(function(el) {
+  el.addEventListener('change', function() {
+    el.classList.toggle('selected', el.querySelector('input').checked);
+  });
+});
+
+async function genWorkPlan() {
+  var teacher = document.getElementById('wp-teacher').value.trim();
+  var year    = document.getElementById('wp-year').value;
+  var subject = document.getElementById('wp-subject').value.trim();
+  var exp     = document.getElementById('wp-exp').value;
+  var extra   = document.getElementById('wp-extra').value.trim();
+
+  var selected = [];
+  document.querySelectorAll('.wp-cats input[type=checkbox]:checked').forEach(function(cb) {
+    selected.push(cb.value);
+  });
+  if (!selected.length) { alert('Хамгийн багадаа нэг хэсэг сонгоно уу!'); return; }
+
+  var expLabels = {'1':'1-3 жилийн туршлагатай залуу','2':'4-10 жилийн туршлагатай','3':'10+ жилийн ахлах'};
+  var catNames = selected.map(function(k){ return WP_CATS[k] ? WP_CATS[k].name : k; });
+
+  var prompt = 'Та Монгол ЕБС-ийн багшийн ажлын жилийн төлөвлөгөө боловсруулагч AI байна.\n\n' +
+    'МЭДЭЭЛЭЛ:\n' +
+    '- Багш: ' + (teacher||'тодорхойгүй') + '\n' +
+    '- Хичээлийн жил: ' + year + '\n' +
+    '- Хичээл/Анги: ' + (subject||'тодорхойгүй') + '\n' +
+    '- Туршлага: ' + expLabels[exp] + '\n' +
+    (extra ? '- Нэмэлт: ' + extra + '\n' : '') +
+    '- Боловсруулах хэсгүүд: ' + catNames.join(', ') + '\n\n' +
+    'ДААЛГАВАР:\nДараах хэсэг бүрт жилийн ажлын төлөвлөгөө зохиож, JSON форматаар буцаана уу.\n' +
+    'Хэсэг бүрт 3-4 зорилт, зорилт бүрт:\n' +
+    '- goal: зорилт (товч, конкрет)\n' +
+    '- actions: үйл ажиллагаа (массив, 2-3 зүйл)\n' +
+    '- result: хүлээгдэж буй үр дүн\n' +
+    '- time: хугацаа (жишээ: "9-11-р сар", "Жилдээ")\n\n' +
+    'JSON хариулт:\n{\n' +
+    selected.map(function(k){ return '  "' + k + '": {"goals": [...]}'; }).join(',\n') +
+    '\n}\n\nЗӨВХӨН JSON буцаана уу. Монгол хэлээр дэлгэрэнгүй.';
+
+  var btn = document.getElementById('wp-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-sm"></span> Боловсруулж байна...';
+  document.getElementById('wp-empty').style.display = 'none';
+  document.getElementById('wp-loading').style.display = 'flex';
+  document.getElementById('wp-result').style.display = 'none';
+
+  try {
+    var res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({messages:[{role:'user', content:prompt}]})
+    });
+    var data = await res.json();
+    btn.disabled = false;
+    btn.textContent = btn.getAttribute('data-label');
+    document.getElementById('wp-loading').style.display = 'none';
+
+    if (data.error) {
+      document.getElementById('wp-empty').style.display = 'flex';
+      document.getElementById('wp-empty').innerHTML = '<div style="color:#c62828;padding:1rem">❌ ' + data.error + '</div>';
+      return;
+    }
+
+    var raw = (data.reply || '').trim();
+    if (raw.startsWith('```')) { raw = raw.replace(/```json?/,'').replace(/```$/,'').trim(); }
+    var plan;
+    try { plan = JSON.parse(raw); }
+    catch(e) {
+      // Хэсэгчлэн авах
+      var m = raw.match(/\{[\s\S]*\}/);
+      if (m) { try { plan = JSON.parse(m[0]); } catch(e2) { plan = null; } }
+    }
+
+    if (!plan) {
+      wpRenderRaw(raw, teacher, year, subject, selected);
+    } else {
+      wpRenderPlan(plan, teacher, year, subject, selected);
+    }
+    document.getElementById('wp-result').style.display = 'block';
+
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = btn.getAttribute('data-label');
+    document.getElementById('wp-loading').style.display = 'none';
+    document.getElementById('wp-empty').style.display = 'flex';
+    document.getElementById('wp-empty').innerHTML = '<div style="color:#c62828">❌ ' + e.message + '</div>';
+  }
+}
+
+function wpRenderPlan(plan, teacher, year, subject, selected) {
+  var html = '<div style="background:#fff;border:1px solid var(--green-100);border-radius:12px;padding:1.2rem;margin-bottom:1rem">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center">' +
+      '<div>' +
+        '<div style="font-size:.72rem;color:var(--text-muted)">' + year + ' · ' + (subject||'') + '</div>' +
+        '<div style="font-size:1.1rem;font-weight:900;color:var(--text-dark);margin-top:.2rem">' +
+          (teacher||'Багш') + ' — Ажлын төлөвлөгөө</div>' +
+      '</div>' +
+      '<span style="background:var(--teal-600);color:#fff;padding:4px 12px;border-radius:99px;font-size:.7rem;font-weight:700">ЖИЛИЙН ТӨЛӨВЛӨГӨӨ</span>' +
+    '</div></div>';
+
+  selected.forEach(function(key, si) {
+    var cat = WP_CATS[key] || {icon:'📌', name:key, color:'#333', bg:'#f5f5f5'};
+    var section = plan[key];
+    if (!section) return;
+    var goals = section.goals || [];
+
+    html += '<div class="wp-section">' +
+      '<div class="wp-section-head" style="background:' + cat.bg + '">' +
+        '<div class="num" style="background:' + cat.color + ';color:#fff">' + (si+1) + '</div>' +
+        '<div class="title">' + cat.icon + ' ' + cat.name + '</div>' +
+      '</div>' +
+      '<div class="wp-section-body">' +
+      '<table class="wp-goal-table">' +
+      '<thead><tr>' +
+        '<th style="width:30px">#</th>' +
+        '<th style="min-width:180px">Зорилт</th>' +
+        '<th style="min-width:220px">Үйл ажиллагаа</th>' +
+        '<th style="min-width:160px">Хүлээгдэх үр дүн</th>' +
+        '<th style="min-width:80px">Хугацаа</th>' +
+      '</tr></thead><tbody>';
+
+    goals.forEach(function(g, gi) {
+      var actions = Array.isArray(g.actions) ? g.actions : [g.actions||''];
+      html += '<tr>' +
+        '<td style="font-weight:800;color:' + cat.color + '">' + (gi+1) + '</td>' +
+        '<td style="font-weight:600;color:var(--text-dark)">' + (g.goal||'') + '</td>' +
+        '<td><ul style="margin:0;padding-left:1rem;line-height:1.8">' +
+          actions.map(function(a){ return '<li>' + a + '</li>'; }).join('') +
+        '</ul></td>' +
+        '<td style="color:var(--text-mid)">' + (g.result||'') + '</td>' +
+        '<td><span class="wp-tag" style="background:' + cat.bg + ';color:' + cat.color + '">' + (g.time||'Жилдээ') + '</span></td>' +
+      '</tr>';
+    });
+
+    html += '</tbody></table></div></div>';
+  });
+
+  document.getElementById('wp-result-body').innerHTML = html;
+}
+
+function wpRenderRaw(raw, teacher, year, subject, selected) {
+  var html = '<div style="background:#fff;border:1px solid var(--green-100);border-radius:12px;padding:1.2rem;margin-bottom:1rem">' +
+    '<h3 style="margin:0 0 .5rem">' + (teacher||'Багш') + ' — Ажлын төлөвлөгөө ' + year + '</h3>' +
+    '<div style="font-size:.82rem;line-height:1.8;white-space:pre-wrap">' +
+    raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div></div>';
+  document.getElementById('wp-result-body').innerHTML = html;
+}
+
+function wpPrint() {
+  var body = document.getElementById('wp-result-body');
+  if (!body) return;
+  var win = window.open('','_blank');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ажлын төлөвлөгөө</title>' +
+    '<style>body{font-family:serif;font-size:10pt;line-height:1.6;padding:15mm}' +
+    'table{width:100%;border-collapse:collapse;margin-bottom:10px}' +
+    'th{background:#e8f5e9;padding:5px 8px;text-align:left;font-size:8pt;border:1px solid #ccc}' +
+    'td{padding:5px 8px;border:1px solid #ccc;vertical-align:top;font-size:9pt}' +
+    'h3{margin:8px 0 4px}ul{margin:0;padding-left:14px}' +
+    '@media print{button{display:none}}</style></head><body>' +
+    body.innerHTML + '</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print();},500);
+}
+
+function wpCopy() {
+  var text = document.getElementById('wp-result-body').innerText || '';
+  navigator.clipboard.writeText(text).then(function(){ alert('Хуулагдлаа!'); });
+}
+
+function wpReset() {
+  document.getElementById('wp-empty').style.display = 'flex';
+  document.getElementById('wp-empty').innerHTML = '<div style="font-size:3rem;margin-bottom:1rem;opacity:.4">📋</div>' +
+    '<h3 style="font-size:1rem;font-weight:600;color:var(--text-mid)">Ажлын төлөвлөгөө үүсгэхэд бэлэн</h3>' +
+    '<p style="font-size:.82rem;line-height:1.7;margin-top:.5rem">Зүүн талын маягтыг бөглөөд<br><strong>"Боловсруулах" товч дарна уу</strong></p>';
+  document.getElementById('wp-result').style.display = 'none';
+}
+// ══ АЖЛЫН ТӨЛӨВЛӨГӨӨ ТӨГСӨВ ════════════════════════
 
 // VERSION: 2025-teacher-v3-fixed
 async function callAI(prompt, outId, btnId, actionsId) {
