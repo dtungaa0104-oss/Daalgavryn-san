@@ -80,7 +80,7 @@
     <div class="panel-section">
       <div class="panel-title">③ Хичээл</div>
       <select class="subject-select" id="subject-sel">
-        {% for s in subjects %}<option>{{ s }}</option>{% endfor %}
+        {% for s in all_subjects %}<option>{{ s }}</option>{% endfor %}
       </select>
     </div>
 
@@ -201,12 +201,15 @@ function pickExam(eid) {
   setSlider('Чадвар', ch);
   setSlider('Хэрэглээ', he);
   updateTotal();
-  // Анги
-  if (!curGrade || grades.indexOf(curGrade) < 0) {
-    pickGrade(grades[0]);
-  } else {
-    pickGrade(curGrade);
-  }
+  // Анги — шалгалтад хамаарах анги сонгох
+  var gradeToSelect = (curGrade && grades.indexOf(curGrade) >= 0) ? curGrade : grades[0];
+  curGrade = gradeToSelect;
+  document.querySelectorAll('.grade-btn').forEach(function(b){b.classList.remove('active')});
+  var selgb = document.getElementById('gbtn-'+gradeToSelect);
+  if (selgb) selgb.classList.add('active');
+  var selEt = ET[eid];
+  var selInfo = document.getElementById('grade-exam-info');
+  if (selInfo && selEt) selInfo.innerHTML = '<span style="color:'+selEt.color+'">'+selEt.icon+' '+gradeToSelect+'-р анги — '+selEt.name+'</span>';
 }
 
 // ── GRADE ────────────────────────────────────────────
@@ -215,14 +218,18 @@ function pickGrade(g) {
   document.querySelectorAll('.grade-btn').forEach(function(b){b.classList.remove('active')});
   var gb = document.getElementById('gbtn-'+g);
   if (gb) gb.classList.add('active');
-  var eid = GM[g] || 'devshih';
+  // Одоогийн шалгалтын төрөлд энэ анги хамаарвал өөрчлөхгүй
+  var eid;
+  if (curExamId && ET[curExamId] && ET[curExamId].grades.indexOf(g) >= 0) {
+    eid = curExamId;
+  } else {
+    eid = GM[g] || 'devshih';
+    pickExam(eid);
+    return;
+  }
   var et = ET[eid];
   var info = document.getElementById('grade-exam-info');
   if (info && et) info.innerHTML = '<span style="color:'+et.color+'">'+et.icon+' '+g+'-р анги — '+et.name+'</span>';
-  // Шалгалтын төрлийг автоматаар солих
-  if (curExamId && ET[curExamId] && ET[curExamId].grades.indexOf(g) < 0) {
-    pickExam(eid);
-  }
 }
 
 // ── SLIDER ───────────────────────────────────────────
