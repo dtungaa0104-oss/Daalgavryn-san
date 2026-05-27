@@ -15,30 +15,48 @@ EXAM_TYPES = {
     "ulsiin": {
         "id":"ulsiin","name":"Улсын шалгалт","icon":"🏆","color":"#f0a500",
         "grades":[5,9,12],
-        "blueprint":{"total":40,"duration":"90 минут",
-                     "Мэдлэг ойлголт":12,"Чадвар":16,"Хэрэглээ":12,
-                     "note":"Улсын журмын албан ёсны шалгалт"}
+        "blueprint":{
+            "total":20,"score":35,"duration":"80 минут",
+            "Мэдлэг ойлголт":6,"Чадвар":8,"Хэрэглээ":6,
+            # Задгай даалгавар тусдаа
+            "zadgai_total":3,"zadgai_score":9,
+            "zadgai": [
+                {"num":"2.1","score":3,"desc":"Харьцаа, пропорц"},
+                {"num":"2.2","score":3,"desc":"Геометр, биет"},
+                {"num":"2.3","score":3,"desc":"Статистик, практик"},
+            ],
+            "note":"2025: 17 сонгох (1-2 оноо) + 9 задгай = 35 оноо · 80 минут"
+        }
     },
     "devshih": {
         "id":"devshih","name":"Анги дэвших шалгалт","icon":"📋","color":"#3b82f6",
         "grades":[3,4,6,7,8,10,11],
-        "blueprint":{"total":25,"duration":"60 минут",
-                     "Мэдлэг ойлголт":8,"Чадвар":10,"Хэрэглээ":7,
-                     "note":"Дараагийн анги руу дэвших шалгалт"}
+        "blueprint":{
+            "total":25,"score":49,"duration":"60 минут",
+            "Мэдлэг ойлголт":8,"Чадвар":10,"Хэрэглээ":7,
+            "zadgai_total":0,"zadgai_score":0,"zadgai":[],
+            "note":"25 сонгох даалгавар · 60 минут"
+        }
     },
     "guitsegdel": {
         "id":"guitsegdel","name":"Гүйцэтгэлийн үнэлгээ","icon":"📝","color":"#22c55e",
         "grades":list(range(2,12)),
-        "blueprint":{"total":10,"duration":"30 минут",
-                     "Мэдлэг ойлголт":4,"Чадвар":4,"Хэрэглээ":2,
-                     "note":"Оноогоор дүгнэхгүй — гүйцэтгэлийн үнэлгээ"}
+        "blueprint":{
+            "total":10,"score":0,"duration":"30 минут",
+            "Мэдлэг ойлголт":4,"Чадвар":4,"Хэрэглээ":2,
+            "zadgai_total":0,"zadgai_score":0,"zadgai":[],
+            "note":"Оноогоор дүгнэхгүй — гүйцэтгэлийн үнэлгээ"
+        }
     },
     "elselt": {
         "id":"elselt","name":"Элсэлтийн шалгалт","icon":"🎓","color":"#a855f7",
         "grades":[12],
-        "blueprint":{"total":40,"duration":"90 минут",
-                     "Мэдлэг ойлголт":10,"Чадвар":18,"Хэрэглээ":12,
-                     "note":"1 буруу = −0.2 оноо · Нийт 100 оноо"}
+        "blueprint":{
+            "total":40,"score":100,"duration":"90 минут",
+            "Мэдлэг ойлголт":10,"Чадвар":18,"Хэрэглээ":12,
+            "zadgai_total":0,"zadgai_score":0,"zadgai":[],
+            "note":"1 буруу = −0.2 оноо · Нийт 100 оноо"
+        }
     },
 }
 
@@ -257,6 +275,11 @@ def generate_exam():
         "duration":bp["duration"],"note":bp.get("note",""),
         "ai_generated":ai_generated,
         "source_note":" · ".join(msg_parts) if msg_parts else "",
+        "blueprint_info":{
+            "zadgai_total": bp.get("zadgai_total",0),
+            "zadgai_score": bp.get("zadgai_score",0),
+            "zadgai": bp.get("zadgai",[]),
+        },
         "questions":selected})
 
 @app.route("/api/stats")

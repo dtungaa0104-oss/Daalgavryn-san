@@ -240,7 +240,102 @@ function renderExam(exam) {
         </div>
         <button class="btn btn-outline" onclick="generateExam()">↻ Дахин</button>
       </div>
+      <!-- Задгай даалгаврын хэсэг -->
+      <div id="zadgai-section" style="display:none;margin-top:1rem;border-top:2px solid var(--green-100);padding-top:1rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem">
+          <h3 style="font-size:.95rem;font-weight:800;color:var(--text-dark);margin:0">
+            📝 Задгай даалгавар (II хэсэг)
+          </h3>
+          <button class="btn btn-sm btn-primary" onclick="generateZadgai()">✦ AI-аар үүсгэх</button>
+        </div>
+        <div id="zadgai-info" style="font-size:.82rem;color:var(--text-muted);margin-bottom:.8rem"></div>
+        <div id="zadgai-out" class="ai-out"></div>
+        <div id="zadgai-actions" style="display:none;gap:.6rem;margin-top:.6rem">
+          <button class="btn btn-sm btn-outline" onclick="printZadgai()">🖨 Хэвлэх</button>
+        </div>
+      </div>
     </div>`;
+}
+
+// Задгай даалгаврын хэсэг харуулах
+function showZadgaiSection(exam) {
+  var bp = exam.blueprint_info || {};
+  var zadgai = bp.zadgai || [];
+  if (!zadgai.length) return;
+  var sec = document.getElementById('zadgai-section');
+  var info = document.getElementById('zadgai-info');
+  if (sec) sec.style.display = 'block';
+  if (info) {
+    info.innerHTML = 'Нийт: <strong>' + bp.zadgai_total + '</strong> задгай даалгавар · ' +
+      '<strong>' + bp.zadgai_score + '</strong> оноо · ' +
+      zadgai.map(function(z){return z.num+' ('+z.score+' оноо)'}).join(', ');
+  }
+}
+
+async function generateZadgai() {
+  if (!currentExam) return;
+  var out = document.getElementById('zadgai-out');
+  var btn = document.querySelector('#zadgai-section .btn-primary');
+  var grade = currentExam.grade;
+  var subject = currentExam.subject;
+  var origLabel = '✦ AI-аар үүсгэх';
+  out.className = 'ai-out show';
+  out.innerHTML = '⏳ Задгай даалгавар үүсгэж байна...';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> Үүсгэж байна...'; }
+
+  var prompt = grade + '-р ангийн ' + subject + ' хичээлийн УЛСЫН ШАЛГАЛТЫН задгай даалгавар (II хэсэг) зохио. ' +
+    '2025 оны шалгалтын жишгийн дагуу:
+' +
+    '2.1 — 3 дэд даалгавартай, нийт 3 оноо
+' +
+    '2.2 — 3 дэд даалгавартай, нийт 3 оноо
+' +
+    '2.3 — 3 дэд даалгавартай, нийт 3 оноо
+' +
+    'Математикийн томъёо, тэмдэгтүүдийг LaTeX ($...$) хэлбэрт бич.
+' +
+    'Монгол хэлээр, бодит шалгалтын хэлбэрээр. Зөвхөн даалгавар, тайлбаргүй.';
+
+  try {
+    var res = await fetch('/api/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({messages:[{role:'user',content:prompt}]})
+    });
+    var data = await res.json();
+    if (btn) { btn.disabled = false; btn.textContent = origLabel; }
+    if (data.error) { out.innerHTML = '❌ ' + data.error; return; }
+    var reply = data.reply || data.result || '';
+    out.innerHTML = reply
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/
+/g,'<br>');
+    // KaTeX render
+    if (window.renderMathInElement) renderMathInElement(out, {
+      delimiters:[{left:'$',right:'$',display:false},{left:'$$',right:'$$',display:true}],
+      throwOnError:false
+    });
+    var acts = document.getElementById('zadgai-actions');
+    if (acts) acts.style.display = 'flex';
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = origLabel; }
+    out.innerHTML = '❌ Алдаа: ' + e.message;
+  }
+}
+
+function printZadgai() {
+  var out = document.getElementById('zadgai-out');
+  if (!out || !out.textContent) return;
+  var win = window.open('','_blank');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">' +
+    '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></sc' + 'ript>' +
+    '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"' +
+    ' onload="renderMathInElement(document.body,{delimiters:[{left:'$',right:'$',display:false},{left:'$$',right:'$$',display:true}]})"></sc' + 'ript>' +
+    '<style>body{font-family:serif;font-size:12pt;line-height:1.8;padding:20mm}h2{font-size:13pt}br{margin:4px 0}</style></head>' +
+    '<body><h2>' + (currentExam ? currentExam.title : '') + ' — Задгай даалгавар</h2>' +
+    out.innerHTML + '</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print()},800);
 }
 
 function printExam() {
