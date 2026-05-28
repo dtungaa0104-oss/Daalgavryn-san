@@ -3,10 +3,11 @@
 {% block content %}
 <style>
 .bp-wrap{display:grid;grid-template-columns:240px 1fr;min-height:80vh}
-.bp-panel{background:#fff;border-right:2px solid var(--green-100);padding:1.2rem;overflow-y:auto}
+.bp-panel{background:#fff;border-right:2px solid var(--green-100);padding:1.2rem;overflow-y:auto;overflow-x:hidden;min-width:0;width:100%;box-sizing:border-box}
+@media(max-width:700px){.bp-wrap{grid-template-columns:1fr;grid-template-rows:auto 1fr}.bp-panel{border-right:none;border-bottom:2px solid var(--green-100)}}
 .bp-main{padding:1.5rem;background:var(--green-50)}
 .panel-section{margin-bottom:1.2rem}
-.panel-title{font-size:.7rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem}
+.panel-title{font-size:.68rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem;white-space:normal;word-break:break-word}
 .et-btn{width:100%;text-align:left;padding:.6rem .8rem;border-radius:8px;border:1.5px solid var(--green-100);background:#fff;cursor:pointer;margin-bottom:.4rem;transition:all .15s}
 .et-btn:hover{border-color:var(--teal-600)}
 .et-btn.active{border-color:var(--teal-600);background:var(--teal-50)}
@@ -18,9 +19,10 @@
 .grade-btn.active{background:var(--teal-600);color:#fff;border-color:var(--teal-600)}
 .grade-btn.dimmed{opacity:.3;pointer-events:none}
 .subject-select{width:100%;padding:.4rem .6rem;border:1.5px solid var(--green-100);border-radius:8px;font-size:.85rem;background:var(--green-50)}
-.slider-row{display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem}
-.bp-slider{flex:1;height:6px;accent-color:var(--teal-600)}
-.slider-val{min-width:24px;text-align:right;font-size:.85rem;font-weight:700;color:var(--teal-600)}
+.slider-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;width:100%;box-sizing:border-box;min-width:0}
+.slider-label{min-width:0;flex-shrink:0;width:78px;font-size:.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bp-slider{flex:1;min-width:0;height:6px;accent-color:var(--teal-600);width:0}
+.slider-val{flex-shrink:0;min-width:22px;text-align:right;font-size:.82rem;font-weight:700;color:var(--teal-600)}
 .total-bar{background:var(--green-50);border:1.5px solid var(--green-100);border-radius:8px;padding:.5rem .8rem;font-size:.82rem;display:flex;gap:1rem;margin-top:.5rem}
 .grade-exam-info{font-size:.75rem;color:var(--text-muted);margin-top:.3rem;min-height:16px}
 .guitsegdel-note{font-size:.72rem;color:#ef4444;display:none}
@@ -38,7 +40,7 @@
 .q-item{background:#fff;border:1.5px solid var(--green-100);border-radius:8px;padding:.7rem 1rem;display:flex;gap:.8rem;align-items:flex-start}
 .q-num{min-width:28px;height:28px;border-radius:50%;background:var(--teal-600);color:#fff;font-size:.78rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .q-body{flex:1}
-.q-text{font-size:.88rem;line-height:1.5;color:var(--text-dark);margin-bottom:.3rem}
+.q-text{font-size:.88rem;line-height:1.6;color:var(--text-dark);margin-bottom:.3rem;word-break:break-word;overflow-wrap:break-word}
 .q-tags{display:flex;gap:.4rem;flex-wrap:wrap}
 .q-tag{font-size:.7rem;padding:1px 8px;border-radius:20px;font-weight:600}
 .q-score{font-size:.72rem;color:var(--text-muted);margin-left:auto;white-space:nowrap}
@@ -86,12 +88,12 @@
 
     <div class="panel-section">
       <div class="panel-title">④ Блюпринт</div>
-      <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.5rem">Түвшин тус бүрд хэдэн даалгавар оруулахыг тохируулна</div>
+      <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:.5rem;line-height:1.4;word-break:keep-all;white-space:normal">Түвшин тус бүрд хэдэн даалгавар оруулахыг тохируулна</div>
       <div class="blueprint-sliders">
         {% for lvl in levels %}
         {% set lvl_css = lvl | replace(' ','') %}
         <div class="slider-row">
-          <span class="q-level level-{{ lvl_css }}" style="min-width:80px;font-size:.72rem">{{ lvl }}</span>
+          <span class="q-level level-{{ lvl_css }} slider-label" title="{{ lvl }}">{{ lvl }}</span>
           <input type="range" min="0" max="25" value="0"
                  id="slider-{{ lvl }}" class="bp-slider"
                  oninput="onSlider('{{ lvl }}',this.value)">
@@ -302,6 +304,40 @@ async function doGenerate() {
   }
 }
 
+// Математикийн тэмдэгт, геометрийн дүрс зөв харуулах
+function renderMath(text) {
+  if (!text) return '';
+  // HTML special chars хамгаалах (< > & гэхэд) гэхдээ $ нь KaTeX-д хэрэгтэй
+  return text
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+}
+
+// Геометрийн дүрс → Unicode
+function geoSymbol(text) {
+  return text
+    .replace(/көвсөн/g,'○')
+    .replace(/тойрог/gi,'⊙')
+    .replace(/гурвалжин/gi,'△')
+    .replace(/дөрвөлжин/gi,'□')
+    .replace(/ромб/gi,'◇')
+    .replace(/трапец/gi,'⏢')
+    .replace(/өнцөг/gi,'∠')
+    .replace(/параллель/gi,'∥')
+    .replace(/перпендикуляр/gi,'⊥')
+    .replace(/sqrt\(([^)]+)\)/g,'√($1)')
+    .replace(/\^2/g,'²')
+    .replace(/\^3/g,'³')
+    .replace(/>=/, '≥')
+    .replace(/<=/, '≤')
+    .replace(/!=/, '≠')
+    .replace(/pi/gi,'π')
+    .replace(/alpha/gi,'α')
+    .replace(/beta/gi,'β')
+    .replace(/gamma/gi,'γ');
+}
+
 function renderExam(data) {
   examData = data;
   document.getElementById('exam-title').textContent = data.title || '';
@@ -320,13 +356,13 @@ function renderExam(data) {
     var opts = '';
     if (q.options && q.options.length) {
       opts = '<div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.3rem">' +
-        q.options.map(function(o){ return '<span class="q-tag" style="background:var(--green-50);border:1px solid var(--green-100);color:var(--text-mid)">'+o+'</span>'}).join('') +
+        q.options.map(function(o){ return '<span class="q-tag" style="background:var(--green-50);border:1px solid var(--green-100);color:var(--text-mid)">'+renderMath(o)+'</span>'}).join('') +
         '</div>';
     }
     return '<div class="q-item">' +
       '<div class="q-num">'+(i+1)+'</div>' +
       '<div class="q-body">' +
-        '<div class="q-text">'+q.question+'</div>'+opts+
+        '<div class="q-text">'+renderMath(q.question)+'</div>'+opts+
         '<div class="q-tags">' +
           '<span class="q-tag q-level level-'+lvlCss+'">'+q.level+'</span>' +
           '<span class="q-tag" style="background:#f0f9ff;border:1px solid #bae6fd;color:#0369a1">'+q.bloom+'</span>' +
@@ -337,13 +373,25 @@ function renderExam(data) {
   }).join('');
   document.getElementById('questions-list').innerHTML = html || '<p style="color:var(--text-muted);padding:1rem">Даалгавар байхгүй</p>';
 
-  // KaTeX render
-  if (window.renderMathInElement) {
-    renderMathInElement(document.getElementById('questions-list'), {
-      delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
-      throwOnError:false
-    });
+  // KaTeX render — математик томьёо ($...$, $$...$$)
+  var qlist = document.getElementById('questions-list');
+  if (qlist && window.renderMathInElement) {
+    try {
+      renderMathInElement(qlist, {
+        delimiters:[
+          {left:'$$',right:'$$',display:true},
+          {left:'$',right:'$',display:false},
+          {left:'\\\\(',right:'\\\\)',display:false},
+          {left:'\\\\[',right:'\\\\]',display:true}
+        ],
+        throwOnError:false
+      });
+    } catch(e) { console.log('KaTeX:', e); }
   }
+  // Geo symbols
+  qlist && qlist.querySelectorAll('.q-text').forEach(function(el){
+    el.innerHTML = geoSymbol(el.innerHTML);
+  });
 
   // Задгай хэсэг
   var bp_info = data.blueprint_info || {};
