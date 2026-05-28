@@ -204,64 +204,45 @@ def _fetch_scalar(conn, sql, params=()):
 
 
 def init_db():
-    """DB table үүсгэх — PostgreSQL эсвэл SQLite"""
+    """DB table үүсгэх — PGConn.execute эсвэл sqlite3, хоёуланд ажилладаг"""
+    import sqlite3 as _sq
     conn = get_db()
-    if USE_PG and _HAS_PG:
-        cur = conn._conn.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS questions (
-                id         SERIAL PRIMARY KEY,
-                q_code     TEXT UNIQUE,
-                grade      INTEGER NOT NULL,
-                subject    TEXT NOT NULL,
-                level      TEXT NOT NULL DEFAULT 'Мэдлэг ойлголт',
-                bloom      TEXT NOT NULL DEFAULT 'Мэдлэг',
-                q_type     TEXT NOT NULL DEFAULT 'Нэг сонголт',
-                question   TEXT NOT NULL,
-                option_a   TEXT, option_b TEXT, option_c TEXT, option_d TEXT,
-                answer     TEXT, score INTEGER DEFAULT 1,
-                topic      TEXT DEFAULT '',
-                hint       TEXT DEFAULT '',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS question_topics (
-                id         SERIAL PRIMARY KEY,
-                grade      INTEGER,
-                subject    TEXT,
-                topic      TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        conn._conn.commit()
-        cur.close()
+    is_pg = USE_PG and _HAS_PG and not isinstance(conn, _sq.Connection)
+    if is_pg:
+        sql_q = """CREATE TABLE IF NOT EXISTS questions (
+            id SERIAL PRIMARY KEY, q_code TEXT UNIQUE,
+            grade INTEGER NOT NULL, subject TEXT NOT NULL,
+            level TEXT NOT NULL DEFAULT 'Мэдлэг ойлголт',
+            bloom TEXT NOT NULL DEFAULT 'Мэдлэг',
+            q_type TEXT NOT NULL DEFAULT 'Нэг сонголт',
+            question TEXT NOT NULL,
+            option_a TEXT, option_b TEXT, option_c TEXT, option_d TEXT,
+            answer TEXT, score INTEGER DEFAULT 1,
+            topic TEXT DEFAULT '', hint TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"""
+        sql_t = """CREATE TABLE IF NOT EXISTS question_topics (
+            id SERIAL PRIMARY KEY, grade INTEGER,
+            subject TEXT, topic TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"""
     else:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS questions (
-                id       INTEGER PRIMARY KEY AUTOINCREMENT,
-                q_code   TEXT UNIQUE,
-                grade    INTEGER NOT NULL,
-                subject  TEXT NOT NULL,
-                level    TEXT NOT NULL DEFAULT 'Мэдлэг ойлголт',
-                bloom    TEXT NOT NULL DEFAULT 'Мэдлэг',
-                q_type   TEXT NOT NULL DEFAULT 'Нэг сонголт',
-                question TEXT NOT NULL,
-                option_a TEXT, option_b TEXT, option_c TEXT, option_d TEXT,
-                answer   TEXT, score INTEGER DEFAULT 1,
-                topic    TEXT DEFAULT '',
-                hint     TEXT DEFAULT '',
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS question_topics (
-                id      INTEGER PRIMARY KEY AUTOINCREMENT,
-                grade   INTEGER, subject TEXT, topic TEXT,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        conn.commit()
+        sql_q = """CREATE TABLE IF NOT EXISTS questions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, q_code TEXT UNIQUE,
+            grade INTEGER NOT NULL, subject TEXT NOT NULL,
+            level TEXT NOT NULL DEFAULT 'Мэдлэг ойлголт',
+            bloom TEXT NOT NULL DEFAULT 'Мэдлэг',
+            q_type TEXT NOT NULL DEFAULT 'Нэг сонголт',
+            question TEXT NOT NULL,
+            option_a TEXT, option_b TEXT, option_c TEXT, option_d TEXT,
+            answer TEXT, score INTEGER DEFAULT 1,
+            topic TEXT DEFAULT '', hint TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP)"""
+        sql_t = """CREATE TABLE IF NOT EXISTS question_topics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, grade INTEGER,
+            subject TEXT, topic TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP)"""
+    conn.execute(sql_q)
+    conn.execute(sql_t)
+    conn.commit()
     conn.close()
 
 
@@ -598,13 +579,8 @@ def admin_import():
             questions=parse_raw_text(raw,grade,subject,lvl)
             if not questions:
                 return jsonify({"error":"Даалгавар илрүүлж чадсангүй."}),400
+            init_db()
             conn=get_db()
-            try:
-                conn.execute("SELECT 1 FROM questions LIMIT 1")
-            except Exception:
-                conn.close()
-                init_db()
-                conn=get_db()
             saved=skipped=0
             for q in questions:
                 try:
@@ -1005,14 +981,8 @@ def api_upload():
         questions = parse_raw_text(raw, grade, subject, lvl)
         if not questions:
             return jsonify({"error": "Даалгавар илрүүлж чадсангүй"}), 400
+        init_db()  # Table байгаа эсэхийг шалгаад шаардлагатай бол үүсгэнэ
         conn = get_db()
-        # Table байхгүй бол үүсгэх
-        try:
-            conn.execute("SELECT 1 FROM questions LIMIT 1")
-        except Exception:
-            conn.close()
-            init_db()
-            conn = get_db()
         saved = skipped = 0
         for q in questions:
             try:
