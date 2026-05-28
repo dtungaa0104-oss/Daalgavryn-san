@@ -1229,7 +1229,7 @@ function crtRemoveRow(btn) {
 function crtPasteNames() {
   var text = prompt('Нэрсийг мөр бүрт бичнэ үү:\nНэр[Tab]Утга форматаар\nЖишээ:\nБ.Болд\t1-р байр\nД.Дулам\t2-р байр');
   if (!text) return;
-  var lines = text.split('\n').filter(function(l){ return l.trim(); });
+  var lines = text.split('\\n').filter(function(l){ return l.trim(); });
   var list = document.getElementById('crt-names');
   list.innerHTML = '';
   lines.forEach(function(line) {
@@ -1839,39 +1839,37 @@ function wpReset() {
 async function callAI(prompt, outId, btnId, actionsId) {
   var btn = btnId ? document.getElementById(btnId) : null;
   var out = document.getElementById(outId);
-  if (!out) { console.error('callAI: out element not found:', outId); return; }
+  if (!out) { console.error('callAI: element not found:', outId); return; }
   var origLabel = btn ? (btn.getAttribute('data-label') || btn.textContent) : '';
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> AI боловсруулж байна...'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> Боловсруулж байна...'; }
   out.className = 'ai-out show';
-  out.innerHTML = '⏳ Боловсруулж байна... (30-60 секунд)';
+  out.innerHTML = '<div style="color:var(--text-muted);font-size:.82rem">⏳ AI хариулт бэлтгэж байна...</div>';
   try {
-    var controller = new AbortController();
-    var timeout = setTimeout(function(){ controller.abort(); }, 55000);
     var res = await fetch('/api/chat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({messages: [{role: 'user', content: prompt}]}),
-      signal: controller.signal
+      body: JSON.stringify({messages: [{role: 'user', content: prompt}]})
     });
-    clearTimeout(timeout);
     var data = await res.json();
     if (btn) { btn.disabled = false; btn.textContent = origLabel; }
     if (!res.ok || data.error) {
-      out.innerHTML = '❌ Алдаа: ' + (data.error || 'HTTP ' + res.status);
+      out.innerHTML = '<div style="color:#c62828;padding:.5rem;background:#fff5f5;border-radius:6px">❌ ' +
+        (data.error || 'HTTP ' + res.status) + '</div>';
       return;
     }
     var reply = data.reply || data.result || '⚠️ Хариулт хоосон';
     out.innerHTML = reply
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-      .split('\n').join('<br>');
+      .replace(/[*][*](.+?)[*][*]/g,'<strong>$1</strong>')
+      .replace(/^[#]{1,3} (.+)$/gm,'<strong>$1</strong>')
+      .replaceAll('\n', '<br>');
     if (actionsId) {
       var actEl = document.getElementById(actionsId);
       if (actEl) actEl.style.display = 'flex';
     }
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = origLabel; }
-    out.innerHTML = '❌ Холболтын алдаа: ' + e.message;
+    out.innerHTML = '<div style="color:#c62828">❌ ' + e.message + '</div>';
   }
 }
 
@@ -2112,8 +2110,8 @@ function renderLessonPlan(plan, topicInfo) {
         '<div style="font-weight:700;color:var(--text-dark)">' + s.name + '</div>' +
         '<div style="font-size:.72rem;color:var(--text-muted);font-family:monospace">' + s.time + ' мин</div></td>' +
         '<td style="padding:.8rem;font-size:.82rem;vertical-align:top;border-bottom:1px solid var(--green-50);color:var(--text-mid)">' + (s.purpose||'') + '</td>' +
-        '<td style="padding:.8rem;font-size:.82rem;vertical-align:top;border-bottom:1px solid var(--green-50);color:var(--text-mid);line-height:1.6">' + (s.teacher_actions||'').split('\n').join('<br>') + '</td>' +
-        '<td style="padding:.8rem;font-size:.82rem;vertical-align:top;border-bottom:1px solid var(--green-50);color:var(--text-mid);line-height:1.6">' + (s.student_actions||'').split('\n').join('<br>') + '</td>' +
+        '<td style="padding:.8rem;font-size:.82rem;vertical-align:top;border-bottom:1px solid var(--green-50);color:var(--text-mid);line-height:1.6">' + (s.teacher_actions||'').replaceAll('\n', '<br>') + '</td>' +
+        '<td style="padding:.8rem;font-size:.82rem;vertical-align:top;border-bottom:1px solid var(--green-50);color:var(--text-mid);line-height:1.6">' + (s.student_actions||'').replaceAll('\n', '<br>') + '</td>' +
         '<td style="padding:.8rem;font-size:.82rem;vertical-align:top;border-bottom:1px solid var(--green-50);color:var(--text-mid)">' + (s.assessment||'') + '</td>' +
         '</tr>';
     }).join('') +
