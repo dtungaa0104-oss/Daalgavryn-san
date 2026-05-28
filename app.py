@@ -18,6 +18,12 @@ except:
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "orkhontul-ebs-2025")
+app.config.update(
+    SESSION_COOKIE_SECURE   = os.environ.get("RENDER", "") != "",  # Render-д HTTPS
+    SESSION_COOKIE_HTTPONLY = True,
+    SESSION_COOKIE_SAMESITE = "Lax",
+    PERMANENT_SESSION_LIFETIME = 86400 * 7  # 7 хоног
+)
 # ── DATABASE: PostgreSQL (Supabase) эсвэл SQLite fallback ──────────────
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:Orkhontuul%402020@db.vnxqgqthvqhyziwyyvsm.supabase.co:5432/postgres")
 DB_PATH      = os.environ.get("DB_PATH", "questions.db")
