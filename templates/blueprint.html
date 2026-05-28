@@ -344,7 +344,7 @@ function geoFigureSVG(text) {
       '<line x1="26" y1="3" x2="26" y2="43" stroke="#1565c0" stroke-width="0.8" stroke-dasharray="3"/>'+
       '</svg>';
 
-  if (/тойрог|circle/.test(t))
+  if (/тойрог|circle|circumference/.test(t))
     return '<svg width="50" height="50" viewBox="0 0 50 50">'+
       '<circle cx="25" cy="25" r="21" '+SB+'/>'+
       '<line x1="25" y1="25" x2="46" y2="25" stroke="#1565c0" stroke-width="1.2"/>'+
@@ -368,7 +368,7 @@ function geoFigureSVG(text) {
       '<rect x="4" y="4" width="50" height="34" '+S+'/>'+
       '<text x="29" y="24" text-anchor="middle" font-size="8" fill="#666">a×b</text></svg>';
 
-  if (/ромб|rhombus/.test(t))
+  if (/ромб|rhombus|diamond/.test(t))
     return '<svg width="50" height="50" viewBox="0 0 50 50">'+
       '<polygon points="25,3 47,25 25,47 3,25" '+SR+'/>'+
       '<line x1="25" y1="3" x2="25" y2="47" stroke="#c62828" stroke-width="0.8" stroke-dasharray="3"/>'+
@@ -381,7 +381,7 @@ function geoFigureSVG(text) {
       '<line x1="14" y1="4" x2="4" y2="40" stroke="#e65100" stroke-width="0.8" stroke-dasharray="2"/>'+
       '</svg>';
 
-  if (/параллелограмм|parallelogram/.test(t))
+  if (/паралл|parallelogram/.test(t))
     return '<svg width="58" height="44" viewBox="0 0 58 44">'+
       '<polygon points="12,4 54,4 46,40 4,40" '+S+'/>'+
       '</svg>';
@@ -413,7 +413,7 @@ function geoFigureSVG(text) {
       '<line x1="34" y1="46" x2="48" y2="34" '+S+'/>'+
       '</svg>';
 
-  if (/бөмбөлөг|sphere/.test(t))
+  if (/бөмбөл|sphere|ball/.test(t))
     return '<svg width="50" height="50" viewBox="0 0 50 50">'+
       '<circle cx="25" cy="25" r="21" '+SB+'/>'+
       '<ellipse cx="25" cy="25" rx="21" ry="8" '+SB+' stroke-dasharray="4,3"/>'+
@@ -454,7 +454,7 @@ function geoFigureSVG(text) {
       '</svg>';
 
   // Координатын тэнхлэг
-  if (/координат|coordinate|graph|график/.test(t))
+  if (/координат|coordinate|graph|график|функц|f\(x\)/.test(t))
     return '<svg width="52" height="52" viewBox="0 0 52 52">'+
       '<line x1="4" y1="26" x2="48" y2="26" stroke="#555" stroke-width="1.5"/>'+
       '<line x1="26" y1="48" x2="26" y2="4" stroke="#555" stroke-width="1.5"/>'+
