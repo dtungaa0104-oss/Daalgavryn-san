@@ -445,7 +445,7 @@ function selectAll() { allQuestions.forEach(q=>selected.add(String(q.id))); rend
 function downloadSelected() {
   const qs = allQuestions.filter(q=>selected.has(String(q.id)));
   if (!qs.length) { alert('Даалгавар сонгоно уу'); return; }
-  let t = `ОРХОНТУУЛ ЕБС — ДААЛГАВРЫН САН\n${'='.repeat(50)}\n\n`;
+  let t = `ОРХОНТУУЛ ЕБС — АМЖИЛТЫН ТӨВ\n${'='.repeat(50)}\n\n`;
   qs.forEach((q,i) => {
     t += `${i+1}. [${q.level}] [${q.bloom}] ${q.question}\n`;
     if (q.options) q.options.forEach(o=>t+=`   ${o}\n`);
