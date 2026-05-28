@@ -139,7 +139,8 @@
         </div>
         <div class="exam-actions">
           <button class="btn btn-primary" onclick="doPrint()">🖨 Хэвлэх</button>
-          <button class="btn btn-outline" onclick="doDownload()">⬇ Татах</button>
+          <button class="btn btn-outline" onclick="doDownload()">⬇ Word</button>
+          <button class="btn btn-outline" onclick="doDownloadWithAnswers()">⬇ Хариулттай</button>
           <button class="btn btn-outline" onclick="doGenerate()">↻ Дахин</button>
         </div>
         <div class="questions-list" id="questions-list"></div>
@@ -627,19 +628,68 @@ function doPrint() {
   win.document.close();
 }
 
-function doDownload() {
+async function doDownload() {
   if (!examData) return;
-  var qs = examData.questions || [];
-  var txt = examData.title+'\n'+'='.repeat(40)+'\n\n';
-  qs.forEach(function(q,i){
-    txt += (i+1)+'. '+q.question+' /'+q.score+' оноо/\n';
-    if (q.options) q.options.forEach(function(o,j){txt += '   '+String.fromCharCode(65+j)+'. '+o+'\n'});
-    txt += '\n';
-  });
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([txt],{type:'text/plain;charset=utf-8'}));
-  a.download = (examData.grade+'_angi_'+examData.subject+'_shalgalt.txt').replace(/ /g,'_');
-  a.click();
+  var btn = document.querySelector('[onclick="doDownload()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+  try {
+    var res = await fetch('/api/export-docx', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        title:        examData.title,
+        grade:        examData.grade,
+        subject:      examData.subject,
+        duration:     examData.duration,
+        questions:    examData.questions,
+        show_answers: false
+      })
+    });
+    if (!res.ok) { alert('Татах алдаа: '+res.status); return; }
+    var blob = await res.blob();
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href   = url;
+    a.download = (examData.grade+'_anги_'+examData.subject+'_шалгалт.docx').replace(/ /g,'_');
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    alert('Татах алдаа: '+e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⬇ Word'; }
+  }
+}
+
+async function doDownloadWithAnswers() {
+  if (!examData) return;
+  var btn = document.querySelector('[onclick="doDownloadWithAnswers()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+  try {
+    var res = await fetch('/api/export-docx', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        title:        examData.title + ' (Хариулттай)',
+        grade:        examData.grade,
+        subject:      examData.subject,
+        duration:     examData.duration,
+        questions:    examData.questions,
+        show_answers: true
+      })
+    });
+    if (!res.ok) { alert('Татах алдаа: '+res.status); return; }
+    var blob = await res.blob();
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href   = url;
+    a.download = (examData.grade+'_анги_'+examData.subject+'_хариулт.docx').replace(/ /g,'_');
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    alert('Татах алдаа: '+e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⬇ Хариулттай'; }
+  }
 }
 </script>
 {% endblock %}
