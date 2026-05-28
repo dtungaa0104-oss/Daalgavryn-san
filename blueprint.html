@@ -631,6 +631,12 @@ function renderExam(data) {
   // KaTeX render — DOM шинэчлэгдсэний дараа дуудах
   var qlist = document.getElementById('questions-list');
   // base.html-д тодорхойлсон mathRender ашиглах
+  // Задгай хэсэг харуулах
+  var zs = document.getElementById('zadgai-section');
+  if (zs) zs.style.display = 'block';
+  // examData-д blueprint хадгалах
+  if (examData) examData.blueprint = blueprint || {};
+
   if (window.mathRender) {
     mathRender(qlist);
   } else if (window.renderMathInElement) {
@@ -659,55 +665,109 @@ function renderExam(data) {
 // ── ЗАДГАЙ ───────────────────────────────────────────
 async function genZadgai() {
   if (!examData) return;
-  var out = document.getElementById('zadgai-out');
-  var btn = event.target;
+  var out  = document.getElementById('zadgai-out');
+  var info = document.getElementById('zadgai-info');
+  var btn  = document.querySelector('[onclick="genZadgai()"]');
+  if (btn) { btn.disabled=true; btn.innerHTML='<span class="spinner-sm"></span>'; }
   out.className = 'ai-out show';
   out.textContent = '⏳ Задгай даалгавар үүсгэж байна...';
-  btn.disabled = true;
 
-  var prompt = examData.grade+'-р ангийн '+examData.subject+
-    ' хичээлийн улсын шалгалтын задгай даалгавар (II хэсэг) зохио.\n'+
-    '2.1 — 3 дэд даалгавар, 3 оноо\n'+
-    '2.2 — 3 дэд даалгавар, 3 оноо\n'+
-    '2.3 — 3 дэд даалгавар, 3 оноо\n'+
-    'Математикийн томъёог $...$ хэлбэрт бич. Монгол хэлээр. Зөвхөн даалгавар.';
+  // Блюпринтийн дагуу задгай даалгаврын тоо тооцох
+  var blueprint = examData.blueprint || {};
+  var zadgaiCount = 0;
+  var zadgaiSpec = [];
+  // Чадвар: 1 том бодлого (3 оноо), Хэрэглээ: 1 том бодлого (4 оноо)
+  if ((blueprint['Чадвар']||0) > 0) { zadgaiSpec.push({num:'2.1', score:3, label:'Чадварын бодлого'}); zadgaiCount++; }
+  if ((blueprint['Хэрэглээ']||0) > 0) { zadgaiSpec.push({num:'2.2', score:4, label:'Хэрэглээний бодлого'}); zadgaiCount++; }
+  if (zadgaiCount === 0) {
+    zadgaiSpec = [
+      {num:'2.1', score:3, label:'Задгай бодлого'},
+      {num:'2.2', score:4, label:'Задгай бодлого'}
+    ];
+  }
+  // Нэмэлт 2.3 — Системтэй бодлого
+  zadgaiSpec.push({num:'2.'+(zadgaiSpec.length+1), score:3, label:'Системтэй бодлого'});
 
-  try {
-    var res = await fetch('/api/chat', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({messages:[{role:'user',content:prompt}]})
-    });
-    var data = await res.json();
-    btn.disabled = false;
-    if (data.error) { out.textContent = '❌ '+data.error; return; }
-    var reply = data.reply || data.result || '';
+  var specText = zadgaiSpec.map(function(s){
+    return s.num+' — '+s.label+' ('+s.score+' оноо, '+s.score+' дэд даалгавар)';
+  }).join(String.fromCharCode(10));
+
+  var totalScore = zadgaiSpec.reduce(function(a,s){return a+s.score},0);
+  info.textContent = '2-р хэсэг: '+zadgaiSpec.length+' бодлого · Нийт '+totalScore+' оноо';
+
+  var prompt = examData.grade+"-р ангийн "+examData.subject+" хичээлийн задгай даалгавар (II хэсэг) зохио. "+
+    "Сэдэв: "+examData.title+". "+
+    "Блюпринт: "+JSON.stringify(blueprint)+". "+
+    "Бодлогуудыг зохио: "+specText+". "+
+    "Шаардлага: Монгол хэлээр. Томьёо $...$ хэлбэрт. "+
+    "Дэд даалгавар а) б) в) дугаарлах. Ажлын зай дурдах. "+
+    "Зөв хариулт хамт өгөх. Амьдрал практиктай холбох.";
+;
+
+  fetch('/api/chat', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({messages:[{role:'user', content:prompt}]})
+  }).then(function(r){ return r.json(); })
+  .then(function(data) {
+    if (btn) { btn.disabled=false; btn.textContent='✦ AI-аар үүсгэх'; }
+    if (data.error) {
+      out.innerHTML = '<div style="color:#c62828">❌ '+data.error+'</div>';
+      return;
+    }
+    var reply = data.reply || '';
+    // Форматлах
     out.innerHTML = reply
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-      .replace(/\n/g,'<br>');
-    if (window.renderMathInElement) renderMathInElement(out,{
-      delimiters:[{left:'$',right:'$',display:false},{left:'$$',right:'$$',display:true}],
-      throwOnError:false
-    });
-    var acts = document.getElementById('zadgai-actions');
-    if (acts) acts.style.display = 'block';
-  } catch(e) {
-    btn.disabled = false;
-    out.textContent = '❌ Алдаа: '+e.message;
-  }
+      .replace(/[*][*](.+?)[*][*]/g,'<strong>$1</strong>')
+      .replace(/^(2[.]\d+.*?)$/gm,'<h4 style="color:var(--teal-600);margin:1rem 0 .3rem;font-size:.9rem">$1</h4>')
+      .replace(/^([аабвгд][).])(.+)$/gm,'<div style="margin:.3rem 0 .3rem 1rem">$1$2</div>')
+      .replaceAll(String.fromCharCode(10),'<br>');
+    // MathJax render
+    if (window.mathRender) mathRender(out);
+    // Actions
+    var act = document.getElementById('zadgai-actions');
+    if (act) act.style.display='flex';
+    // examData-д хадгалах
+    examData.zadgai = reply;
+    examData.zadgaiSpec = zadgaiSpec;
+  }).catch(function(e) {
+    if (btn) { btn.disabled=false; btn.textContent='✦ AI-аар үүсгэх'; }
+    out.innerHTML = '<div style="color:#c62828">❌ '+e.message+'</div>';
+  });
 }
 
 
 function printZadgai() {
-  if (!document.getElementById('zadgai-out').textContent) return;
+  if (!examData || !examData.zadgai) return;
   var win = window.open('','_blank');
-  win.document.write('<html><head><meta charset="UTF-8">'+
-    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">'+
-    '<style>body{font-family:serif;font-size:12pt;line-height:1.8;padding:20mm}</style></head>'+
-    '<body><h2>'+(examData?examData.title:'')+'</h2>'+
-    document.getElementById('zadgai-out').innerHTML+'</body></html>');
+  var spec = examData.zadgaiSpec || [];
+  var totalScore = spec.reduce(function(a,s){return a+s.score},0);
+  win.document.write(
+    '<!DOCTYPE html><html><head><meta charset="UTF-8">'+
+    '<script>window.MathJax={tex:{inlineMath:[["$","$"]],displayMath:[["$$","$$"]]}};<'+'/script>'+
+    '<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"><'+'/script>'+
+    '<style>'+
+    'body{font-family:serif;font-size:11pt;padding:15mm;line-height:2}'+
+    'h1{font-size:13pt;text-align:center;border-bottom:2px solid #000;padding-bottom:5px}'+
+    'h2{font-size:12pt;text-align:center;font-weight:normal}'+
+    'h3{font-size:11pt;color:#1b5e20;margin:1.2rem 0 .4rem;border-left:3px solid #1b5e20;padding-left:8px}'+
+    '.work-space{border-bottom:1px dotted #ccc;min-height:60px;margin:.5rem 0}'+
+    '@media print{button{display:none}@page{margin:15mm;size:A4}}'+
+    '</style></head><body>'+
+    '<button onclick="window.print()" style="margin-bottom:10px;padding:5px 14px">🖨 Хэвлэх</button>'+
+    '<h1>'+examData.title+'</h1>'+
+    '<h2>'+examData.grade+'-р анги &nbsp;·&nbsp; '+examData.subject+'</h2>'+
+    '<h2 style="margin-top:0">II ХЭСЭГ — Задгай даалгавар &nbsp;/Нийт '+totalScore+' оноо/</h2>'+
+    '<hr>'+
+    examData.zadgai
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/[*][*](.+?)[*][*]/g,'<strong>$1</strong>')
+      .replace(/^(2[.]\d+.*)$/gm,'<h3>$1</h3>')
+      .replace(/\n/g,'<br>')+
+    '<br><br><hr><p style="font-size:9pt;color:#888;text-align:right">Орхонтуул ЕБС &nbsp;·&nbsp; '+new Date().getFullYear()+'</p>'+
+    '</body></html>'
+  );
   win.document.close();
-  setTimeout(function(){win.print()},600);
 }
 
 // ── ХЭВЛЭХ / ТАТАХ ───────────────────────────────────
