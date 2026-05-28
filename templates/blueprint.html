@@ -40,7 +40,7 @@
 .q-item{background:#fff;border:1.5px solid var(--green-100);border-radius:8px;padding:.7rem 1rem;display:flex;gap:.8rem;align-items:flex-start}
 .q-num{min-width:28px;height:28px;border-radius:50%;background:var(--teal-600);color:#fff;font-size:.78rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .q-body{flex:1}
-.q-text{font-size:.88rem;line-height:1.6;color:var(--text-dark);margin-bottom:.3rem;word-break:break-word;overflow-wrap:break-word}
+.q-text{font-size:.88rem;line-height:1.7;color:var(--text-dark);margin-bottom:.3rem;word-break:break-word;overflow-wrap:break-word;display:flex;align-items:center;gap:.3rem;flex-wrap:wrap}
 .q-tags{display:flex;gap:.4rem;flex-wrap:wrap}
 .q-tag{font-size:.7rem;padding:1px 8px;border-radius:20px;font-weight:600}
 .q-score{font-size:.72rem;color:var(--text-muted);margin-left:auto;white-space:nowrap}
@@ -161,6 +161,7 @@
 </div>
 {% endblock %}
 {% block scripts %}
+
 <script>
 const ET = {{ exam_types | tojson }};
 const GM = {{ grade_exam_map | tojson }};
@@ -304,38 +305,173 @@ async function doGenerate() {
   }
 }
 
-// Математикийн тэмдэгт, геометрийн дүрс зөв харуулах
-function renderMath(text) {
+// ── МАТЕМАТИК РЕНДЭР (MathJax 3) ─────────────────────────
+function enrichText(text) {
   if (!text) return '';
-  // HTML special chars хамгаалах (< > & гэхэд) гэхдээ $ нь KaTeX-д хэрэгтэй
-  return text
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;');
+  // HTML-д аюулгүй болгох ($, \-г хамгаалахгүй — MathJax хэрэгтэй)
+  var safe = text
+    .replace(/&(?!amp;|lt;|gt;|#[0-9]+;|[a-zA-Z]+;)/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  // Геометрийн SVG дүрс нэмэх
+  var fig = geoFigureSVG(text);
+  return (fig ? '<span class="geo-fig">'+fig+'</span> ' : '') + safe;
 }
 
-// Геометрийн дүрс → Unicode
-function geoSymbol(text) {
-  return text
-    .replace(/көвсөн/g,'○')
-    .replace(/тойрог/gi,'⊙')
-    .replace(/гурвалжин/gi,'△')
-    .replace(/дөрвөлжин/gi,'□')
-    .replace(/ромб/gi,'◇')
-    .replace(/трапец/gi,'⏢')
-    .replace(/өнцөг/gi,'∠')
-    .replace(/параллель/gi,'∥')
-    .replace(/перпендикуляр/gi,'⊥')
-    .replace(/sqrt\(([^)]+)\)/g,'√($1)')
-    .replace(/\^2/g,'²')
-    .replace(/\^3/g,'³')
-    .replace(/>=/, '≥')
-    .replace(/<=/, '≤')
-    .replace(/!=/, '≠')
-    .replace(/pi/gi,'π')
-    .replace(/alpha/gi,'α')
-    .replace(/beta/gi,'β')
-    .replace(/gamma/gi,'γ');
+// ── ГЕОМЕТРИЙН БҮРЭН SVG ДҮРСҮҮД ─────────────────────────
+function geoFigureSVG(text) {
+  if (!text) return '';
+  var t = text.toLowerCase();
+  var S = 'stroke="#2e7d32" stroke-width="1.8" fill="none"';
+  var SB = 'stroke="#1565c0" stroke-width="1.8" fill="none"';
+  var SR = 'stroke="#c62828" stroke-width="1.8" fill="none"';
+  var SO = 'stroke="#e65100" stroke-width="1.8" fill="none"';
+
+  // ── Хавтгайн дүрсүүд ──
+  if (/гурвалжин|triangle/.test(t))
+    return '<svg width="52" height="46" viewBox="0 0 52 46"><polygon points="26,3 49,43 3,43" '+S+'/>'+
+      '<text x="26" y="41" text-anchor="middle" font-size="7" fill="#555">A</text>'+
+      '<text x="3" y="43" font-size="7" fill="#555">B</text>'+
+      '<text x="46" y="43" font-size="7" fill="#555">C</text></svg>';
+
+  if (/тэгш өнцөгт гурвалжин|right.*triangle|right triangle/.test(t))
+    return '<svg width="52" height="46" viewBox="0 0 52 46">'+
+      '<polygon points="3,43 49,43 3,5" '+S+'/>'+
+      '<rect x="3" y="37" width="6" height="6" '+S+'/></svg>';
+
+  if (/тэгш талт гурвалжин|equilateral/.test(t))
+    return '<svg width="52" height="46" viewBox="0 0 52 46"><polygon points="26,3 49,43 3,43" '+SB+'/>'+
+      '<line x1="26" y1="3" x2="26" y2="43" stroke="#1565c0" stroke-width="0.8" stroke-dasharray="3"/>'+
+      '</svg>';
+
+  if (/тойрог|circle/.test(t))
+    return '<svg width="50" height="50" viewBox="0 0 50 50">'+
+      '<circle cx="25" cy="25" r="21" '+SB+'/>'+
+      '<line x1="25" y1="25" x2="46" y2="25" stroke="#1565c0" stroke-width="1.2"/>'+
+      '<text x="33" y="22" font-size="8" fill="#1565c0">r</text>'+
+      '<circle cx="25" cy="25" r="2" fill="#1565c0"/></svg>';
+
+  if (/хагас тойрог|semicircle/.test(t))
+    return '<svg width="54" height="34" viewBox="0 0 54 34">'+
+      '<path d="M4,30 A23,23 0 0,1 50,30" '+SB+'/>'+
+      '<line x1="4" y1="30" x2="50" y2="30" '+SB+'/></svg>';
+
+  if (/квадрат|square/.test(t))
+    return '<svg width="46" height="46" viewBox="0 0 46 46">'+
+      '<rect x="4" y="4" width="38" height="38" '+S+'/>'+
+      '<line x1="4" y1="4" x2="8" y2="4" stroke="#2e7d32" stroke-width="1.5"/>'+
+      '<line x1="4" y1="4" x2="4" y2="8" stroke="#2e7d32" stroke-width="1.5"/>'+
+      '</svg>';
+
+  if (/тэгш өнцөгт|rectangle/.test(t))
+    return '<svg width="58" height="42" viewBox="0 0 58 42">'+
+      '<rect x="4" y="4" width="50" height="34" '+S+'/>'+
+      '<text x="29" y="24" text-anchor="middle" font-size="8" fill="#666">a×b</text></svg>';
+
+  if (/ромб|rhombus/.test(t))
+    return '<svg width="50" height="50" viewBox="0 0 50 50">'+
+      '<polygon points="25,3 47,25 25,47 3,25" '+SR+'/>'+
+      '<line x1="25" y1="3" x2="25" y2="47" stroke="#c62828" stroke-width="0.8" stroke-dasharray="3"/>'+
+      '<line x1="3" y1="25" x2="47" y2="25" stroke="#c62828" stroke-width="0.8" stroke-dasharray="3"/>'+
+      '</svg>';
+
+  if (/трапец|trapez/.test(t))
+    return '<svg width="58" height="44" viewBox="0 0 58 44">'+
+      '<polygon points="14,4 44,4 54,40 4,40" '+SO+'/>'+
+      '<line x1="14" y1="4" x2="4" y2="40" stroke="#e65100" stroke-width="0.8" stroke-dasharray="2"/>'+
+      '</svg>';
+
+  if (/параллелограмм|parallelogram/.test(t))
+    return '<svg width="58" height="44" viewBox="0 0 58 44">'+
+      '<polygon points="12,4 54,4 46,40 4,40" '+S+'/>'+
+      '</svg>';
+
+  if (/пентагон|pentagon/.test(t))
+    return '<svg width="50" height="50" viewBox="0 0 50 50">'+
+      '<polygon points="25,3 48,19 39,44 11,44 2,19" '+SB+'/></svg>';
+
+  if (/зэрэгцээ шулуун|parallel lines/.test(t))
+    return '<svg width="50" height="40" viewBox="0 0 50 40">'+
+      '<line x1="4" y1="12" x2="46" y2="12" stroke="#2e7d32" stroke-width="2"/>'+
+      '<line x1="4" y1="28" x2="46" y2="28" stroke="#2e7d32" stroke-width="2"/>'+
+      '<text x="48" y="14" font-size="8" fill="#555">a</text>'+
+      '<text x="48" y="30" font-size="8" fill="#555">b</text></svg>';
+
+  if (/огтлолцох|intersect/.test(t))
+    return '<svg width="50" height="50" viewBox="0 0 50 50">'+
+      '<line x1="5" y1="5" x2="45" y2="45" stroke="#2e7d32" stroke-width="2"/>'+
+      '<line x1="45" y1="5" x2="5" y2="45" stroke="#1565c0" stroke-width="2"/>'+
+      '<circle cx="25" cy="25" r="3" fill="#c62828"/></svg>';
+
+  // ── Огторгуйн дүрсүүд ──
+  if (/куб|cube/.test(t))
+    return '<svg width="52" height="52" viewBox="0 0 52 52">'+
+      '<rect x="4" y="16" width="30" height="30" '+S+'/>'+
+      '<polygon points="4,16 18,4 48,4 34,16" '+S+'/>'+
+      '<line x1="34" y1="16" x2="48" y2="4" '+S+'/>'+
+      '<line x1="48" y1="4" x2="48" y2="34" '+S+'/>'+
+      '<line x1="34" y1="46" x2="48" y2="34" '+S+'/>'+
+      '</svg>';
+
+  if (/бөмбөлөг|sphere/.test(t))
+    return '<svg width="50" height="50" viewBox="0 0 50 50">'+
+      '<circle cx="25" cy="25" r="21" '+SB+'/>'+
+      '<ellipse cx="25" cy="25" rx="21" ry="8" '+SB+' stroke-dasharray="4,3"/>'+
+      '<ellipse cx="25" cy="25" rx="8" ry="21" stroke="#1565c0" stroke-width="0.8" fill="none" stroke-dasharray="4,3"/>'+
+      '</svg>';
+
+  if (/цилиндр|cylinder/.test(t))
+    return '<svg width="46" height="56" viewBox="0 0 46 56">'+
+      '<ellipse cx="23" cy="10" rx="19" ry="7" '+S+'/>'+
+      '<ellipse cx="23" cy="46" rx="19" ry="7" '+S+'/>'+
+      '<line x1="4" y1="10" x2="4" y2="46" '+S+'/>'+
+      '<line x1="42" y1="10" x2="42" y2="46" '+S+'/>'+
+      '</svg>';
+
+  if (/конус|cone/.test(t))
+    return '<svg width="50" height="54" viewBox="0 0 50 54">'+
+      '<ellipse cx="25" cy="44" rx="21" ry="7" '+SR+'/>'+
+      '<line x1="4" y1="44" x2="25" y2="4" '+SR+'/>'+
+      '<line x1="46" y1="44" x2="25" y2="4" '+SR+'/>'+
+      '</svg>';
+
+  if (/пирамид|pyramid/.test(t))
+    return '<svg width="54" height="52" viewBox="0 0 54 52">'+
+      '<polygon points="4,46 50,46 50,46" fill="none"/>'+
+      '<line x1="4" y1="46" x2="27" y2="4" stroke="#e65100" stroke-width="1.8"/>'+
+      '<line x1="50" y1="46" x2="27" y2="4" stroke="#e65100" stroke-width="1.8"/>'+
+      '<line x1="4" y1="46" x2="50" y2="46" stroke="#e65100" stroke-width="1.8"/>'+
+      '<line x1="15" y1="30" x2="27" y2="4" stroke="#e65100" stroke-width="0.8" stroke-dasharray="3"/>'+
+      '<polygon points="4,46 50,46 38,30 15,30" stroke="#e65100" stroke-width="1" fill="none" stroke-dasharray="3,3"/>'+
+      '</svg>';
+
+  if (/призм|prism/.test(t))
+    return '<svg width="56" height="52" viewBox="0 0 56 52">'+
+      '<polygon points="4,46 28,46 40,28 16,28" '+S+'/>'+
+      '<polygon points="4,46 16,28 16,8 4,26" '+S+'/>'+
+      '<polygon points="16,28 40,28 40,8 16,8" '+S+'/>'+
+      '<line x1="4" y1="26" x2="28" y2="26" stroke="#2e7d32" stroke-width="0.8" stroke-dasharray="3"/>'+
+      '</svg>';
+
+  // Координатын тэнхлэг
+  if (/координат|coordinate|graph|график/.test(t))
+    return '<svg width="52" height="52" viewBox="0 0 52 52">'+
+      '<line x1="4" y1="26" x2="48" y2="26" stroke="#555" stroke-width="1.5"/>'+
+      '<line x1="26" y1="48" x2="26" y2="4" stroke="#555" stroke-width="1.5"/>'+
+      '<polygon points="48,26 42,23 42,29" fill="#555"/>'+
+      '<polygon points="26,4 23,10 29,10" fill="#555"/>'+
+      '<text x="46" y="23" font-size="8" fill="#555">x</text>'+
+      '<text x="28" y="8" font-size="8" fill="#555">y</text>'+
+      '</svg>';
+
+  // Вектор
+  if (/вектор|vector/.test(t))
+    return '<svg width="52" height="36" viewBox="0 0 52 36">'+
+      '<line x1="4" y1="18" x2="44" y2="18" stroke="#1565c0" stroke-width="2"/>'+
+      '<polygon points="48,18 40,14 40,22" fill="#1565c0"/>'+
+      '<text x="24" y="14" text-anchor="middle" font-size="8" fill="#1565c0">a⃗</text></svg>';
+
+  return '';
 }
 
 function renderExam(data) {
@@ -356,13 +492,13 @@ function renderExam(data) {
     var opts = '';
     if (q.options && q.options.length) {
       opts = '<div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.3rem">' +
-        q.options.map(function(o){ return '<span class="q-tag" style="background:var(--green-50);border:1px solid var(--green-100);color:var(--text-mid)">'+renderMath(o)+'</span>'}).join('') +
+        q.options.map(function(o){ return '<span class="q-tag" style="background:var(--green-50);border:1px solid var(--green-100);color:var(--text-mid)">'+enrichText(o)+'</span>'}).join('') +
         '</div>';
     }
     return '<div class="q-item">' +
       '<div class="q-num">'+(i+1)+'</div>' +
       '<div class="q-body">' +
-        '<div class="q-text">'+renderMath(q.question)+'</div>'+opts+
+        '<div class="q-text">'+enrichText(q.question)+'</div>'+opts+
         '<div class="q-tags">' +
           '<span class="q-tag q-level level-'+lvlCss+'">'+q.level+'</span>' +
           '<span class="q-tag" style="background:#f0f9ff;border:1px solid #bae6fd;color:#0369a1">'+q.bloom+'</span>' +
@@ -373,25 +509,19 @@ function renderExam(data) {
   }).join('');
   document.getElementById('questions-list').innerHTML = html || '<p style="color:var(--text-muted);padding:1rem">Даалгавар байхгүй</p>';
 
-  // KaTeX render — математик томьёо ($...$, $$...$$)
+  // KaTeX render — DOM шинэчлэгдсэний дараа дуудах
   var qlist = document.getElementById('questions-list');
-  if (qlist && window.renderMathInElement) {
+  // base.html-д тодорхойлсон mathRender ашиглах
+  if (window.mathRender) {
+    mathRender(qlist);
+  } else if (window.renderMathInElement) {
     try {
       renderMathInElement(qlist, {
-        delimiters:[
-          {left:'$$',right:'$$',display:true},
-          {left:'$',right:'$',display:false},
-          {left:'\\\\(',right:'\\\\)',display:false},
-          {left:'\\\\[',right:'\\\\]',display:true}
-        ],
+        delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
         throwOnError:false
       });
-    } catch(e) { console.log('KaTeX:', e); }
+    } catch(e) {}
   }
-  // Geo symbols
-  qlist && qlist.querySelectorAll('.q-text').forEach(function(el){
-    el.innerHTML = geoSymbol(el.innerHTML);
-  });
 
   // Задгай хэсэг
   var bp_info = data.blueprint_info || {};
@@ -464,22 +594,37 @@ function printZadgai() {
 function doPrint() {
   if (!examData) return;
   var qs = examData.questions || [];
-  var win = window.open('','_blank');
-  var body = '<h2>'+examData.title+'</h2>'+
-    '<p>'+examData.grade+'-р анги · '+examData.subject+' · '+examData.duration+'</p><hr>'+
+  var body = '<h2 style="text-align:center;border-bottom:2px solid #333;padding-bottom:8px">'+examData.title+'</h2>'+
+    '<p style="text-align:center;font-size:10pt;color:#555">'+examData.grade+'-р анги &nbsp;·&nbsp; '+
+    examData.subject+' &nbsp;·&nbsp; '+examData.duration+'</p><hr style="margin:8px 0">' +
     qs.map(function(q,i){
-      var opts = q.options ? q.options.map(function(o,j){return String.fromCharCode(65+j)+'. '+o}).join('   ') : '';
-      return '<p><b>'+(i+1)+'.</b> '+q.question+' /'+q.score+' оноо/</p>'+(opts?'<p>'+opts+'</p>':'');
+      var fig = geoFigure(q.question) || '';
+      var opts = '';
+      if (q.options && q.options.length) {
+        opts = '<table style="margin:4px 0 4px 20px;width:90%"><tr>' +
+          q.options.map(function(o,j){
+            var isAns = String.fromCharCode(1040+j) === (q.answer||'А');
+            return '<td style="width:50%;padding:2px 6px;'+(isAns?'color:#1b5e20;font-weight:bold':'')+'">' +
+              String.fromCharCode(1040+j)+'. '+o+'</td>';
+          }).join('') + '</tr></table>';
+      }
+      return '<div style="margin:10px 0;padding:8px;border-left:3px solid #2e7d32;page-break-inside:avoid">'+
+        '<b style="color:#1b5e20">'+(i+1)+'.</b> '+fig+q.question+
+        ' <span style="font-size:9pt;color:#888">/'+q.score+' оноо/</span>'+opts+'</div>';
     }).join('');
-  win.document.write('<html><head><meta charset="UTF-8">'+
-    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">'+
-    '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"><\/script>'+
-    '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"'+
-    ' onload="renderMathInElement(document.body)"><\/script>'+
-    '<style>body{font-family:serif;font-size:12pt;line-height:1.8;padding:20mm}hr{margin:8px 0}@media print{button{display:none}}</style></head>'+
-    '<body><button onclick="window.print()">🖨 Хэвлэх</button>'+body+'</body></html>');
+  var win = window.open('','_blank');
+  win.document.write(
+    '<html><head><meta charset="UTF-8">'+
+    '<script>window.MathJax={tex:{inlineMath:[["$","$"]],displayMath:[["$$","$$"]]}};<\/script>'+
+    '<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"><\/script>'+
+    '<style>'+
+    'body{font-family:serif;font-size:11pt;line-height:1.8;padding:15mm;color:#000}'+
+    'h2{font-size:14pt}svg{vertical-align:middle}'+
+    '@media print{button{display:none}@page{margin:15mm;size:A4}}'+
+    '</style></head>'+
+    '<body><button onclick="window.print()" style="margin-bottom:10px;padding:6px 14px">🖨 Хэвлэх</button>'+
+    body+'</body></html>');
   win.document.close();
-  setTimeout(function(){win.print()},800);
 }
 
 function doDownload() {
