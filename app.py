@@ -564,6 +564,45 @@ JSON формат:
         import traceback; print(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 
+
+@app.route("/certificate")
+def certificate_page():
+    return render_template("certificate.html", all_subjects=ALL_SUBJECTS)
+
+@app.route("/api/certificate", methods=["POST"])
+def gen_cert():
+    """Сертификат / Өргөмжлөл үүсгэх"""
+    from certificate_gen import gen_certificate, gen_batch
+    data = request.json
+    cert_type = data.get("cert_type", "cert")
+    school    = data.get("school", "Орхонтуул ЕБС")
+    title     = data.get("title", "СЕРТИФИКАТ")
+    subtitle  = data.get("subtitle", "")
+    date      = data.get("date", "")
+    names     = data.get("names", [])  # [{"name":"...","value":"..."}]
+
+    if not names:
+        return jsonify({"error": "Нэр оруулаагүй байна"}), 400
+
+    try:
+        if len(names) == 1:
+            pdf = gen_certificate(
+                name=names[0]["name"], value=names[0].get("value",""),
+                school=school, title=title, subtitle=subtitle,
+                date=date, cert_type=cert_type
+            )
+        else:
+            pdf = gen_batch(names, school=school, title=title,
+                          subtitle=subtitle, date=date, cert_type=cert_type)
+
+        from flask import Response
+        fname = "certificate.pdf" if len(names)==1 else "certificates_batch.pdf"
+        return Response(pdf, mimetype="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={fname}"})
+    except Exception as e:
+        import traceback; print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/api/lesson-plan", methods=["POST"])
 def lesson_plan():
     """Ээлжит хичээлийн хөтөлбөр үүсгэх — Teacher_Ej аргаар"""
