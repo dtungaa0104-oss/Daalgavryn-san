@@ -1844,73 +1844,95 @@ function renderPlanOutput(text) {
   var out = document.getElementById('plan-out');
   if (!out) return;
 
-  // Markdown хүснэгт → HTML хүснэгт
-  var html = text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
-
-  // Хүснэгт мөр боловсруулах
-  var lines = html.split('\n');
+  var lines = text.split('\n');
   var result = [];
   var inTable = false;
   var headerDone = false;
+  var tableRows = [];
+  var tableHeaders = [];
 
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i].trim();
+  function flushTable() {
+    if (!tableHeaders.length) return;
+    var html = '<div class="plan-table-wrap"><table class="plan-tbl">';
+    html += '<thead><tr>' + tableHeaders.map(function(h){
+      return '<th>' + h + '</th>';
+    }).join('') + '</tr></thead><tbody>';
+    tableRows.forEach(function(row) {
+      html += '<tr>' + row.map(function(td, i){
+        var style = i===0 ? ' style="font-weight:700;color:var(--teal-600);white-space:nowrap"' :
+                    i===1 ? ' style="white-space:nowrap"' : '';
+        return '<td' + style + '>' + td + '</td>';
+      }).join('') + '</tr>';
+    });
+    html += '</tbody></table></div>';
+    result.push(html);
+    tableHeaders = []; tableRows = []; inTable = false; headerDone = false;
+  }
+
+  lines.forEach(function(rawLine) {
+    var line = rawLine.trim();
+
+    // Хүснэгтийн мөр
     if (line.startsWith('|') && line.endsWith('|')) {
-      // Separator мөр хаях
-      if (/^\|[\s\|\-:]+\|$/.test(line)) {
-        if (!headerDone && inTable) {
-          result.push('</tr></thead><tbody>');
-          headerDone = true;
-        }
-        continue;
+      var cells = line.split('|').map(function(s){return s.trim();}).filter(function(s){return s!=='';});
+
+      // Separator мөр
+      if (cells.every(function(s){return /^[-:]+$/.test(s);})) {
+        headerDone = true;
+        return;
       }
+
       if (!inTable) {
-        result.push('<div class="plan-table-wrap"><table class="plan-tbl"><thead><tr>');
         inTable = true;
         headerDone = false;
-        var cells = line.split('|').filter(function(c){return c.trim();});
-        cells.forEach(function(c){ result.push('<th>' + c.trim() + '</th>'); });
-        result.push('</tr>');
-      } else {
-        result.push('<tr>');
-        var cells = line.split('|').filter(function(c){return c.trim();});
-        cells.forEach(function(c){ result.push('<td>' + c.trim() + '</td>'); });
-        result.push('</tr>');
+        tableHeaders = cells;
+        tableRows = [];
+      } else if (headerDone) {
+        tableRows.push(cells);
       }
-    } else {
-      if (inTable) {
-        result.push('</tbody></table></div>');
-        inTable = false;
-        headerDone = false;
-      }
-      if (line.startsWith('# ')) {
-        result.push('<h2 class="plan-h2">' + line.slice(2) + '</h2>');
-      } else if (line.startsWith('## ')) {
-        result.push('<h3 class="plan-h3">' + line.slice(3) + '</h3>');
-      } else if (line.startsWith('### ')) {
-        result.push('<h4 class="plan-h4">' + line.slice(4) + '</h4>');
-      } else if (line) {
-        result.push('<p class="plan-p">' + line + '</p>');
-      }
+      return;
     }
-  }
-  if (inTable) result.push('</tbody></table></div>');
 
-  out.innerHTML = '<style>' +
-    '.plan-table-wrap{overflow-x:auto;margin:1rem 0}' +
-    '.plan-tbl{width:100%;border-collapse:collapse;font-size:.82rem}' +
-    '.plan-tbl th{background:var(--teal-600);color:#fff;padding:8px 10px;text-align:left;font-size:.72rem;font-weight:700;white-space:nowrap}' +
-    '.plan-tbl td{padding:7px 10px;border-bottom:1px solid var(--green-100);vertical-align:top;line-height:1.6}' +
+    // Хүснэгт дууссан
+    if (inTable) flushTable();
+
+    // Хоосон мөр
+    if (!line) return;
+
+    // Markdown
+    var safe = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/[*][*](.+?)[*][*]/g,'<strong>$1</strong>');
+
+    if (safe.startsWith('# ')) {
+      result.push('<h2 class="plan-h2">' + safe.slice(2) + '</h2>');
+    } else if (safe.startsWith('## ')) {
+      result.push('<h3 class="plan-h3">' + safe.slice(3) + '</h3>');
+    } else if (safe.startsWith('### ')) {
+      result.push('<h4 class="plan-h4">' + safe.slice(4) + '</h4>');
+    } else {
+      result.push('<p class="plan-p">' + safe + '</p>');
+    }
+  });
+  if (inTable) flushTable();
+
+  out.className = 'ai-out show';
+  out.innerHTML =
+    '<style>' +
+    '.plan-table-wrap{overflow-x:auto;margin:1rem 0;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)}' +
+    '.plan-tbl{width:100%;border-collapse:collapse;font-size:.8rem;min-width:600px}' +
+    '.plan-tbl thead tr{background:var(--teal-600)}' +
+    '.plan-tbl th{color:#fff;padding:9px 11px;text-align:left;font-size:.72rem;font-weight:700;white-space:nowrap;letter-spacing:.03em}' +
+    '.plan-tbl td{padding:7px 11px;border-bottom:1px solid var(--green-100);vertical-align:top;line-height:1.6;font-size:.8rem}' +
     '.plan-tbl tr:hover td{background:var(--green-50)}' +
-    '.plan-h2{font-size:1rem;font-weight:800;color:var(--teal-600);margin:1.2rem 0 .4rem;border-bottom:2px solid var(--green-100);padding-bottom:.3rem}' +
-    '.plan-h3{font-size:.9rem;font-weight:700;color:var(--text-dark);margin:.8rem 0 .3rem}' +
-    '.plan-h4{font-size:.82rem;font-weight:700;color:var(--text-mid);margin:.5rem 0 .2rem}' +
-    '.plan-p{font-size:.82rem;color:var(--text-mid);line-height:1.7;margin:.3rem 0}' +
+    '.plan-tbl tr:nth-child(even) td{background:#fafffe}' +
+    '.plan-h2{font-size:1rem;font-weight:800;color:var(--teal-600);margin:1.4rem 0 .5rem;padding-bottom:.35rem;border-bottom:2px solid var(--green-100)}' +
+    '.plan-h3{font-size:.9rem;font-weight:700;color:var(--text-dark);margin:.9rem 0 .3rem}' +
+    '.plan-h4{font-size:.83rem;font-weight:700;color:var(--text-mid);margin:.5rem 0 .2rem}' +
+    '.plan-p{font-size:.83rem;color:var(--text-mid);line-height:1.7;margin:.3rem 0}' +
     '</style>' +
     result.join('\n');
 }
+
 
 function printPlan() {
   var out = document.getElementById('plan-out');
