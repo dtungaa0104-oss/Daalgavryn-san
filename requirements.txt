@@ -7,3 +7,4 @@ beautifulsoup4>=4.12.0
 anthropic>=0.25.0
 reportlab>=4.0.0
 pypdf>=3.0.0
+psycopg2-binary>=2.9.9
