@@ -23,7 +23,8 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY = True,
     SESSION_COOKIE_SAMESITE = "Lax",
     SESSION_COOKIE_NAME     = "daalgavar_session",
-    PERMANENT_SESSION_LIFETIME = 86400 * 365
+    PERMANENT_SESSION_LIFETIME = 86400 * 365,
+    MAX_CONTENT_LENGTH      = 50 * 1024 * 1024  # 50MB
 )
 # Render HTTPS proxy дамжуулах
 try:
@@ -345,6 +346,99 @@ def api_questions():
     rows=conn.execute(sql,params).fetchall(); conn.close()
     return jsonify({"questions":[row_to_dict(r) for r in rows],"total":len(rows)})
 
+
+@app.route("/api/export-docx", methods=["POST"])
+def export_docx():
+    """Шалгалтыг Word (.docx) файлаар татах"""
+    import io as _io
+    from docx import Document
+    from docx.shared import Pt, Cm, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.oxml.ns import qn
+    from docx.oxml import OxmlElement
+
+    data     = request.json
+    title    = data.get("title", "Шалгалт")
+    grade    = data.get("grade", "")
+    subject  = data.get("subject", "")
+    duration = data.get("duration", "")
+    questions= data.get("questions", [])
+    show_ans = data.get("show_answers", False)
+
+    doc = Document()
+
+    # Хуудасны тохиргоо
+    section = doc.sections[0]
+    section.page_width  = Cm(21)
+    section.page_height = Cm(29.7)
+    section.left_margin = section.right_margin = Cm(2.5)
+    section.top_margin  = section.bottom_margin = Cm(2)
+
+    # Гарчиг
+    h = doc.add_heading(title, level=0)
+    h.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = h.runs[0]
+    run.font.size = Pt(14)
+    run.font.bold = True
+
+    # Мета мэдээлэл
+    meta = doc.add_paragraph()
+    meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    meta.add_run(f"{grade}-р анги  ·  {subject}  ·  {duration}").font.size = Pt(11)
+
+    # Хуваагч шугам
+    doc.add_paragraph("─" * 60)
+
+    # Даалгаварууд
+    for i, q in enumerate(questions, 1):
+        # Асуулт
+        p = doc.add_paragraph()
+        num_run = p.add_run(f"{i}. ")
+        num_run.bold = True
+        num_run.font.size = Pt(11)
+        q_run = p.add_run(q.get("question", ""))
+        q_run.font.size = Pt(11)
+        score_run = p.add_run(f"  /{q.get('score',1)} оноо/")
+        score_run.font.size = Pt(9)
+        score_run.font.color.rgb = RGBColor(0x88, 0x88, 0x88)
+        p.paragraph_format.space_before = Pt(6)
+
+        # Сонголтууд
+        opts = q.get("options", [])
+        if opts:
+            labels = ["А", "Б", "В", "Г"]
+            opt_p = doc.add_paragraph()
+            opt_p.paragraph_format.left_indent = Cm(1)
+            opt_p.paragraph_format.space_before = Pt(2)
+            for j, opt in enumerate(opts):
+                label = labels[j] if j < len(labels) else str(j+1)
+                is_ans = show_ans and label == q.get("answer","")
+                run = opt_p.add_run(f"{label}. {opt}     ")
+                run.font.size = Pt(10)
+                if is_ans:
+                    run.bold = True
+                    run.font.color.rgb = RGBColor(0x1B, 0x5E, 0x20)
+
+    # Хариулт хуудас
+    if show_ans:
+        doc.add_page_break()
+        doc.add_heading("Зөв хариулт", level=1)
+        ans_p = doc.add_paragraph()
+        for i, q in enumerate(questions, 1):
+            ans_p.add_run(f"{i}. {q.get('answer','')}   ")
+
+    buf = _io.BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+
+    from flask import Response
+    safe_name = title.replace(" ", "_").replace("/","")[:50]
+    return Response(
+        buf.read(),
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f"attachment; filename={safe_name}.docx"}
+    )
+
 @app.route("/api/generate-exam",methods=["POST"])
 def generate_exam():
     data=request.json; grade=data.get("grade",9); subject=data.get("subject","Математик")
@@ -557,7 +651,7 @@ def admin_import():
                 # PDF хуудасны тоог 10-аар хязгаарлах (timeout-аас сэргийлэх)
                 import pdfplumber, io as _io
                 with pdfplumber.open(_io.BytesIO(file_bytes)) as pdf:
-                    pages = pdf.pages[:10]  # Max 10 хуудас
+                    pages = pdf.pages[:50]  # Max 50 хуудас
                     raw = "\n".join(p.extract_text() or "" for p in pages)
             elif fname.endswith((".docx",".doc")): raw=extract_from_docx(file_bytes)
             elif fname.endswith(".txt"):            raw=file_bytes.decode("utf-8",errors="ignore")
