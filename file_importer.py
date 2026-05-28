@@ -84,13 +84,37 @@ def detect_bloom(text):
     return 'Мэдлэг'
 
 def extract_from_pdf(file_bytes):
+    """PDF-с текст гаргах — CID encoding автоматаар шийднэ"""
     texts = []
     with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-        for page in pdf.pages:
-            t = page.extract_text()
-            if t:
-                texts.append(t)
-    return '\n'.join(texts)
+        for page in pdf.pages[:50]:
+            # Энгийн extraction
+            text = page.extract_text(x_tolerance=3, y_tolerance=3) or ''
+            
+            # CID тэмдэгт байвал char-level авах
+            if '(cid:' in text:
+                char_parts = []
+                prev_y = None
+                for ch in page.chars:
+                    ch_txt = ch.get('text', '')
+                    ch_y   = round(ch.get('top', 0))
+                    if prev_y is not None and abs(ch_y - prev_y) > 3:
+                        char_parts.append('\n')
+                    char_parts.append(ch_txt)
+                    prev_y = ch_y
+                char_text = ''.join(char_parts)
+                if char_text.strip():
+                    text = char_text
+            
+            # Үлдсэн CID хоосон болгох
+            import re as _re
+            text = _re.sub(r'\(cid:\d+\)', '', text)
+            text = _re.sub(r' {3,}', '  ', text)
+            text = _re.sub(r'\n{3,}', '\n\n', text)
+            
+            if text.strip():
+                texts.append(text.strip())
+    return '\n\n'.join(texts)
 
 def extract_from_docx(file_bytes):
     doc = Document(io.BytesIO(file_bytes))
