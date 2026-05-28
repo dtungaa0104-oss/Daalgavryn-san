@@ -456,18 +456,34 @@
   }
   </style>
   <!-- KaTeX математикийн тэмдэгт -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"
-    onload="renderMathInElement(document.body,{
-      delimiters:[
-        {left:'$$',right:'$$',display:true},
-        {left:'\\(',right:'\\)',display:false},
-        {left:'$',right:'$',display:false}
-      ],
-      throwOnError:false
-    })">
+  <!-- MathJax 3 — бүх төрлийн математикийн томьёо -->
+  <script>
+  window.MathJax = {
+    tex: {
+      inlineMath:  [['$','$'],['\\(','\\)']],
+      displayMath: [['$$','$$'],['\\[','\\]']],
+      packages: {'[+]':['ams','boldsymbol','color']},
+      tags: 'ams'
+    },
+    options: {
+      skipHtmlTags: ['script','noscript','style','textarea','pre','annotation','annotation-xml'],
+      processHtmlClass: 'math-render'
+    },
+    startup: {
+      ready() {
+        MathJax.startup.defaultReady();
+      }
+    }
+  };
+  // Глобал render функц — динамик HTML-д дуудна
+  function mathRender(el) {
+    if (!el) return;
+    if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise([el]).catch(function(e){ console.log('MathJax:', e); });
+    }
+  }
   </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
   {% block extra_head %}{% endblock %}
 </head>
 <body>
