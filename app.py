@@ -122,8 +122,9 @@ class PGConn:
         # INSERT-д RETURNING id нэмэх
         is_insert = sql_pg.strip().upper().startswith("INSERT")
         if is_insert and "RETURNING" not in sql_pg.upper():
-            sql_pg = sql_pg.rstrip().rstrip(")").rstrip() + ") RETURNING id"
-            # VALUES-ийн хаалтыг зөв хаах
+            last = sql_pg.rfind(")")
+            if last >= 0:
+                sql_pg = sql_pg[:last+1] + " RETURNING id"
             
         cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql_pg, params)
@@ -162,14 +163,18 @@ def get_db():
     """PostgreSQL (Supabase) эсвэл SQLite буцаана"""
     if USE_PG and _HAS_PG:
         try:
-            conn = psycopg2.connect(DATABASE_URL, sslmode='require',
-                                    connect_timeout=15)
+            conn = psycopg2.connect(
+                DATABASE_URL,
+                sslmode='require',
+                connect_timeout=15
+            )
             return PGConn(conn)
         except Exception as e:
             print(f"PG холболт алдаа: {e} — SQLite ашиглана")
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
 
 def init_db():
     conn = get_db()
