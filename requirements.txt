@@ -8,3 +8,5 @@ anthropic>=0.25.0
 
 reportlab
 pypdf
+
+psycopg2-binary
