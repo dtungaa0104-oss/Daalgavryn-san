@@ -29,12 +29,20 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:Orkhontuul%
 DB_PATH      = os.environ.get("DB_PATH", "questions.db")
 USE_PG       = bool(DATABASE_URL)
 
-if USE_PG:
-    try:
-        print("PostgreSQL (Supabase) ашиглаж байна")
-    except ImportError:
-        USE_PG = False
-        print("psycopg2 байхгүй — SQLite ашиглана")
+try:
+    import psycopg2
+    import psycopg2.extras
+    _HAS_PG = True
+except ImportError:
+    _HAS_PG = False
+    USE_PG = False
+    psycopg2 = None
+
+if USE_PG and _HAS_PG:
+    print("PostgreSQL (Supabase) ашиглана")
+elif USE_PG:
+    print("psycopg2 байхгүй — SQLite ашиглана")
+    USE_PG = False
 
 EXAM_TYPES = {
     "ulsiin": {
@@ -109,15 +117,6 @@ Q_TYPES     = ["Нэг сонголт","Олон сонголт","Нээлттэ
 ADMIN_PW    = os.environ.get("ADMIN_PASSWORD","orkhontul2025")
 LEVEL_SCORE = {"Мэдлэг ойлголт":1,"Чадвар":2,"Хэрэглээ":3}
 
-try:
-    import psycopg2
-    import psycopg2.extras
-    _HAS_PG = True
-except ImportError:
-    _HAS_PG = False
-    USE_PG = False
-    psycopg2 = None
-
 class PGConn:
     """psycopg2 connection-г sqlite3-тай адил interface болгох wrapper"""
     def __init__(self, conn):
@@ -183,21 +182,66 @@ def get_db():
 
 
 def init_db():
+    """DB table үүсгэх — PostgreSQL эсвэл SQLite"""
     conn = get_db()
-    conn.execute("""CREATE TABLE IF NOT EXISTS questions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        q_code TEXT UNIQUE, grade INTEGER NOT NULL, subject TEXT NOT NULL,
-        level TEXT NOT NULL, bloom TEXT NOT NULL, q_type TEXT NOT NULL,
-        question TEXT NOT NULL,
-        option_a TEXT, option_b TEXT, option_c TEXT, option_d TEXT,
-        answer TEXT, score INTEGER DEFAULT 1, topic TEXT,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
-    try:
-        conn.execute("ALTER TABLE questions ADD COLUMN level TEXT NOT NULL DEFAULT 'Мэдлэг ойлголт'")
-    except: pass
-    conn.commit(); conn.close()
+    if USE_PG and _HAS_PG:
+        cur = conn._conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS questions (
+                id         SERIAL PRIMARY KEY,
+                q_code     TEXT UNIQUE,
+                grade      INTEGER NOT NULL,
+                subject    TEXT NOT NULL,
+                level      TEXT NOT NULL DEFAULT 'Мэдлэг ойлголт',
+                bloom      TEXT NOT NULL DEFAULT 'Мэдлэг',
+                q_type     TEXT NOT NULL DEFAULT 'Нэг сонголт',
+                question   TEXT NOT NULL,
+                option_a   TEXT, option_b TEXT, option_c TEXT, option_d TEXT,
+                answer     TEXT, score INTEGER DEFAULT 1,
+                topic      TEXT DEFAULT '',
+                hint       TEXT DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS question_topics (
+                id         SERIAL PRIMARY KEY,
+                grade      INTEGER,
+                subject    TEXT,
+                topic      TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn._conn.commit()
+        cur.close()
+    else:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS questions (
+                id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                q_code   TEXT UNIQUE,
+                grade    INTEGER NOT NULL,
+                subject  TEXT NOT NULL,
+                level    TEXT NOT NULL DEFAULT 'Мэдлэг ойлголт',
+                bloom    TEXT NOT NULL DEFAULT 'Мэдлэг',
+                q_type   TEXT NOT NULL DEFAULT 'Нэг сонголт',
+                question TEXT NOT NULL,
+                option_a TEXT, option_b TEXT, option_c TEXT, option_d TEXT,
+                answer   TEXT, score INTEGER DEFAULT 1,
+                topic    TEXT DEFAULT '',
+                hint     TEXT DEFAULT '',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS question_topics (
+                id      INTEGER PRIMARY KEY AUTOINCREMENT,
+                grade   INTEGER, subject TEXT, topic TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+    conn.close()
 
-init_db()
 
 def row_to_dict(row):
     d = dict(row)
