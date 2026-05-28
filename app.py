@@ -646,6 +646,48 @@ JSON формат:
 def certificate_page():
     return render_template("certificate.html", all_subjects=ALL_SUBJECTS)
 
+
+@app.route("/api/certificate-ai", methods=["POST"])
+def certificate_ai():
+    """AI-аар өргөмжлөлийн агуулга үүсгэх"""
+    import json as _j
+    data = request.json
+    api_key = os.environ.get("ANTHROPIC_API_KEY","")
+    if not api_key:
+        return jsonify({"error":"API тохируулаагүй"}), 400
+    if anthropic is None:
+        return jsonify({"error":"anthropic суугаагүй"}), 500
+    cert_type = data.get("cert_type","award")
+    name = data.get("name","")
+    reason = data.get("reason","")
+    school = data.get("school","Орхонтуул ЕБС")
+    type_labels = {"award":"өргөмжлөл","cert":"сертификат","thanks":"талархал"}
+    prompt = (
+        school + "-н " + type_labels.get(cert_type,"өргөмжлөл") + " үүсгэж байна.\n"
+        + ("Хүлээн авагч: " + name + "\n" if name else "")
+        + ("Шалтгаан/Үйл ажиллагаа: " + reason + "\n" if reason else "")
+        + "\nДараах JSON форматаар монгол хэлээр буцаа (зөвхөн JSON):\n"
+        + '{"title":"ӨРГӨМЖЛӨЛ","subtitle":"Дэд гарчиг жишээ нь тэмцээний нэр","value":"Байр эзэлсэн эсвэл хийсэн зүйлийн товч тодорхойлолт"}'
+    )
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        msg = client.messages.create(
+            model="claude-sonnet-4-5", max_tokens=500,
+            messages=[{"role":"user","content":prompt}])
+        raw = msg.content[0].text.strip()
+        if "```" in raw:
+            for part in raw.split("```"):
+                p2 = part.strip()
+                if p2.startswith("json"): p2 = p2[4:].strip()
+                if p2.startswith("{"): raw = p2; break
+        s = raw.find("{"); e = raw.rfind("}")+1
+        if s >= 0 and e > s: raw = raw[s:e]
+        result = _j.loads(raw)
+        return jsonify(result)
+    except Exception as ex:
+        import traceback; print(traceback.format_exc())
+        return jsonify({"error": str(ex)}), 500
+
 @app.route("/api/certificate", methods=["POST"])
 def gen_cert():
     """Сертификат / Өргөмжлөл үүсгэх"""
