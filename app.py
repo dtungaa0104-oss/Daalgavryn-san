@@ -699,53 +699,25 @@ def lesson_plan():
     intro = max(5, p // 8)
     main_t = p // 3 + p // 4
     end_t = p - intro - main_t
-    prompt = f"""Та Монгол ЕБС-ийн мэргэшсэн хичээлийн хөтөлбөр боловсруулагч AI байна.
-Дараах мэдээллээр БҮРЭН, ДЭЛГЭРЭНГҮЙ хичээлийн хөтөлбөр үүсгэнэ үү.
+    prompt = f"""{grade_label} {subject} "{topic}" хичээлийн хөтөлбөр.
+Багш:{teacher or '-'} Менежер:{manager or '-'} Хугацаа:{period}мин
+Зорилт:{objectives or 'стандартын дагуу'}
 
-МЭДЭЭЛЭЛ:
-- Сургалтын менежер: {manager or 'тодорхойгүй'}
-- Багш: {teacher or 'тодорхойгүй'}
-- Анги: {grade_label}
-- Хичээл: {subject}
-- {'Нэгж хичээл: ' + unit_title if unit_title else ''}
-- {'Ээлжит хичээлийн сэдэв: ' + topic if is_eeljit else 'Сэдэв: ' + topic}
-- Хугацаа: {period} минут
-- Нэмэлт зорилт: {objectives or 'байхгүй'}
-
-JSON ФОРМАТААР ХАРИУЛНА УУ (бусад текст огт оруулахгүй):
-{{
-  "header": {{"subject":"{subject}","topic":"{topic}","grade":"{grade_label}","period":"{period} минут","manager":"{manager}","teacher":"{teacher}"}},
-  "objectives": {{
-    "A": "Сурагч [{topic}]-ийн үндсэн ойлголтыг мэдэж чадна — мэдлэгийн зорилт",
-    "B": "Сурагч [{topic}]-ийг тайлбарлах, жишээ гаргах чадвартай болно",
-    "C": "Сурагч [{topic}]-ийг амьдралдаа хэрэглэж чадна"
-  }},
-  "design": {{
-    "method": "Дэлгэрэнгүй арга зүй",
-    "tools": "Тодорхой хэрэглэгдэхүүн",
-    "engagement": "Ангийн зохион байгуулалт"
-  }},
-  "stages": [
-    {{"name":"I. ЭХЛЭЛ","time":{intro},"purpose":"Урьдчилсан мэдлэг идэвхжүүлэлт","teacher_actions":"Тодорхой үйлдэл","student_actions":"Сурагчийн үйлдэл","assessment":"Үнэлгээ"}},
-    {{"name":"II. СУДЛАЛ","time":{main_t},"purpose":"Шинэ мэдлэг, практик","teacher_actions":"Explore-Explain-Practice","student_actions":"Бүлгийн ажил","assessment":"Бүлгийн үнэлгээ"}},
-    {{"name":"III. ДҮГНЭЛТ","time":{end_t},"purpose":"Бататгал, үнэлгээ","teacher_actions":"3-2-1 арга, Exit ticket","student_actions":"3-2-1 карт бөглөх","assessment":"Exit ticket"}}
-  ],
-  "differentiation": {{
-    "support": "Дэмжлэг хэрэгтэй сурагчдад тодорхой арга",
-    "advanced": "Дэвшилтэт сурагчдад нэмэлт даалгавар"
-  }},
-  "homework": "Тодорхой гэрийн даалгавар"
-}}
-Бүх талбарыг МОНГОЛ ХЭЛЭЭР, ДЭЛГЭРЭНГҮЙ бөглөнө үү. Зөвхөн JSON буцаана уу."""
+Зөвхөн JSON:
+{{"header":{{"subject":"{subject}","topic":"{topic}","grade":"{grade_label}","period":"{period}мин","teacher":"{teacher}","manager":"{manager}"}},"objectives":{{"A":"[{topic}] үндсэн ойлголтыг мэддэг болно","B":"[{topic}] тайлбарлаж жишээ гаргах чадвартай болно","C":"[{topic}] амьдралд хэрэглэж чадна"}},"design":{{"method":"Bloom таксономи, Discovery Learning","tools":"Сурах бичиг, самбар, картууд","engagement":"Бүлгийн болон хосоор ажиллах"}},"stages":[{{"name":"I.ЭХЛЭЛ","time":{intro},"purpose":"Урьдчилсан мэдлэг идэвхжүүлэх","teacher_actions":"Асуулт тавих, видео харуулах","student_actions":"Хариулах, хэлэлцэх","assessment":"Амаар шалгах"}},{{"name":"II.СУДЛАЛ","time":{main_t},"purpose":"Шинэ мэдлэг эзэмших","teacher_actions":"Тайлбарлах, жишээ гаргах, дадлага хийлгэх","student_actions":"Бүлгээр ажиллах, бичих","assessment":"Бүлгийн ажил үнэлэх"}},{{"name":"III.ДҮГНЭЛТ","time":{end_t},"purpose":"Бататгах, үнэлэх","teacher_actions":"3-2-1 карт, exit ticket","student_actions":"Карт бөглөх, хуваалцах","assessment":"Exit ticket"}}],"differentiation":{{"support":"Дэмжлэгтэй сурагчдад: нэмэлт тайлбар, хялбар даалгавар","advanced":"Дэвшилтэт сурагчдад: нэмэлт бодлого, судалгааны даалгавар"}},"homework":"Гэрийн даалгавар: {topic}-той холбоотой 3 жишээ бодох"}}"""
     try:
         client = anthropic.Anthropic(api_key=api_key)
-        msg = client.messages.create(model="claude-sonnet-4-5", max_tokens=3000,
+        msg = client.messages.create(model="claude-sonnet-4-5", max_tokens=4000,
             messages=[{"role":"user","content":prompt}])
         raw = msg.content[0].text.strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"): raw = raw[4:]
-        plan = _json.loads(raw.strip())
+        raw = raw.strip()
+        # JSON дутуу ирвэл засах
+        if not raw.endswith("}"):
+            raw = raw[:raw.rfind("}")+1] if "}" in raw else raw
+        plan = _json.loads(raw)
         return jsonify({"plan": plan})
     except Exception as e:
         import traceback
@@ -786,7 +758,7 @@ def chatbot():
         client = anthropic.Anthropic(api_key=api_key)
         msg = client.messages.create(
             model="claude-sonnet-4-5",
-            max_tokens=1500,
+            max_tokens=2000,
             system="Та Орхонтуул ЕБС-ийн ухаалаг туслах AI. Багш, сурагчид Монгол хэлээр дэлгэрэнгүй, найрсаг хариулна.",
             messages=messages
         )
