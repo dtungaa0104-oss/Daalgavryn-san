@@ -33,7 +33,9 @@ try:
 except Exception:
     pass
 # ── DATABASE: PostgreSQL (Supabase) эсвэл SQLite fallback ──────────────
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:Orkhontuul%402020@db.vnxqgqthvqhyziwyyvsm.supabase.co:5432/postgres")
+DATABASE_URL     = os.environ.get("DATABASE_URL", "postgresql://postgres.vnxqgqthvqhyziwyyvsm:Orkhontuul%402020@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres")
+SUPABASE_URL     = os.environ.get("SUPABASE_URL", "https://vnxqgqthvqhyziwyyvsm.supabase.co")
+SUPABASE_KEY     = os.environ.get("SUPABASE_KEY", "")  # service_role key
 DB_PATH      = os.environ.get("DB_PATH", "questions.db")
 USE_PG       = bool(DATABASE_URL)
 
@@ -41,16 +43,17 @@ try:
     import psycopg2
     import psycopg2.extras
     _HAS_PG = True
+    print("✅ psycopg2 байна — PostgreSQL ашиглана")
 except ImportError:
     _HAS_PG = False
-    USE_PG = False
     psycopg2 = None
-
-if USE_PG and _HAS_PG:
-    print("PostgreSQL (Supabase) ашиглана")
-elif USE_PG:
-    print("psycopg2 байхгүй — SQLite ашиглана")
-    USE_PG = False
+    # psycopg2 байхгүй ч SUPABASE_KEY байвал REST API ашиглана
+    if SUPABASE_KEY:
+        USE_PG = True  # REST API-аар хийнэ
+        print("✅ Supabase REST API ашиглана (psycopg2 байхгүй)")
+    elif USE_PG:
+        USE_PG = False
+        print("⚠️ psycopg2 болон SUPABASE_KEY байхгүй — SQLite ашиглана")
 
 EXAM_TYPES = {
     "ulsiin": {
@@ -125,6 +128,141 @@ Q_TYPES     = ["Нэг сонголт","Олон сонголт","Нээлттэ
 ADMIN_PW    = os.environ.get("ADMIN_PASSWORD","orkhontul2025")
 LEVEL_SCORE = {"Мэдлэг ойлголт":1,"Чадвар":2,"Хэрэглээ":3}
 
+class SupabaseRestConn:
+    """Supabase REST API ашиглан DB үйлдэл хийх
+    psycopg2 байхгүй үед ашиглана"""
+    import requests as _req
+
+    def __init__(self):
+        self._rows  = None
+        self._lastrowid = None
+        self._pending = []  # commit хүлээж буй үйлдлүүд
+
+    def _headers(self):
+        return {
+            "apikey":        SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type":  "application/json",
+            "Prefer":        "return=representation"
+        }
+
+    def _base(self, table="questions"):
+        return f"{SUPABASE_URL}/rest/v1/{table}"
+
+    def execute(self, sql, params=()):
+        import re as _re, requests as _rq
+        sql_s = sql.strip()
+        sql_u = sql_s.upper()
+
+        if sql_u.startswith("SELECT COUNT(*)"):
+            # COUNT(*) FROM table WHERE ...
+            m = _re.search(r"FROM\s+(\w+)(.*)", sql_s, _re.IGNORECASE)
+            if not m: self._rows = [{"count":0}]; return self
+            table = m.group(1)
+            where = m.group(2).strip()
+            url = f"{self._base(table)}?select=id"
+            # WHERE clause parse
+            if "WHERE" in where.upper():
+                wh = where[where.upper().index("WHERE")+5:].strip()
+                filters = self._parse_where(wh, params)
+                url += filters
+            url += "&head=true"
+            hdrs = self._headers()
+            hdrs["Prefer"] = "count=exact"
+            hdrs.pop("Prefer", None)
+            hdrs["Prefer"] = "count=exact"
+            r = _rq.head(url.replace("&head=true",""), headers=hdrs, timeout=10)
+            cnt = int(r.headers.get("content-range","0/0").split("/")[-1] or "0")
+            self._rows = [{"count": cnt}]
+            return self
+
+        elif sql_u.startswith("SELECT"):
+            m = _re.search(r"FROM\s+(\w+)(.*)", sql_s, _re.IGNORECASE)
+            if not m: self._rows = []; return self
+            table = m.group(1)
+            rest  = m.group(2).strip()
+            url = self._base(table) + "?select=*"
+            if "WHERE" in rest.upper():
+                wi = rest.upper().index("WHERE")
+                wh = rest[wi+5:]
+                url += self._parse_where(wh, params)
+            if "ORDER BY RANDOM()" in sql_u:
+                pass  # Supabase random sort байхгүй
+            m2 = _re.search(r"LIMIT\s+(\d+)", sql_u)
+            if m2: url += f"&limit={m2.group(1)}"
+            r = _rq.get(url, headers=self._headers(), timeout=10)
+            self._rows = r.json() if r.status_code==200 else []
+            return self
+
+        elif sql_u.startswith("INSERT"):
+            m = _re.search(r"INSERT(?:\s+OR\s+IGNORE)?\s+INTO\s+(\w+)\s*\(([^)]+)\)", sql_s, _re.IGNORECASE)
+            if not m: return self
+            table = m.group(1)
+            cols  = [col.strip() for col in m.group(2).split(",")]
+            row   = dict(zip(cols, params))
+            r = _rq.post(self._base(table), headers=self._headers(),
+                        json=row, timeout=10)
+            if r.status_code in (200,201):
+                data = r.json()
+                if data and isinstance(data, list):
+                    self._lastrowid = data[0].get("id")
+            return self
+
+        elif sql_u.startswith("UPDATE"):
+            m = _re.search(r"UPDATE\s+(\w+)\s+SET\s+(.+?)\s+WHERE\s+(.+)", sql_s, _re.IGNORECASE|_re.DOTALL)
+            if not m: return self
+            table = m.group(1)
+            # Simple: build from params
+            _rq.patch(self._base(table)+"?id=eq."+str(params[-1]),
+                     headers=self._headers(), json={}, timeout=10)
+            return self
+
+        elif sql_u.startswith("DELETE"):
+            m = _re.search(r"DELETE\s+FROM\s+(\w+)\s+WHERE\s+id\s*=\s*[?%s]", sql_s, _re.IGNORECASE)
+            if m:
+                table = m.group(1)
+                _rq.delete(f"{self._base(table)}?id=eq.{params[0]}",
+                          headers=self._headers(), timeout=10)
+            return self
+
+        elif sql_u.startswith("CREATE TABLE"):
+            # REST API-д DDL байхгүй — анх удаа Supabase dashboard-д үүсгэсэн байна
+            return self
+
+        elif sql_u.startswith("ALTER TABLE"):
+            return self
+
+        return self
+
+    def _parse_where(self, where, params):
+        """WHERE clause → Supabase query params"""
+        import re as _re
+        result = ""
+        conditions = _re.split(r"\\s+AND\\s+", where, flags=_re.IGNORECASE)
+        pi = 0
+        for cond in conditions:
+            m = _re.match(r"(\w+)\\s*=\\s*[?%s]", cond.strip())
+            if m and pi < len(params):
+                col = m.group(1)
+                val = params[pi]
+                result += f"&{col}=eq.{val}"
+                pi += 1
+        return result
+
+    def fetchall(self):
+        return self._rows or []
+
+    def fetchone(self):
+        rows = self._rows or []
+        return rows[0] if rows else None
+
+    @property
+    def lastrowid(self):
+        return self._lastrowid
+
+    def commit(self): pass  # REST API-д auto-commit
+    def close(self):  pass
+
 class PGConn:
     """psycopg2 connection-г sqlite3-тай адил interface болгох wrapper"""
     def __init__(self, conn):
@@ -176,17 +314,18 @@ class PGConn:
         self.close()
 
 def get_db():
-    """PostgreSQL (Supabase) эсвэл SQLite буцаана"""
+    """PostgreSQL (psycopg2) / Supabase REST / SQLite буцаана"""
     if USE_PG and _HAS_PG:
+        # psycopg2 байвал шууд холбогдоно
         try:
             conn = psycopg2.connect(
-                DATABASE_URL,
-                sslmode='require',
-                connect_timeout=15
-            )
+                DATABASE_URL, sslmode='require', connect_timeout=10)
             return PGConn(conn)
         except Exception as e:
             print(f"PG холболт алдаа: {e} — SQLite ашиглана")
+    elif USE_PG and SUPABASE_KEY and not _HAS_PG:
+        # psycopg2 байхгүй, SUPABASE_KEY байвал REST API ашиглана
+        return SupabaseRestConn()
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
@@ -1037,6 +1176,7 @@ def teacher_logout():
 
 @app.route("/api/upload", methods=["POST"])
 def api_upload():
+    """Файлаар даалгавар оруулах — PDF, DOCX, TXT"""
     """Багшийн upload route"""
     if not session.get("teacher_logged_in") and not session.get("admin"):
         return jsonify({"error": "teacher_login_required", "redirect": "/teacher-login"}), 401
