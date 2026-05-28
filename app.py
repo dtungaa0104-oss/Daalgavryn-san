@@ -315,33 +315,39 @@ def generate_exam():
                 try:
                     import json as _json
                     score=LEVEL_SCORE.get(lvl,1)
-                    prompt=f"""Та Монгол боловсролын {grade}-р ангийн {subject} хичээлийн багш.
-Блюпринтийн түвшин: {lvl}
-{need} даалгавар зохио. Зөвхөн JSON array буцаа, тайлбаргүй.
-Формат: [{{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","answer":"А"}}]
-Монгол хэлээр."""
+                    score=LEVEL_SCORE.get(lvl,1)
+                    lvl_guide = {'Мэдлэг ойлголт':'Тодорхойлолт таних, томьёо мэдэх, тооцоолол','Чадвар':'Бодлого шийдэх, тайлбарлах, хэрэглэх','Хэрэглээ':'Амьдралын бодлого, дүгнэх, загвар байгуулах'}
+                    is_math = subject in ['Математик','Алгебр','Геометр','Тригонометр']
+                    math_hint = ' Томьёо (a²+b²=c²), тэгшитгэл (2x+5=13), геометр (S=ah/2), хувь (400-ын 25%), функц f(x)=2x+3 зэрэг ТООГООР бичигдсэн бодлого заавал оруулна.' if is_math else ''
+                    prompt = (
+                        f'Монгол ЕБС {grade}-р анги {subject} хичээл. '
+                        f'Блюпринт: {lvl} ({lvl_guide.get(lvl,"")}).{math_hint}\n'
+                        f'{need} даалгавар үүсгэ. Монгол хэлээр. '
+                        'Зөвхөн JSON array буцаа, тайлбаргүй:\n'
+                        '[{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","answer":"А"}]'
+                    )
                     client=anthropic.Anthropic(api_key=api_key)
                     msg=client.messages.create(model="claude-sonnet-4-5",max_tokens=3000,
-                        messages=[{"role":"user","content":prompt}])
+                       messages=[{"role":"user","content":prompt}])
                     raw=msg.content[0].text.strip()
                     raw=re.sub(r'^```json\s*','',raw); raw=re.sub(r'^```\s*','',raw); raw=re.sub(r'\s*```$','',raw).strip()
                     ai_qs=_json.loads(raw)
                     if not isinstance(ai_qs,list): ai_qs=[ai_qs]
                     for idx,q in enumerate(ai_qs[:need]):
-                        q_code=f"Q{grade}-{subject[:2]}-AI-{datetime.now().strftime('%f')}-{idx}"
-                        try:
-                            conn.execute("""INSERT INTO questions(q_code,grade,subject,level,bloom,q_type,
-                                question,option_a,option_b,option_c,option_d,answer,score,topic)
-                                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                                (q_code,grade,subject,lvl,'Мэдлэг','Нэг сонголт',q.get('question',''),
-                                 q.get('option_a'),q.get('option_b'),q.get('option_c'),q.get('option_d'),
-                                 q.get('answer','А'),score,''))
-                            conn.commit()
-                            saved=conn.execute("SELECT * FROM questions WHERE q_code=?",(q_code,)).fetchone()
-                            if saved:
-                                selected.append(row_to_dict(saved))
-                                ai_generated+=1
-                        except: pass
+                       q_code=f"Q{grade}-{subject[:2]}-AI-{datetime.now().strftime('%f')}-{idx}"
+                       try:
+                           conn.execute("""INSERT INTO questions(q_code,grade,subject,level,bloom,q_type,
+                               question,option_a,option_b,option_c,option_d,answer,score,topic)
+                               VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                               (q_code,grade,subject,lvl,'Мэдлэг','Нэг сонголт',q.get('question',''),
+                                q.get('option_a'),q.get('option_b'),q.get('option_c'),q.get('option_d'),
+                                q.get('answer','А'),score,''))
+                           conn.commit()
+                           saved=conn.execute("SELECT * FROM questions WHERE q_code=?",(q_code,)).fetchone()
+                           if saved:
+                               selected.append(row_to_dict(saved))
+                               ai_generated+=1
+                       except: pass
                 except Exception as ai_err:
                     print(f"AI generate error: {ai_err}")
     conn.close()
@@ -490,8 +496,8 @@ def admin_import():
                 cl2=anthropic.Anthropic(api_key=api_key2)
                 msg2=cl2.messages.create(model="claude-sonnet-4-5",max_tokens=2000,
                     messages=[{"role":"user","content":[
-                        {"type":"image","source":{"type":"base64","media_type":mt,"data":b64}},
-                        {"type":"text","text":"Зурган дээрх даалгаваруудыг дугаарлан задла."}
+                       {"type":"image","source":{"type":"base64","media_type":mt,"data":b64}},
+                       {"type":"text","text":"Зурган дээрх даалгаваруудыг дугаарлан задла."}
                     ]}])
                 raw=msg2.content[0].text
             else: return jsonify({"error":"PDF, Word, JPG эсвэл TXT файл оруулна уу"}),400
@@ -502,11 +508,11 @@ def admin_import():
             for q in questions:
                 try:
                     conn.execute("""INSERT INTO questions(q_code,grade,subject,level,bloom,q_type,
-                        question,option_a,option_b,option_c,option_d,answer,score,topic)
-                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                        (q['q_code'],q['grade'],q['subject'],q.get('level',lvl),q['bloom'],q['q_type'],
-                         q['question'],q['option_a'],q['option_b'],q['option_c'],q['option_d'],
-                         q['answer'],q['score'],q['topic']))
+                       question,option_a,option_b,option_c,option_d,answer,score,topic)
+                       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                       (q['q_code'],q['grade'],q['subject'],q.get('level',lvl),q['bloom'],q['q_type'],
+                        q['question'],q['option_a'],q['option_b'],q['option_c'],q['option_d'],
+                        q['answer'],q['score'],q['topic']))
                     saved+=1
                 except: skipped+=1
             conn.commit(); conn.close()
@@ -530,13 +536,16 @@ def admin_ai_generate():
             return jsonify({"error":"ANTHROPIC_API_KEY тохируулаагүй."}),400
         has_options=q_type in("Нэг сонголт","Олон сонголт")
         score=LEVEL_SCORE.get(lvl,1)
-        prompt=f"""Та Монгол боловсролын {grade}-р ангийн {subject} хичээлийн багш.
-{"Сэдэв: "+topic if topic else ""}
-Блюпринтийн түвшин: {lvl} | Блумын шат: {bloom} | Төрөл: {q_type}
-{count} даалгавар зохио. Зөвхөн JSON array буцаа, тайлбаргүй.
-Формат: [{{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","answer":"А","topic":"{topic or subject}"}}]
-{"Нээлттэй бол option_a..d = null." if not has_options else ""}
-Монгол хэлээр."""
+        is_math2 = subject in ['Математик','Алгебр','Геометр','Тригонометр']
+        math_hint2 = ' Тоогоор бичигдсэн бодлого (тооцоолол, томьёо, геометр, тэгшитгэл) заавал оруул.' if is_math2 else ''
+        prompt=(
+             f'Монгол ЕБС {grade}-р анги {subject} хичээл.'
+             + (f' Сэдэв: {topic}.' if topic else '')
+             + f' Блюпринт: {lvl}, Блум: {bloom}, Төрөл: {q_type}.{math_hint2}\n'
+             + f'{count} даалгавар үүсгэ. Монгол хэлээр. Зөвхөн JSON array:\n'
+             + '[{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","answer":"А","topic":"' + '" + (topic or subject) + ""}]'
+             + (' Нээлттэй: option_a..d = null.' if not has_options else '')
+        )
         try:
             client=anthropic.Anthropic(api_key=api_key)
             msg=client.messages.create(model="claude-sonnet-4-5",max_tokens=4000,
@@ -552,11 +561,11 @@ def admin_ai_generate():
                 q_code=f"Q{grade}-{subject[:2]}-AI-{datetime.now().strftime('%f')}-{idx}"
                 try:
                     conn.execute("""INSERT INTO questions(q_code,grade,subject,level,bloom,q_type,
-                        question,option_a,option_b,option_c,option_d,answer,score,topic)
-                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                        (q_code,grade,subject,lvl,bloom,q_type,q.get('question',''),
-                         q.get('option_a'),q.get('option_b'),q.get('option_c'),q.get('option_d'),
-                         q.get('answer','А'),score,q.get('topic',topic)))
+                       question,option_a,option_b,option_c,option_d,answer,score,topic)
+                       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                       (q_code,grade,subject,lvl,bloom,q_type,q.get('question',''),
+                        q.get('option_a'),q.get('option_b'),q.get('option_c'),q.get('option_d'),
+                        q.get('answer','А'),score,q.get('topic',topic)))
                     saved+=1
                 except: pass
             conn.commit(); conn.close()
@@ -712,7 +721,7 @@ def gen_cert():
             )
         else:
             pdf = gen_batch(names, school=school, title=title,
-                          subtitle=subtitle, date=date, cert_type=cert_type)
+                         subtitle=subtitle, date=date, cert_type=cert_type)
 
         from flask import Response
         fname = "certificate.pdf" if len(names)==1 else "certificates_batch.pdf"
@@ -899,8 +908,8 @@ def api_upload():
                     question,option_a,option_b,option_c,option_d,answer,score,topic)
                     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                     (q['q_code'],q['grade'],q['subject'],q.get('level',lvl),q['bloom'],
-                     q['q_type'],q['question'],q['option_a'],q['option_b'],
-                     q['option_c'],q['option_d'],q['answer'],q['score'],q['topic']))
+                    q['q_type'],q['question'],q['option_a'],q['option_b'],
+                    q['option_c'],q['option_d'],q['answer'],q['score'],q['topic']))
                 saved += 1
             except: skipped += 1
         conn.commit(); conn.close()
