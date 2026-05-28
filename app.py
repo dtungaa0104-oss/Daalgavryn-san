@@ -18,7 +18,19 @@ except:
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "orkhontul-ebs-2025")
-DB_PATH        = os.environ.get("DB_PATH", "questions.db")
+# ── DATABASE: PostgreSQL (Supabase) эсвэл SQLite fallback ──────────────
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:Orkhontuul%402020@db.vnxqgqthvqhyziwyyvsm.supabase.co:5432/postgres")
+DB_PATH      = os.environ.get("DB_PATH", "questions.db")
+USE_PG       = bool(DATABASE_URL)
+
+if USE_PG:
+    try:
+        import psycopg2
+        import psycopg2.extras
+        print("✅ PostgreSQL (Supabase) ашиглаж байна")
+    except ImportError:
+        USE_PG = False
+        print("⚠️ psycopg2 суугаагүй — SQLite ашиглана")
 
 EXAM_TYPES = {
     "ulsiin": {
@@ -93,7 +105,58 @@ Q_TYPES     = ["Нэг сонголт","Олон сонголт","Нээлттэ
 ADMIN_PW    = os.environ.get("ADMIN_PASSWORD","orkhontul2025")
 LEVEL_SCORE = {"Мэдлэг ойлголт":1,"Чадвар":2,"Хэрэглээ":3}
 
+class PGConn:
+    """psycopg2 connection-г sqlite3-тай адил interface болгох wrapper"""
+    def __init__(self, conn):
+        self._conn = conn
+
+    def execute(self, sql, params=()):
+        sql_pg = sql.replace("?", "%s")
+        # INSERT-д RETURNING id нэмэх
+        is_insert = sql_pg.strip().upper().startswith("INSERT")
+        if is_insert and "RETURNING" not in sql_pg.upper():
+            sql_pg = sql_pg.rstrip().rstrip(")").rstrip() + ") RETURNING id"
+            # VALUES-ийн хаалтыг зөв хаах
+            
+        cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql_pg, params)
+        if is_insert:
+            try:
+                row = cur.fetchone()
+                if row and 'id' in row:
+                    cur.lastrowid = row['id']
+                else:
+                    cur.lastrowid = None
+            except:
+                cur.lastrowid = None
+        else:
+            cur.lastrowid = None
+        return cur
+
+    def executemany(self, sql, params_list):
+        sql_pg = sql.replace("?", "%s")
+        cur = self._conn.cursor()
+        cur.executemany(sql_pg, params_list)
+        return cur
+
+    def commit(self):
+        self._conn.commit()
+
+    def close(self):
+        self._conn.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        self.close()
+
 def get_db():
+    """PostgreSQL (Supabase) эсвэл SQLite буцаана"""
+    if USE_PG:
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require',
+                                connect_timeout=15)
+        return PGConn(conn)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
@@ -544,12 +607,9 @@ JSON формат:
 Монгол хэлээр дэлгэрэнгүй. Зөвхөн JSON буцаана уу."""
     try:
         client = anthropic.Anthropic(api_key=api_key)
-        full_text = []
-        with client.messages.stream(model="claude-sonnet-4-5", max_tokens=3000,
-            messages=[{"role":"user","content":prompt}]) as stream:
-            for text in stream.text_stream:
-                full_text.append(text)
-        raw = "".join(full_text).strip()
+        msg = client.messages.create(model="claude-sonnet-4-5", max_tokens=3000,
+            messages=[{"role":"user","content":prompt}])
+        raw = msg.content[0].text.strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"): raw = raw[4:]
@@ -664,12 +724,9 @@ JSON ФОРМАТААР ХАРИУЛНА УУ (бусад текст огт ор
 Бүх талбарыг МОНГОЛ ХЭЛЭЭР, ДЭЛГЭРЭНГҮЙ бөглөнө үү. Зөвхөн JSON буцаана уу."""
     try:
         client = anthropic.Anthropic(api_key=api_key)
-        full_text = []
-        with client.messages.stream(model="claude-sonnet-4-5", max_tokens=3000,
-            messages=[{"role":"user","content":prompt}]) as stream:
-            for text in stream.text_stream:
-                full_text.append(text)
-        raw = "".join(full_text).strip()
+        msg = client.messages.create(model="claude-sonnet-4-5", max_tokens=3000,
+            messages=[{"role":"user","content":prompt}])
+        raw = msg.content[0].text.strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"): raw = raw[4:]
@@ -703,27 +760,22 @@ def teacher_ai():
 # ══ ЧАТБОТ ════════════════════════════════════════════════
 @app.route("/api/chat", methods=["POST"])
 def chatbot():
-    from flask import Response, stream_with_context
     data     = request.json
     messages = data.get("messages", [])
     api_key  = os.environ.get("ANTHROPIC_API_KEY","")
     if not api_key:
-        return jsonify({"error":"API тохируулаагүй"}), 400
+        return jsonify({"error":"API тохируулаагүй. Render → Environment → ANTHROPIC_API_KEY нэмнэ үү."}), 400
     if not messages:
         return jsonify({"error":"Мессеж хоосон"}), 400
     try:
         client = anthropic.Anthropic(api_key=api_key)
-        # Streaming ашиглан timeout-аас сэргийлэх
-        full_text = []
-        with client.messages.stream(
+        msg = client.messages.create(
             model="claude-sonnet-4-5",
-            max_tokens=2000,
-            system="Та Орхонтуул ЕБС-ийн ухаалаг туслах. Багш, сурагчид Монгол хэлээр товч тодорхой хариулна.",
+            max_tokens=1500,
+            system="Та Орхонтуул ЕБС-ийн ухаалаг туслах AI. Багш, сурагчид Монгол хэлээр дэлгэрэнгүй, найрсаг хариулна.",
             messages=messages
-        ) as stream:
-            for text in stream.text_stream:
-                full_text.append(text)
-        return jsonify({"reply": "".join(full_text)})
+        )
+        return jsonify({"reply": msg.content[0].text})
     except Exception as e:
         import traceback
         print("CHAT ERROR:", traceback.format_exc())
