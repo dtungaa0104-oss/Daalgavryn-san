@@ -426,9 +426,9 @@
 <div class="t-panel" id="panel-workplan">
 
 
-<div class="wp-wrap">
+<div class="wp-wrap" style="display:grid;grid-template-columns:300px 1fr;min-height:75vh">
   <!-- ЗҮҮН ПАНЕЛ -->
-  <div class="wp-left">
+  <div class="wp-left" style="background:#fff;border-right:2px solid var(--green-100);padding:1.4rem;overflow-y:auto">
     <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:.8rem">📋 Ажлын төлөвлөгөө</div>
 
     <div class="wp-field">
@@ -509,7 +509,7 @@
   </div>
 
   <!-- БАРУУН ПАНЕЛ -->
-  <div class="wp-right" id="wp-right-panel">
+  <div class="wp-right" id="wp-right-panel" style="background:var(--green-50);overflow-y:auto">
     <div id="wp-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:3rem;color:var(--text-muted)">
       <div style="font-size:3rem;margin-bottom:1rem;opacity:.4">📋</div>
       <h3 style="font-size:1rem;font-weight:600;color:var(--text-mid)">Ажлын төлөвлөгөө үүсгэхэд бэлэн</h3>
@@ -526,7 +526,7 @@
         <button class="btn btn-sm btn-outline" onclick="wpCopy()">📋 Хуулах</button>
         <button class="btn btn-sm btn-outline" onclick="wpReset()">↻ Дахин</button>
       </div>
-      <div class="wp-result" id="wp-result-body"></div>
+      <div id="wp-result-body" style="max-width:820px;margin:1.2rem auto;padding:0 1.4rem 3rem"></div>
     </div>
   </div>
 </div>
@@ -580,7 +580,10 @@
       </div>
     </div>
     <button class="btn btn-sm btn-outline" style="width:100%;margin-bottom:.8rem" onclick="crtPasteNames()">📋 Олон нэр буулгах</button>
-    <button class="btn btn-primary" style="width:100%;padding:10px" id="crt-dl-btn" onclick="crtDownload()">⬇ PDF татах</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.4rem">
+      <button class="btn btn-outline" id="crt-ai-btn" onclick="crtAIGenerate()" style="padding:8px">🤖 AI загвар</button>
+      <button class="btn btn-primary" id="crt-dl-btn" onclick="crtDownload()" style="padding:8px">⬇ PDF татах</button>
+    </div>
     <div id="crt-count" style="font-size:.72rem;color:var(--text-muted);margin-top:.3rem;text-align:center"></div>
   </div>
   <div class="crt-right">
@@ -1283,6 +1286,60 @@ async function crtDownload() {
   if (d) d.value = new Date().toISOString().slice(0,10);
 })();
 // ══ СЕРТИФИКАТ ТӨГСӨВ ═══════════════════════════════
+
+// ══ СЕРТИФИКАТЫН AI ЗАГВАР ═══════════════════════════
+async function crtAIGenerate() {
+  var school = document.getElementById('crt-school').value || 'Орхонтуул ЕБС';
+  var sub = document.getElementById('crt-sub').value || '';
+  var names = crtGetNames();
+  var typeLabels = {cert:'сертификат', award:'өргөмжлөл', thanks:'талархал'};
+  var btn = document.getElementById('crt-ai-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+
+  var prompt = school + '-н ' + typeLabels[crtType] + ' үүсгэж байна.\n' +
+    'Шалтгаан: ' + (sub || 'олон нийтийн ажилд оролцсоны төлөө') + '\n' +
+    'Одоогийн гарчиг: ' + document.getElementById('crt-title').value + '\n\n' +
+    'Дараах мэдээллийг JSON-аар буцаана уу:\n' +
+    '{\n' +
+    '  "title": "гарчиг (ТОМООР)",\n' +
+    '  "subtitle": "дэд гарчиг (шалтгаан, тодорхой)",\n' +
+    '  "value_prefix": "байр/утгын өмнө тавих үг (жишээ: 1-р байр, Шилдэг гэх мэт)"\n' +
+    '}\n' +
+    'Монгол хэлээр. Зөвхөн JSON.';
+
+  try {
+    var res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({messages: [{role:'user', content:prompt}]})
+    });
+    var data = await res.json();
+    if (btn) { btn.disabled = false; btn.textContent = '🤖 AI загвар'; }
+    if (data.error) { alert('AI алдаа: ' + data.error); return; }
+    var raw = (data.reply || '').replace(/```json?|```/g,'').trim();
+    try {
+      var ai = JSON.parse(raw);
+      if (ai.title) document.getElementById('crt-title').value = ai.title;
+      if (ai.subtitle) document.getElementById('crt-sub').value = ai.subtitle;
+      // Байрны утгыг нэмэх
+      if (ai.value_prefix) {
+        document.querySelectorAll('.crt-val-inp').forEach(function(inp, i) {
+          if (!inp.value) inp.value = ai.value_prefix + (i+1);
+        });
+      }
+      crtPreview();
+    } catch(e) {
+      // Plain text хариулт
+      document.getElementById('crt-sub').value = raw.slice(0,100);
+      crtPreview();
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '🤖 AI загвар'; }
+    alert('Алдаа: ' + e.message);
+  }
+}
+// ══ СЕРТИФИКАТЫН AI ЗАГВАР ТӨГСӨВ ══════════════════
+
 
 // ══ TAB ════════════════════════════════════════════
 function showTab(tab) {
