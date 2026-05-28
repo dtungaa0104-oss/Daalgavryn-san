@@ -598,7 +598,14 @@ def admin_import():
             questions=parse_raw_text(raw,grade,subject,lvl)
             if not questions:
                 return jsonify({"error":"Даалгавар илрүүлж чадсангүй."}),400
-            conn=get_db(); saved=skipped=0
+            conn=get_db()
+            try:
+                conn.execute("SELECT 1 FROM questions LIMIT 1")
+            except Exception:
+                conn.close()
+                init_db()
+                conn=get_db()
+            saved=skipped=0
             for q in questions:
                 try:
                     conn.execute("""INSERT OR IGNORE INTO questions(q_code,grade,subject,level,bloom,q_type,
@@ -998,7 +1005,15 @@ def api_upload():
         questions = parse_raw_text(raw, grade, subject, lvl)
         if not questions:
             return jsonify({"error": "Даалгавар илрүүлж чадсангүй"}), 400
-        conn = get_db(); saved = skipped = 0
+        conn = get_db()
+        # Table байхгүй бол үүсгэх
+        try:
+            conn.execute("SELECT 1 FROM questions LIMIT 1")
+        except Exception:
+            conn.close()
+            init_db()
+            conn = get_db()
+        saved = skipped = 0
         for q in questions:
             try:
                 conn.execute("""INSERT INTO questions(q_code,grade,subject,level,bloom,q_type,
@@ -1031,6 +1046,13 @@ def teacher_required(f):
 
 
 # ══ START ══════════════════════════════════════════════════
+# ── APP STARTUP ────────────────────────────────────────────
+try:
+    init_db()
+    print("✅ DB tables ready")
+except Exception as _ie:
+    print(f"⚠️ init_db: {_ie}")
+
 if __name__=="__main__":
     port=int(os.environ.get("PORT",5000))
     app.run(host="0.0.0.0",port=port)
