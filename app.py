@@ -587,6 +587,8 @@ def workplan():
     api_key = os.environ.get("ANTHROPIC_API_KEY","")
     if not api_key:
         return jsonify({"error":"API тохируулаагүй"}), 400
+    if anthropic is None:
+        return jsonify({"error": "anthropic суугаагүй - requirements.txt шалгана уу"}), 500
     teacher = data.get("teacher","")
     year    = data.get("year","2025-2026")
     subject = data.get("subject","")
@@ -680,49 +682,70 @@ def gen_cert():
 
 @app.route("/api/lesson-plan", methods=["POST"])
 def lesson_plan():
-    """Ээлжит хичээлийн хөтөлбөр үүсгэх — Teacher_Ej аргаар"""
-    data = request.json
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    import json as _j2
+    data     = request.json
+    api_key  = os.environ.get("ANTHROPIC_API_KEY", "")
     if not api_key:
         return jsonify({"error": "API тохируулаагүй"}), 400
-    manager = data.get("manager_name", "")
-    teacher = data.get("teacher_name", "")
-    subject = data.get("subject", "")
-    topic = data.get("topic", "")
-    unit_title = data.get("unit_title", "")
-    grade = data.get("grade", "9")
-    period = data.get("period", "40")
-    objectives = data.get("objectives", "")
-    is_eeljit = data.get("is_eeljit", True)
-    grade_label = CURRICULUM.get("grades", {}).get(grade, {}).get("label", f"{grade}-р анги")
-    p = int(period)
-    intro = max(5, p // 8)
-    main_t = p // 3 + p // 4
-    end_t = p - intro - main_t
-    prompt = f"""{grade_label} {subject} "{topic}" хичээлийн хөтөлбөр.
-Багш:{teacher or '-'} Менежер:{manager or '-'} Хугацаа:{period}мин
-Зорилт:{objectives or 'стандартын дагуу'}
-
-Зөвхөн JSON:
-{{"header":{{"subject":"{subject}","topic":"{topic}","grade":"{grade_label}","period":"{period}мин","teacher":"{teacher}","manager":"{manager}"}},"objectives":{{"A":"[{topic}] үндсэн ойлголтыг мэддэг болно","B":"[{topic}] тайлбарлаж жишээ гаргах чадвартай болно","C":"[{topic}] амьдралд хэрэглэж чадна"}},"design":{{"method":"Bloom таксономи, Discovery Learning","tools":"Сурах бичиг, самбар, картууд","engagement":"Бүлгийн болон хосоор ажиллах"}},"stages":[{{"name":"I.ЭХЛЭЛ","time":{intro},"purpose":"Урьдчилсан мэдлэг идэвхжүүлэх","teacher_actions":"Асуулт тавих, видео харуулах","student_actions":"Хариулах, хэлэлцэх","assessment":"Амаар шалгах"}},{{"name":"II.СУДЛАЛ","time":{main_t},"purpose":"Шинэ мэдлэг эзэмших","teacher_actions":"Тайлбарлах, жишээ гаргах, дадлага хийлгэх","student_actions":"Бүлгээр ажиллах, бичих","assessment":"Бүлгийн ажил үнэлэх"}},{{"name":"III.ДҮГНЭЛТ","time":{end_t},"purpose":"Бататгах, үнэлэх","teacher_actions":"3-2-1 карт, exit ticket","student_actions":"Карт бөглөх, хуваалцах","assessment":"Exit ticket"}}],"differentiation":{{"support":"Дэмжлэгтэй сурагчдад: нэмэлт тайлбар, хялбар даалгавар","advanced":"Дэвшилтэт сурагчдад: нэмэлт бодлого, судалгааны даалгавар"}},"homework":"Гэрийн даалгавар: {topic}-той холбоотой 3 жишээ бодох"}}"""
+    if anthropic is None:
+        return jsonify({"error": "anthropic суугаагүй - requirements.txt шалгана уу"}), 500
+    if anthropic is None:
+        return jsonify({"error": "anthropic package суугаагүй"}), 500
+    manager  = str(data.get("manager_name") or "")
+    teacher  = str(data.get("teacher_name") or "")
+    subject  = str(data.get("subject") or "Математик")
+    topic    = str(data.get("topic") or "Хичээлийн сэдэв")
+    grade    = str(data.get("grade") or "9")
+    period   = str(data.get("period") or "40")
+    objectives = str(data.get("objectives") or "")
+    grade_label = CURRICULUM.get("grades", {}).get(grade, {}).get("label", grade + "-р анги")
+    p  = int(period)
+    t1 = max(5, p // 8)
+    t2 = p // 3 + p // 4
+    t3 = max(5, p - t1 - t2)
+    stages_template = (
+        '[{"name":"I.ЭХЛЭЛ","time":' + str(t1) + ',"purpose":"...","teacher_actions":"...","student_actions":"...","assessment":"..."},'
+        '{"name":"II.СУДЛАЛ","time":' + str(t2) + ',"purpose":"...","teacher_actions":"...","student_actions":"...","assessment":"..."},'
+        '{"name":"III.ДҮГНЭЛТ","time":' + str(t3) + ',"purpose":"...","teacher_actions":"...","student_actions":"...","assessment":"..."}]'
+    )
+    prompt = (
+        "Монгол ЕБС-ийн " + grade_label + " " + subject + " хичээлийн "
+        + topic + " сэдвийн " + period + " минутын ээлжит хичээлийн хөтөлбөр.\n"
+        "Багш: " + (teacher or "тодорхойгүй") + " Менежер: " + (manager or "тодорхойгүй") + "\n"
+        + ("Зорилт: " + objectives + "\n" if objectives else "")
+        + "\nМОНГОЛ ХЭЛЭЭР дэлгэрэнгүй бөглөж зөвхөн JSON буцаа:\n"
+        + '{"header":{"subject":"' + subject + '","topic":"' + topic + '","grade":"' + grade_label + '","period":"' + period + 'мин","teacher":"' + teacher + '","manager":"' + manager + '"},'
+        + '"objectives":{"A":"' + topic + ' үндсэн ойлголтыг мэддэг болно","B":"' + topic + ' тайлбарлаж чадна","C":"' + topic + ' амьдралд хэрэглэнэ"},'
+        + '"design":{"method":"Bloom таксономи","tools":"Сурах бичиг, самбар","engagement":"Бүлгийн ажил"},'
+        + '"stages":' + stages_template + ','
+        + '"differentiation":{"support":"Нэмэлт тайлбар, хялбар даалгавар","advanced":"Нэмэлт бодлого"},'
+        + '"homework":"' + topic + '-той холбоотой гэрийн даалгавар"}'
+    )
     try:
         client = anthropic.Anthropic(api_key=api_key)
-        msg = client.messages.create(model="claude-sonnet-4-5", max_tokens=4000,
-            messages=[{"role":"user","content":prompt}])
+        msg = client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=4000,
+            messages=[{"role": "user", "content": prompt}]
+        )
         raw = msg.content[0].text.strip()
-        if raw.startswith("```"):
-            raw = raw.split("```")[1]
-            if raw.startswith("json"): raw = raw[4:]
-        raw = raw.strip()
-        # JSON дутуу ирвэл засах
-        if not raw.endswith("}"):
-            raw = raw[:raw.rfind("}")+1] if "}" in raw else raw
-        plan = _json.loads(raw)
+        if "```" in raw:
+            for part in raw.split("```"):
+                p2 = part.strip()
+                if p2.startswith("json"): p2 = p2[4:].strip()
+                if p2.startswith("{"): raw = p2; break
+        s = raw.find("{")
+        e = raw.rfind("}") + 1
+        if s >= 0 and e > s:
+            raw = raw[s:e]
+        plan = _j2.loads(raw)
+        if "header" in plan:
+            plan["header"].update({"subject":subject,"topic":topic,"grade":grade_label,"period":period+"мин","teacher":teacher,"manager":manager})
         return jsonify({"plan": plan})
-    except Exception as e:
+    except Exception as ex:
         import traceback
-        print("LESSON PLAN ERROR:", traceback.format_exc())
-        return jsonify({"error": str(e)}), 500
+        print("LESSON ERROR:", traceback.format_exc())
+        return jsonify({"error": str(ex)}), 500
 
 @app.route("/api/teacher-ai", methods=["POST"])
 def teacher_ai():
@@ -732,6 +755,8 @@ def teacher_ai():
     api_key = os.environ.get("ANTHROPIC_API_KEY","")
     if not api_key:
         return jsonify({"error":"ANTHROPIC_API_KEY тохируулаагүй. Render → Environment-д нэмнэ үү."}), 400
+    if anthropic is None:
+        return jsonify({"error": "anthropic суугаагүй - requirements.txt шалгана уу"}), 500
     if not prompt:
         return jsonify({"error":"Prompt хоосон байна"}), 400
     try:
@@ -752,6 +777,8 @@ def chatbot():
     api_key  = os.environ.get("ANTHROPIC_API_KEY","")
     if not api_key:
         return jsonify({"error":"API тохируулаагүй. Render → Environment → ANTHROPIC_API_KEY нэмнэ үү."}), 400
+    if anthropic is None:
+        return jsonify({"error": "anthropic суугаагүй - requirements.txt шалгана уу"}), 500
     if not messages:
         return jsonify({"error":"Мессеж хоосон"}), 400
     try:
