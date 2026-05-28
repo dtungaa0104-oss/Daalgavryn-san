@@ -19,10 +19,11 @@ except:
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "orkhontul-ebs-2025")
 app.config.update(
-    SESSION_COOKIE_SECURE   = os.environ.get("RENDER", "") != "",  # Render-д HTTPS
+    SESSION_COOKIE_SECURE   = False,
     SESSION_COOKIE_HTTPONLY = True,
     SESSION_COOKIE_SAMESITE = "Lax",
-    PERMANENT_SESSION_LIFETIME = 86400 * 7  # 7 хоног
+    SESSION_COOKIE_NAME     = "daalgavar_session",
+    PERMANENT_SESSION_LIFETIME = 86400 * 365  # 1 жил
 )
 # ── DATABASE: PostgreSQL (Supabase) эсвэл SQLite fallback ──────────────
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:Orkhontuul%402020@db.vnxqgqthvqhyziwyyvsm.supabase.co:5432/postgres")
@@ -445,7 +446,9 @@ def admin_login():
     error=None
     if request.method=="POST":
         if request.form.get("password")==ADMIN_PW:
-            session["admin"]=True; return redirect(url_for("admin_dashboard"))
+            session.permanent = True
+            session["admin"] = True
+            return redirect(url_for("admin_dashboard"))
         error="Нууц үг буруу байна!"
     return render_template("admin_login.html",error=error)
 
@@ -907,6 +910,7 @@ def teacher_login_page():
     if request.method == "POST":
         pw = request.form.get("password", "")
         if pw == TEACHER_PASSWORD:
+            session.permanent = True
             session["teacher_logged_in"] = True
             return redirect(url_for("questions_page"))
         return render_template("teacher_login.html", error="Нууц үг буруу байна")
@@ -920,7 +924,7 @@ def teacher_logout():
 @app.route("/api/upload", methods=["POST"])
 def api_upload():
     """Багшийн upload route"""
-    if not session.get("teacher_logged_in") and not session.get("admin_logged_in"):
+    if not session.get("teacher_logged_in") and not session.get("admin"):
         return jsonify({"error": "teacher_login_required", "redirect": "/teacher-login"}), 401
     from file_importer import extract_from_pdf, extract_from_docx, parse_raw_text
     f = request.files.get("file")
@@ -967,7 +971,9 @@ def api_upload():
                     q['q_type'],q['question'],q['option_a'],q['option_b'],
                     q['option_c'],q['option_d'],q['answer'],q['score'],q['topic']))
                 saved += 1
-            except: skipped += 1
+            except Exception as err:
+                print(f"Upload INSERT error: {err}")
+                skipped += 1
         conn.commit(); conn.close()
         return jsonify({"success": True, "saved": saved, "skipped": skipped})
     except Exception as e:
@@ -980,7 +986,7 @@ TEACHER_PASSWORD = os.environ.get("TEACHER_PASSWORD", "orkhontul-bagsh")
 def teacher_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if session.get("teacher_logged_in") or session.get("admin_logged_in"):
+        if session.get("teacher_logged_in") or session.get("admin"):
             return f(*args, **kwargs)
         return redirect(url_for("teacher_login_page"))
     return decorated
