@@ -23,8 +23,14 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY = True,
     SESSION_COOKIE_SAMESITE = "Lax",
     SESSION_COOKIE_NAME     = "daalgavar_session",
-    PERMANENT_SESSION_LIFETIME = 86400 * 365  # 1 жил
+    PERMANENT_SESSION_LIFETIME = 86400 * 365
 )
+# Render HTTPS proxy дамжуулах
+try:
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+except Exception:
+    pass
 # ── DATABASE: PostgreSQL (Supabase) эсвэл SQLite fallback ──────────────
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:Orkhontuul%402020@db.vnxqgqthvqhyziwyyvsm.supabase.co:5432/postgres")
 DB_PATH      = os.environ.get("DB_PATH", "questions.db")
@@ -476,12 +482,18 @@ def admin_add():
         f=request.form; lvl=f["level"]; score=LEVEL_SCORE.get(lvl,1)
         q_code=f"Q{f['grade']}-{f['subject'][:3]}-{datetime.now().strftime('%f')}"
         conn=get_db()
-        conn.execute("""INSERT INTO questions(q_code,grade,subject,level,bloom,q_type,question,
-            option_a,option_b,option_c,option_d,answer,score,topic)VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-            (q_code,int(f["grade"]),f["subject"],lvl,f["bloom"],f["q_type"],f["question"],
-             f.get("option_a"),f.get("option_b"),f.get("option_c"),f.get("option_d"),
-             f.get("answer"),score,f.get("topic","")))
-        conn.commit(); conn.close(); return redirect(url_for("admin_list"))
+        try:
+            conn.execute("""INSERT INTO questions(q_code,grade,subject,level,bloom,q_type,question,
+                option_a,option_b,option_c,option_d,answer,score,topic)VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (q_code,int(f["grade"]),f["subject"],lvl,f["bloom"],f["q_type"],f["question"],
+                 f.get("option_a"),f.get("option_b"),f.get("option_c"),f.get("option_d"),
+                 f.get("answer"),score,f.get("topic","")))
+            conn.commit()
+        except Exception as _e:
+            print(f"admin_add INSERT error: {_e}")
+            import traceback; traceback.print_exc()
+        conn.close()
+        return redirect(url_for("admin_list"))
     return render_template("admin_add.html",q=None,
         subjects=SUBJECTS,
         all_subjects=ALL_SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
@@ -573,9 +585,11 @@ def admin_import():
                         q['question'],q['option_a'],q['option_b'],q['option_c'],q['option_d'],
                         q['answer'],q['score'],q['topic']))
                     saved+=1
-                except: skipped+=1
+                except Exception as _e:
+                    print(f"INSERT error: {_e}")
+                    skipped+=1
             conn.commit(); conn.close()
-            return jsonify({"success":True,"saved":saved,"skipped":skipped,"preview":questions[:3]})
+            return jsonify({"success":True,"saved":saved,"skipped":skipped,"preview":questions[:3],"db_type":"pg" if (USE_PG and _HAS_PG) else "sqlite"})
         except Exception as e:
             return jsonify({"error":f"Файл уншихад алдаа: {str(e)}"}),500
     return render_template("admin_import.html",subjects=SUBJECTS,
@@ -975,7 +989,8 @@ def api_upload():
                 print(f"Upload INSERT error: {err}")
                 skipped += 1
         conn.commit(); conn.close()
-        return jsonify({"success": True, "saved": saved, "skipped": skipped})
+        return jsonify({"success": True, "saved": saved, "skipped": skipped,
+                        "db_type": "pg" if (USE_PG and _HAS_PG) else "sqlite"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
