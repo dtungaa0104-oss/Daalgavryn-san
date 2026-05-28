@@ -25,12 +25,10 @@ USE_PG       = bool(DATABASE_URL)
 
 if USE_PG:
     try:
-        import psycopg2
-        import psycopg2.extras
-        print("✅ PostgreSQL (Supabase) ашиглаж байна")
+        print("PostgreSQL (Supabase) ашиглаж байна")
     except ImportError:
         USE_PG = False
-        print("⚠️ psycopg2 суугаагүй — SQLite ашиглана")
+        print("psycopg2 байхгүй — SQLite ашиглана")
 
 EXAM_TYPES = {
     "ulsiin": {
@@ -105,6 +103,15 @@ Q_TYPES     = ["Нэг сонголт","Олон сонголт","Нээлттэ
 ADMIN_PW    = os.environ.get("ADMIN_PASSWORD","orkhontul2025")
 LEVEL_SCORE = {"Мэдлэг ойлголт":1,"Чадвар":2,"Хэрэглээ":3}
 
+try:
+    import psycopg2
+    import psycopg2.extras
+    _HAS_PG = True
+except ImportError:
+    _HAS_PG = False
+    USE_PG = False
+    psycopg2 = None
+
 class PGConn:
     """psycopg2 connection-г sqlite3-тай адил interface болгох wrapper"""
     def __init__(self, conn):
@@ -153,10 +160,13 @@ class PGConn:
 
 def get_db():
     """PostgreSQL (Supabase) эсвэл SQLite буцаана"""
-    if USE_PG:
-        conn = psycopg2.connect(DATABASE_URL, sslmode='require',
-                                connect_timeout=15)
-        return PGConn(conn)
+    if USE_PG and _HAS_PG:
+        try:
+            conn = psycopg2.connect(DATABASE_URL, sslmode='require',
+                                    connect_timeout=15)
+            return PGConn(conn)
+        except Exception as e:
+            print(f"PG холболт алдаа: {e} — SQLite ашиглана")
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
