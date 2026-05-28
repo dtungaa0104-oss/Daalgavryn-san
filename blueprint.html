@@ -244,11 +244,13 @@ function setSlider(key, val) {
   if (vl) vl.textContent = val;
 }
 
+
 function onSlider(key, val) {
   var vl = document.getElementById('val-'+key);
   if (vl) vl.textContent = val;
   updateTotal();
 }
+
 
 function updateTotal() {
   var total = 0, score = 0;
@@ -472,8 +474,124 @@ function geoFigureSVG(text) {
       '<polygon points="48,18 40,14 40,22" fill="#1565c0"/>'+
       '<text x="24" y="14" text-anchor="middle" font-size="8" fill="#1565c0">a⃗</text></svg>';
 
+  // ── Координатын системд цэг, шулуун, функц ──────────────
+  // y=mx+b, y=ax^2, цэг A(x,y), шулуун x=c, y=c
+  if (/[Yy]\s*=\s*[-\d.]*\s*[Xx]|[Yy]\s*=\s*[-\d.x^]+|[A-Za-z]\s*\(\s*[-\d.]+\s*,\s*[-\d.]+\s*\)/.test(text)) {
+    return drawCoordPlane(text);
+  }
+
   return '';
 }
+
+// ── КООРДИНАТЫН ХАВТГАЙ ЗУРАГЧ ──────────────────────────
+function drawCoordPlane(text) {
+  var W=200, H=180, CX=90, CY=90, SCALE=20;
+  var svg = '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="vertical-align:middle;border:1px solid #eee;border-radius:4px;margin:4px">';
+
+  // Торлог
+  for (var gx=-4;gx<=4;gx++) {
+    var px=CX+gx*SCALE;
+    svg += '<line x1="'+px+'" y1="10" x2="'+px+'" y2="'+(H-10)+'" stroke="#e0e0e0" stroke-width="0.5"/>';
+    if (gx!==0) svg += '<text x="'+px+'" y="'+(CY+12)+'" text-anchor="middle" font-size="8" fill="#aaa">'+gx+'</text>';
+  }
+  for (var gy=-3;gy<=3;gy++) {
+    var py=CY-gy*SCALE;
+    svg += '<line x1="10" y1="'+py+'" x2="'+(W-10)+'" y2="'+py+'" stroke="#e0e0e0" stroke-width="0.5"/>';
+    if (gy!==0) svg += '<text x="'+(CX-6)+'" y="'+(py+3)+'" text-anchor="end" font-size="8" fill="#aaa">'+gy+'</text>';
+  }
+
+  // Тэнхлэгүүд
+  svg += '<line x1="10" y1="'+CY+'" x2="'+(W-10)+'" y2="'+CY+'" stroke="#555" stroke-width="1.5"/>';
+  svg += '<line x1="'+CX+'" y1="10" x2="'+CX+'" y2="'+(H-10)+'" stroke="#555" stroke-width="1.5"/>';
+  svg += '<polygon points="'+(W-10)+','+CY+' '+(W-16)+','+(CY-3)+' '+(W-16)+','+(CY+3)+'" fill="#555"/>';
+  svg += '<polygon points="'+CX+',10 '+(CX-3)+',16 '+(CX+3)+',16" fill="#555"/>';
+  svg += '<text x="'+(W-8)+'" y="'+(CY-5)+'" font-size="9" fill="#333">x</text>';
+  svg += '<text x="'+(CX+5)+'" y="16" font-size="9" fill="#333">y</text>';
+
+  // Функц/шулуун зурах
+  var funcs = parseFunctions(text);
+  var COLORS = ['#c62828','#1565c0','#2e7d32','#e65100','#6a1b9a'];
+  funcs.forEach(function(fn, fi) {
+    var col = COLORS[fi % COLORS.length];
+    if (fn.type === 'linear') {
+      // y = mx + b
+      var x1s = -4, x2s = 4;
+      var y1s = fn.m * x1s + fn.b;
+      var y2s = fn.m * x2s + fn.b;
+      var px1 = CX + x1s*SCALE, py1 = CY - y1s*SCALE;
+      var px2 = CX + x2s*SCALE, py2 = CY - y2s*SCALE;
+      svg += '<line x1="'+px1+'" y1="'+py1+'" x2="'+px2+'" y2="'+py2+'" stroke="'+col+'" stroke-width="2"/>';
+      // Тэгшитгэл label
+      svg += '<text x="'+(CX+3*SCALE)+'" y="'+(CY-fn.m*3*SCALE-fn.b*SCALE+0)+'" font-size="8" fill="'+col+'">'+fn.label+'</text>';
+    } else if (fn.type === 'quad') {
+      // y = ax^2 + bx + c
+      var pts = [];
+      for (var xi=-4; xi<=4; xi+=0.2) {
+        var yi = fn.a*xi*xi + fn.bq*xi + fn.c;
+        var px = CX+xi*SCALE, py = CY-yi*SCALE;
+        if (py>5 && py<H-5) pts.push(px+','+py);
+      }
+      if (pts.length>1) svg += '<polyline points="'+pts.join(' ')+'" stroke="'+col+'" stroke-width="2" fill="none"/>';
+    } else if (fn.type === 'vline') {
+      // x = c
+      var px = CX + fn.c*SCALE;
+      svg += '<line x1="'+px+'" y1="15" x2="'+px+'" y2="'+(H-15)+'" stroke="'+col+'" stroke-width="2" stroke-dasharray="4,2"/>';
+      svg += '<text x="'+(px+3)+'" y="20" font-size="8" fill="'+col+'">x='+fn.c+'</text>';
+    } else if (fn.type === 'hline') {
+      // y = c
+      var py = CY - fn.c*SCALE;
+      svg += '<line x1="15" y1="'+py+'" x2="'+(W-15)+'" y2="'+py+'" stroke="'+col+'" stroke-width="2" stroke-dasharray="4,2"/>';
+      svg += '<text x="'+(CX+5)+'" y="'+(py-3)+'" font-size="8" fill="'+col+'">y='+fn.c+'</text>';
+    } else if (fn.type === 'point') {
+      // A(x,y) цэг
+      var px = CX + fn.x*SCALE, py = CY - fn.y*SCALE;
+      svg += '<circle cx="'+px+'" cy="'+py+'" r="4" fill="'+col+'" stroke="#fff" stroke-width="1"/>';
+      svg += '<text x="'+(px+5)+'" y="'+(py-4)+'" font-size="9" fill="'+col+'" font-weight="bold">'+fn.label+'</text>';
+    }
+  });
+
+  svg += '</svg>';
+  return svg;
+}
+
+
+function parseFunctions(text) {
+  var results = [];
+  // y = 1.5x + 2, y=2x-3, y=-x, y=x
+  var linPat = /[Yy][ ]*=[ ]*([-\d.]+)?[ ]*[*]?[ ]*[Xx][ ]*([+-][ ]*[\d.]+)?/g;
+  var m;
+  while ((m=linPat.exec(text))!==null) {
+    var ms = (m[1]||'1').replace(/\s/g,'');
+    var bs = (m[2]||'0').replace(/\s/g,'');
+    var mv = parseFloat(ms==='−'||ms==='-'?-1:ms)||1;
+    var bv = parseFloat(bs)||0;
+    results.push({type:'linear', m:mv, b:bv, label:m[0].replace(/\s/g,'')});
+  }
+  // y = ax^2
+  var quadPat = /[Yy][ ]*=[ ]*([-\d.]+)?[ ]*[*]?[ ]*[Xx][ ]*[\^\u00B2]2/g;
+  while ((m=quadPat.exec(text))!==null) {
+    var av = parseFloat((m[1]||'1'))||1;
+    results.push({type:'quad', a:av, bq:0, c:0, label:m[0]});
+  }
+  // x = c (тогтмол шулуун)
+  var vlinPat = /x\s*=\s*([-\d.]+)/gi;
+  while ((m=vlinPat.exec(text))!==null) {
+    results.push({type:'vline', c:parseFloat(m[1])||0});
+  }
+  // y = c (тогтмол шулуун)
+  var hlinPat = /y\s*=\s*([-\d.]+)/gi;
+  while ((m=hlinPat.exec(text))!==null) {
+    if (!isNaN(parseFloat(m[1])) && !/[Xx]/.test(text.slice(m.index,m.index+20)))
+      results.push({type:'hline', c:parseFloat(m[1])||0});
+  }
+  // A(2,3), B(-1,4) цэгүүд
+  var ptPat = /([A-Za-z])\s*\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)/g;
+  while ((m=ptPat.exec(text))!==null) {
+    results.push({type:'point', x:parseFloat(m[2]), y:parseFloat(m[3]), label:m[1]+'('+m[2]+','+m[3]+')'});
+  }
+  return results;
+}
+
 
 function renderExam(data) {
   examData = data;
@@ -578,6 +696,7 @@ async function genZadgai() {
     out.textContent = '❌ Алдаа: '+e.message;
   }
 }
+
 
 function printZadgai() {
   if (!document.getElementById('zadgai-out').textContent) return;
