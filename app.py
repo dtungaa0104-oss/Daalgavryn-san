@@ -131,12 +131,15 @@ class PGConn:
 
     def execute(self, sql, params=()):
         sql_pg = sql.replace("?", "%s")
+        # INSERT OR IGNORE → ON CONFLICT DO NOTHING (PostgreSQL)
+        sql_pg = sql_pg.replace("INSERT OR IGNORE INTO", "INSERT INTO")
+        sql_pg = sql_pg.replace("INSERT OR REPLACE INTO", "INSERT INTO")
         # INSERT-д RETURNING id нэмэх
         is_insert = sql_pg.strip().upper().startswith("INSERT")
-        if is_insert and "RETURNING" not in sql_pg.upper():
+        if is_insert and "RETURNING" not in sql_pg.upper() and "ON CONFLICT" not in sql_pg.upper():
             last = sql_pg.rfind(")")
             if last >= 0:
-                sql_pg = sql_pg[:last+1] + " RETURNING id"
+                sql_pg = sql_pg[:last+1] + " ON CONFLICT (q_code) DO NOTHING RETURNING id"
             
         cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql_pg, params)
@@ -578,7 +581,7 @@ def admin_import():
             conn=get_db(); saved=skipped=0
             for q in questions:
                 try:
-                    conn.execute("""INSERT INTO questions(q_code,grade,subject,level,bloom,q_type,
+                    conn.execute("""INSERT OR IGNORE INTO questions(q_code,grade,subject,level,bloom,q_type,
                        question,option_a,option_b,option_c,option_d,answer,score,topic)
                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                        (q['q_code'],q['grade'],q['subject'],q.get('level',lvl),q['bloom'],q['q_type'],
@@ -633,7 +636,7 @@ def admin_ai_generate():
             for idx,q in enumerate(ai_qs):
                 q_code=f"Q{grade}-{subject[:2]}-AI-{datetime.now().strftime('%f')}-{idx}"
                 try:
-                    conn.execute("""INSERT INTO questions(q_code,grade,subject,level,bloom,q_type,
+                    conn.execute("""INSERT OR IGNORE INTO questions(q_code,grade,subject,level,bloom,q_type,
                        question,option_a,option_b,option_c,option_d,answer,score,topic)
                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                        (q_code,grade,subject,lvl,bloom,q_type,q.get('question',''),
