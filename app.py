@@ -9,7 +9,7 @@ except ImportError:
 
 # Curriculum data
 import json as _json
-_curr_path = os.path.join(os.path.dirname(__file__), 'data', 'curriculum.json')
+_curr_path = os.path.join(os.path.dirname(__file__), 'templates', 'curriculum.json')
 try:
     with open(_curr_path, 'r', encoding='utf-8') as _f:
         CURRICULUM = _json.load(_f)
@@ -500,6 +500,69 @@ def teacher_page():
         levels=LEVELS, blooms=BLOOM,
         curriculum_grades=CURRICULUM.get("grades", {}),
         curriculum_periods=CURRICULUM.get("periods", ["40","80","90"]))
+
+
+@app.route("/api/workplan", methods=["POST"])
+def workplan():
+    """Багшийн ажлын төлөвлөгөө — streaming"""
+    data    = request.json
+    api_key = os.environ.get("ANTHROPIC_API_KEY","")
+    if not api_key:
+        return jsonify({"error":"API тохируулаагүй"}), 400
+    teacher = data.get("teacher","")
+    year    = data.get("year","2025-2026")
+    subject = data.get("subject","")
+    exp     = data.get("exp","3")
+    extra   = data.get("extra","")
+    cats    = data.get("cats",[])
+    exp_labels = {"1":"1-3 жилийн туршлагатай залуу",
+                  "2":"4-10 жилийн туршлагатай","3":"10+ жилийн ахлах"}
+    cat_names = {"surgalt":"Сургалт","hugzhil":"Өөрийгөө хөгжүүлэх",
+                 "ecej":"Асран хамгаалагчтай хамтрах",
+                 "niigem":"Иргэд, олон нийттэй ажиллах",
+                 "yos":"Ёс зүй","huuhded":"Хүүхэд хамгаалал"}
+    selected_names = [cat_names.get(k,k) for k in cats]
+    prompt = f"""Та Монгол ЕБС-ийн багшийн ажлын жилийн төлөвлөгөө боловсруулагч AI байна.
+
+МЭДЭЭЛЭЛ:
+- Багш: {teacher or 'тодорхойгүй'}
+- Хичээлийн жил: {year}
+- Хичээл/Анги: {subject or 'тодорхойгүй'}
+- Туршлага: {exp_labels.get(exp,'10+ жил')}
+{f'- Нэмэлт: {extra}' if extra else ''}
+- Хэсгүүд: {', '.join(selected_names)}
+
+ДААЛГАВАР:
+Хэсэг бүрт 3-4 зорилт, зорилт бүрт үйл ажиллагаа, үр дүн, хугацаа бичиж JSON буцаана уу.
+
+JSON формат:
+{{
+  {', '.join([f'"{k}": {{"goals": [{{"goal":"...", "actions":["...","..."], "result":"...", "time":"..."}}]}}' for k in cats[:2]])}
+  ...
+}}
+
+Монгол хэлээр дэлгэрэнгүй. Зөвхөн JSON буцаана уу."""
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        full_text = []
+        with client.messages.stream(model="claude-sonnet-4-5", max_tokens=3000,
+            messages=[{"role":"user","content":prompt}]) as stream:
+            for text in stream.text_stream:
+                full_text.append(text)
+        raw = "".join(full_text).strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"): raw = raw[4:]
+            raw = raw.strip()
+        import json as _j
+        try:
+            plan = _j.loads(raw)
+            return jsonify({"plan": plan})
+        except:
+            return jsonify({"raw": raw})
+    except Exception as e:
+        import traceback; print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/lesson-plan", methods=["POST"])
 def lesson_plan():
