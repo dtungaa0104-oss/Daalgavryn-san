@@ -117,7 +117,7 @@
 <button class="btn btn-primary" style="margin-top:.5rem" id="plan-btn" data-label="✦ Жилийн төлөвлөгөө гаргах" onclick="genPlan()">✦ Жилийн төлөвлөгөө гаргах</button>
       <div class="ai-out" id="plan-out"></div>
       <div id="plan-actions" style="display:none;gap:.6rem;margin-top:.8rem">
-        <button class="btn btn-sm btn-outline" onclick="printOut('plan-out','Жилийн төлөвлөгөө')">🖨 Хэвлэх</button>
+        <button class="btn btn-sm btn-outline" onclick="printPlan()">🖨 Хэвлэх</button>
         <button class="btn btn-sm btn-outline" onclick="dlOut('plan-out','plan')">⬇ Татах</button>
       </div>
     </div>
@@ -218,7 +218,7 @@
       </div>
       <div id="les-result" style="display:none">
         <div style="position:sticky;top:0;z-index:10;display:flex;gap:.5rem;padding:.7rem 1.5rem;background:rgba(244,246,251,.95);border-bottom:1px solid var(--green-100)">
-          <button class="btn btn-sm btn-primary" onclick="printOut('les-plan-content','Ээлжит хичээлийн хөтөлбөр')">🖨 Хэвлэх</button>
+          <button class="btn btn-sm btn-primary" onclick="printLessonPlan()">🖨 Хэвлэх</button>
           <button class="btn btn-sm btn-outline" onclick="copyLessonPlan()">📋 Хуулах</button>
           <button class="btn btn-sm btn-outline" onclick="resetLesson()">↻ Шинэчлэх</button>
         </div>
@@ -1836,6 +1836,217 @@ function wpReset() {
 // ══ АЖЛЫН ТӨЛӨВЛӨГӨӨ ТӨГСӨВ ════════════════════════
 
 // VERSION: 2025-teacher-v3-fixed
+// ══ ХЭВЛЭХ & RENDER СИСТЕМҮҮД ══════════════════════════════
+
+// ── Жилийн төлөвлөгөө ──────────────────────────────────────
+function renderPlanOutput(text) {
+  if (!text || text.startsWith('⏳')) return;
+  var out = document.getElementById('plan-out');
+  if (!out) return;
+
+  // Markdown хүснэгт → HTML хүснэгт
+  var html = text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+
+  // Хүснэгт мөр боловсруулах
+  var lines = html.split('\n');
+  var result = [];
+  var inTable = false;
+  var headerDone = false;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (line.startsWith('|') && line.endsWith('|')) {
+      // Separator мөр хаях
+      if (/^\|[\s\|\-:]+\|$/.test(line)) {
+        if (!headerDone && inTable) {
+          result.push('</tr></thead><tbody>');
+          headerDone = true;
+        }
+        continue;
+      }
+      if (!inTable) {
+        result.push('<div class="plan-table-wrap"><table class="plan-tbl"><thead><tr>');
+        inTable = true;
+        headerDone = false;
+        var cells = line.split('|').filter(function(c){return c.trim();});
+        cells.forEach(function(c){ result.push('<th>' + c.trim() + '</th>'); });
+        result.push('</tr>');
+      } else {
+        result.push('<tr>');
+        var cells = line.split('|').filter(function(c){return c.trim();});
+        cells.forEach(function(c){ result.push('<td>' + c.trim() + '</td>'); });
+        result.push('</tr>');
+      }
+    } else {
+      if (inTable) {
+        result.push('</tbody></table></div>');
+        inTable = false;
+        headerDone = false;
+      }
+      if (line.startsWith('# ')) {
+        result.push('<h2 class="plan-h2">' + line.slice(2) + '</h2>');
+      } else if (line.startsWith('## ')) {
+        result.push('<h3 class="plan-h3">' + line.slice(3) + '</h3>');
+      } else if (line.startsWith('### ')) {
+        result.push('<h4 class="plan-h4">' + line.slice(4) + '</h4>');
+      } else if (line) {
+        result.push('<p class="plan-p">' + line + '</p>');
+      }
+    }
+  }
+  if (inTable) result.push('</tbody></table></div>');
+
+  out.innerHTML = '<style>' +
+    '.plan-table-wrap{overflow-x:auto;margin:1rem 0}' +
+    '.plan-tbl{width:100%;border-collapse:collapse;font-size:.82rem}' +
+    '.plan-tbl th{background:var(--teal-600);color:#fff;padding:8px 10px;text-align:left;font-size:.72rem;font-weight:700;white-space:nowrap}' +
+    '.plan-tbl td{padding:7px 10px;border-bottom:1px solid var(--green-100);vertical-align:top;line-height:1.6}' +
+    '.plan-tbl tr:hover td{background:var(--green-50)}' +
+    '.plan-h2{font-size:1rem;font-weight:800;color:var(--teal-600);margin:1.2rem 0 .4rem;border-bottom:2px solid var(--green-100);padding-bottom:.3rem}' +
+    '.plan-h3{font-size:.9rem;font-weight:700;color:var(--text-dark);margin:.8rem 0 .3rem}' +
+    '.plan-h4{font-size:.82rem;font-weight:700;color:var(--text-mid);margin:.5rem 0 .2rem}' +
+    '.plan-p{font-size:.82rem;color:var(--text-mid);line-height:1.7;margin:.3rem 0}' +
+    '</style>' +
+    result.join('\n');
+}
+
+function printPlan() {
+  var out = document.getElementById('plan-out');
+  if (!out || !out.innerHTML.trim()) { alert('Эхлээд төлөвлөгөө үүсгэнэ үү!'); return; }
+  var g = document.getElementById('plan-grade').value;
+  var s = document.getElementById('plan-subject').value;
+  var win = window.open('','_blank');
+  win.document.write(
+    '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<title>' + g + '-р анги ' + s + ' — Жилийн төлөвлөгөө</title>' +
+    '<style>' +
+    'body{font-family:"Times New Roman",serif;font-size:10pt;padding:15mm;color:#000;line-height:1.5}' +
+    'h1{font-size:13pt;text-align:center;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:14px}' +
+    'h2{font-size:12pt;font-weight:bold;margin:12px 0 4px;color:#1b5e20}' +
+    'h3{font-size:11pt;font-weight:bold;margin:8px 0 3px}' +
+    'h4{font-size:10pt;font-weight:bold;margin:6px 0 2px}' +
+    'p{margin:3px 0;font-size:10pt}' +
+    'table{width:100%;border-collapse:collapse;margin:8px 0;font-size:9pt}' +
+    'th{background:#c8e6c9;padding:5px 7px;text-align:left;border:1px solid #555;font-weight:bold}' +
+    'td{padding:4px 7px;border:1px solid #999;vertical-align:top}' +
+    'tr:nth-child(even) td{background:#f9f9f9}' +
+    '@media print{button{display:none}@page{margin:15mm}}' +
+    '</style></head><body>' +
+    '<h1>ОРХОНТУУЛ ЕБС<br>' + g + '-р анги — ' + s + '<br>Жилийн төлөвлөгөө</h1>' +
+    out.innerHTML +
+    '<script>setTimeout(function(){window.print();},500);<\/script>' +
+    '</body></html>'
+  );
+  win.document.close();
+}
+
+// genPlan-г callAI-тай нийцүүлэх — render дуусаад renderPlanOutput дуудах
+var _origCallAI = callAI;
+function callAI(prompt, outId, btnId, actionsId) {
+  if (outId === 'plan-out') {
+    // Override: render хийх
+    var btn = btnId ? document.getElementById(btnId) : null;
+    var out = document.getElementById(outId);
+    if (!out) return;
+    var origLabel = btn ? (btn.getAttribute('data-label') || btn.textContent) : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-sm"></span> Боловсруулж байна...'; }
+    out.className = 'ai-out show';
+    out.innerHTML = '<div style="color:var(--text-muted);font-size:.82rem">⏳ AI хариулт бэлтгэж байна...</div>';
+    fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({messages: [{role: 'user', content: prompt}]})
+    }).then(function(r){ return r.json(); }).then(function(data) {
+      if (btn) { btn.disabled = false; btn.textContent = origLabel; }
+      if (data.error) {
+        out.innerHTML = '<div style="color:#c62828;padding:.5rem;background:#fff5f5;border-radius:6px">❌ ' + data.error + '</div>';
+        return;
+      }
+      renderPlanOutput(data.reply || '');
+      var actEl = actionsId ? document.getElementById(actionsId) : null;
+      if (actEl) actEl.style.display = 'flex';
+    }).catch(function(e) {
+      if (btn) { btn.disabled = false; btn.textContent = origLabel; }
+      out.innerHTML = '<div style="color:#c62828">❌ ' + e.message + '</div>';
+    });
+  } else {
+    _origCallAI(prompt, outId, btnId, actionsId);
+  }
+}
+
+// ── Ээлжит хичээл хэвлэх ───────────────────────────────────
+function printLessonPlan() {
+  var body = document.getElementById('les-plan-content');
+  if (!body || !body.innerHTML.trim()) { alert('Эхлээд хөтөлбөр үүсгэнэ үү!'); return; }
+  var subj = document.getElementById('les-subj-sel')?.value || '';
+  var grade = document.getElementById('les-grade-sel')?.value || '';
+  var win = window.open('','_blank');
+  win.document.write(
+    '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<title>Ээлжит хичээлийн хөтөлбөр</title>' +
+    '<style>' +
+    'body{font-family:"Times New Roman",serif;font-size:9pt;padding:12mm;color:#000;line-height:1.5}' +
+    'h2{font-size:12pt;text-align:center;border-bottom:2px solid #000;padding-bottom:5px;margin-bottom:10px}' +
+    'table{width:100%;border-collapse:collapse;margin:6px 0;font-size:8.5pt}' +
+    'th{background:#c8e6c9;padding:5px 7px;text-align:left;border:1px solid #555;font-weight:bold;font-size:8pt}' +
+    'td{padding:4px 7px;border:1px solid #999;vertical-align:top;line-height:1.5}' +
+    'tr:nth-child(even) td{background:#f9fff9}' +
+    '.card{border:1px solid #ccc;border-radius:4px;padding:8px;margin:4px 0}' +
+    'strong{font-weight:bold}' +
+    'button{display:none}' +
+    '@media print{button{display:none}@page{margin:12mm;size:A4}}' +
+    '</style></head><body>' +
+    '<h2>ОРХОНТУУЛ ЕБС — Ээлжит хичээлийн хөтөлбөр</h2>' +
+    body.innerHTML +
+    '<script>setTimeout(function(){window.print();},500);<\/script>' +
+    '</body></html>'
+  );
+  win.document.close();
+}
+
+// ── Ажлын төлөвлөгөө хэвлэх (сайжруулсан) ─────────────────
+function wpPrint() {
+  var body = document.getElementById('wp-result-body');
+  if (!body || !body.innerHTML.trim()) { alert('Эхлээд төлөвлөгөө үүсгэнэ үү!'); return; }
+  var teacher = document.getElementById('wp-teacher').value || 'Багш';
+  var year    = document.getElementById('wp-year').value || '';
+  var subj    = document.getElementById('wp-subject').value || '';
+  var win = window.open('','_blank');
+  win.document.write(
+    '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<title>' + teacher + ' — Ажлын төлөвлөгөө</title>' +
+    '<style>' +
+    'body{font-family:"Times New Roman",serif;font-size:9.5pt;padding:15mm;color:#000;line-height:1.5}' +
+    'h1{font-size:13pt;text-align:center;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:14px}' +
+    '.wp-section{margin-bottom:14px;break-inside:avoid;page-break-inside:avoid}' +
+    '.sect-head{display:flex;align-items:center;gap:8px;padding:6px 10px;margin-bottom:6px;border-left:4px solid #1b5e20}' +
+    '.sect-title{font-size:11pt;font-weight:bold}' +
+    '.sect-num{width:22px;height:22px;border-radius:4px;background:#1b5e20;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:9pt;font-weight:bold;flex-shrink:0}' +
+    'table{width:100%;border-collapse:collapse;margin:4px 0;font-size:9pt}' +
+    'th{background:#c8e6c9;padding:5px 8px;text-align:left;border:1px solid #666;font-weight:bold;font-size:8.5pt}' +
+    'td{padding:5px 8px;border:1px solid #ccc;vertical-align:top;line-height:1.6}' +
+    'td:first-child{font-weight:bold;color:#1b5e20;width:5%}' +
+    'tr:nth-child(even) td{background:#f9fff9}' +
+    'ul{margin:0;padding-left:14px}' +
+    'li{line-height:1.6}' +
+    '.wp-tag{padding:1px 6px;border-radius:99px;font-size:8pt;font-weight:bold;border:1px solid #999}' +
+    'button{display:none}' +
+    '@media print{@page{margin:15mm;size:A4}button{display:none}.wp-section{page-break-inside:avoid}}' +
+    '</style></head><body>' +
+    '<h1>ОРХОНТУУЛ ЕБС<br>БАГШИЙН АЖЛЫН ЖИЛИЙН ТӨЛӨВЛӨГӨӨ' +
+    (teacher ? '<br><span style="font-size:11pt">' + teacher + '</span>' : '') +
+    (year ? '<br><span style="font-size:10pt;font-weight:normal">' + year + '</span>' : '') +
+    '</h1>' +
+    body.innerHTML +
+    '<script>setTimeout(function(){window.print();},600);<\/script>' +
+    '</body></html>'
+  );
+  win.document.close();
+}
+// ══ ХЭВЛЭХ & RENDER СИСТЕМҮҮД ТӨГСӨВ ══════════════════════
+
 async function callAI(prompt, outId, btnId, actionsId) {
   var btn = btnId ? document.getElementById(btnId) : null;
   var out = document.getElementById(outId);
