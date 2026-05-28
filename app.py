@@ -191,6 +191,18 @@ def get_db():
     return conn
 
 
+def _fetch_scalar(conn, sql, params=()):
+    """SELECT COUNT → int, PostgreSQL болон SQLite хоёуланд ажилладаг"""
+    try:
+        row = conn.execute(sql, params).fetchone()
+        if row is None: return 0
+        if isinstance(row, dict): return list(row.values())[0]
+        try: return row[0]
+        except: return list(dict(row).values())[0]
+    except Exception:
+        return 0
+
+
 def init_db():
     """DB table үүсгэх — PostgreSQL эсвэл SQLite"""
     conn = get_db()
@@ -312,9 +324,8 @@ def mongol_bichig_page():
     recent = conn.execute(
         "SELECT * FROM questions WHERE subject='Монгол хэл бичгийн босго шалгалт' ORDER BY id DESC LIMIT 20"
     ).fetchall()
-    total = conn.execute(
-        "SELECT COUNT(*) FROM questions WHERE subject='Монгол хэл бичгийн босго шалгалт'"
-    ).fetchone()[0]
+    total = _fetch_scalar(conn,
+        "SELECT COUNT(*) FROM questions WHERE subject='Монгол хэл бичгийн босго шалгалт'")
     conn.close()
     return render_template("mongol_bichig.html",
         years=[r['topic'] for r in years],
@@ -439,12 +450,21 @@ def generate_exam():
         },
         "questions":selected})
 
+@app.route("/api/version")
+def version():
+    return jsonify({
+        "version": "2025-v5",
+        "db": "postgresql" if (USE_PG and _HAS_PG) else "sqlite",
+        "psycopg2": _HAS_PG,
+        "use_pg": USE_PG
+    })
+
 @app.route("/api/stats")
 def stats():
     conn=get_db()
-    total=conn.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
-    grades=conn.execute("SELECT COUNT(DISTINCT grade) FROM questions").fetchone()[0]
-    subjects=conn.execute("SELECT COUNT(DISTINCT subject) FROM questions").fetchone()[0]
+    total=_fetch_scalar(conn, "SELECT COUNT(*) FROM questions")
+    grades=_fetch_scalar(conn, "SELECT COUNT(DISTINCT grade) FROM questions")
+    subjects=_fetch_scalar(conn, "SELECT COUNT(DISTINCT subject) FROM questions")
     conn.close()
     return jsonify({"total_questions":total,"grades":grades or 12,
                     "subjects":subjects or 10,"blueprints":len(EXAM_TYPES)})
@@ -469,7 +489,7 @@ def admin_logout():
 @login_required
 def admin_dashboard():
     conn=get_db()
-    total=conn.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
+    total=_fetch_scalar(conn, "SELECT COUNT(*) FROM questions")
     by_level=conn.execute("SELECT level,COUNT(*) cnt FROM questions GROUP BY level").fetchall()
     by_sub=conn.execute("SELECT subject,COUNT(*) cnt FROM questions GROUP BY subject ORDER BY cnt DESC").fetchall()
     recent=conn.execute("SELECT * FROM questions ORDER BY id DESC LIMIT 8").fetchall()
