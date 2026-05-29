@@ -940,18 +940,9 @@ a.back{display:inline-block;margin-bottom:1rem;font-size:.82rem;color:#0f766e;te
             _os.unlink(tmp_path)
         if not nj_list:
             raise ValueError("PDF-с блюпринт олдсонгүй. Хүснэгтийн бүтэц таарахгүй байж болно.")
-        nj_json = _j.dumps(nj_list, ensure_ascii=False)
-        conn = get_db()
-        try:
-            conn.execute(
-                "INSERT INTO blueprints (subject, grade, nj, updated_at) "
-                "VALUES (%s, %s, %s, NOW()) "
-                "ON CONFLICT (subject, grade) "
-                "DO UPDATE SET nj = EXCLUDED.nj, updated_at = NOW()",
-                (subject, grade, nj_json))
-            conn.commit()
-        finally:
-            conn.close()
+        from blueprint_data import _save_blueprint
+        if not _save_blueprint(subject, grade, nj_list):
+            raise ValueError("Өгөгдлийн санд хадгалахад алдаа гарлаа")
         preview = "".join(
             f'<p style="font-size:.78rem;margin:.2rem 0">• {n["name"]}: {len(n.get("surd",[]))} үр дүн</p>'
             for n in nj_list[:5])
