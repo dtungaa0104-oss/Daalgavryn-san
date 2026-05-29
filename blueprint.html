@@ -50,12 +50,23 @@ def init_blueprint_table():
 def _save_blueprint(subject, grade, nj_list):
     nj_json = json.dumps(nj_list, ensure_ascii=False)
     conn = _get_db()
+    cls = type(conn).__name__
     try:
         if _is_sqlite(conn):
             conn.execute(
                 "INSERT OR REPLACE INTO blueprints (subject, grade, nj, updated_at) "
                 "VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
                 (subject, int(grade), nj_json))
+            conn.commit()
+            return True
+        elif cls == "SupabaseRestConn":
+            # REST API — устгаад дахин оруулна
+            conn.execute("DELETE FROM blueprints WHERE subject=? AND grade=?",
+                         (subject, int(grade)))
+            conn.execute("INSERT INTO blueprints (subject, grade, nj) VALUES (?, ?, ?)",
+                         (subject, int(grade), nj_json))
+            conn.commit()
+            return True
         else:
             conn.execute(
                 "INSERT INTO blueprints (subject, grade, nj, updated_at) "
@@ -63,10 +74,10 @@ def _save_blueprint(subject, grade, nj_list):
                 "ON CONFLICT (subject, grade) "
                 "DO UPDATE SET nj = EXCLUDED.nj, updated_at = NOW()",
                 (subject, int(grade), nj_json))
-        conn.commit()
-        return True
+            conn.commit()
+            return True
     except Exception as e:
-        print(f"⚠️ _save_blueprint error: {e}")
+        print(f"\u26a0\ufe0f _save_blueprint error: {e}")
         try:
             conn.execute("DELETE FROM blueprints WHERE subject=? AND grade=?", (subject, int(grade)))
             conn.execute("INSERT INTO blueprints (subject, grade, nj) VALUES (?, ?, ?)",
@@ -74,7 +85,7 @@ def _save_blueprint(subject, grade, nj_list):
             conn.commit()
             return True
         except Exception as e2:
-            print(f"⚠️ _save_blueprint fallback error: {e2}")
+            print(f"\u26a0\ufe0f _save_blueprint fallback error: {e2}")
             return False
     finally:
         try: conn.close()
