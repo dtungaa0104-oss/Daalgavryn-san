@@ -961,8 +961,9 @@ a.back{display:inline-block;margin-bottom:1rem;font-size:.82rem;color:#0f766e;te
             for n in nj_list[:5])
         msg = (f'<div class="ok">✅ Амжилттай! {subject} {grade}-р анги: '
                f'{len(nj_list)} нэгж<br>{preview}</div>')
-    except ImportError:
-        msg = '<div class="err">❌ pdfplumber суулгаагүй — requirements.txt-д нэмнэ үү</div>'
+    except ImportError as ie:
+        import traceback; traceback.print_exc()
+        msg = f'<div class="err">❌ Модуль ачаалах алдаа: {ie}</div>'
     except Exception as e:
         import traceback; traceback.print_exc()
         msg = f'<div class="err">❌ {e}</div>'
