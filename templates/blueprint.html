@@ -1,1013 +1,255 @@
-{% extends "base.html" %}
-{% block title %}Блюпринт — Шалгалт үүсгэх{% endblock %}
-{% block content %}
-<style>
-/* ── Layout ── */
-.bp-wrap{display:grid;grid-template-columns:300px 1fr;min-height:90vh;gap:0}
-.bp-panel{background:#fff;border-right:2px solid var(--green-100);padding:1.2rem;overflow-y:auto;overflow-x:hidden;min-width:0;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:.8rem}
-.bp-main{padding:1.5rem;background:var(--green-50);overflow-y:auto}
-@media(max-width:800px){.bp-wrap{grid-template-columns:1fr}}
-
-/* ── Panel sections ── */
-.panel-section{margin-bottom:.2rem}
-.panel-label{font-size:.67rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.4rem}
-.select-full{width:100%;padding:.45rem .7rem;border:1.5px solid var(--green-100);border-radius:8px;font-size:.85rem;background:#fff;color:var(--text-dark)}
-.select-full:focus{outline:none;border-color:var(--teal-600)}
-
-/* ── Шалгалтын төрөл товч ── */
-.exam-type-grid{display:flex;flex-direction:column;gap:.3rem}
-.et-btn{width:100%;text-align:left;padding:.55rem .8rem;border-radius:8px;border:1.5px solid var(--green-100);background:#fff;cursor:pointer;transition:all .15s}
-.et-btn:hover{border-color:var(--teal-600)}
-.et-btn.active{border-color:var(--teal-600);background:var(--teal-50)}
-.et-name{font-size:.83rem;font-weight:700;color:var(--text-dark)}
-.et-meta{font-size:.7rem;color:var(--text-muted);margin-top:1px}
-
-/* ── Анги товч ── */
-.grade-grid{display:flex;flex-wrap:wrap;gap:.3rem}
-.grade-btn{width:30px;height:30px;border-radius:6px;border:1.5px solid var(--green-200);background:#fff;cursor:pointer;font-size:.78rem;font-weight:700;color:var(--text-dark);transition:all .15s;display:flex;align-items:center;justify-content:center}
-.grade-btn:hover{border-color:var(--teal-600)}
-.grade-btn.active{background:var(--teal-600);color:#fff;border-color:var(--teal-600)}
-.grade-btn.dimmed{opacity:.3;pointer-events:none}
-
-/* ── Үнэлгээний нэгж accordion ── */
-.nj-accordion{display:flex;flex-direction:column;gap:.3rem;margin-top:.2rem}
-.nj-item{border:1.5px solid var(--green-100);border-radius:8px;overflow:hidden;background:#fff}
-.nj-header{display:flex;align-items:center;gap:.5rem;padding:.5rem .7rem;cursor:pointer;user-select:none;transition:background .12s}
-.nj-header:hover{background:var(--green-50)}
-.nj-header.open{background:var(--teal-50);border-bottom:1.5px solid var(--green-100)}
-.nj-icon{font-size:.7rem;color:var(--teal-600);transition:transform .15s;flex-shrink:0}
-.nj-icon.open{transform:rotate(90deg)}
-.nj-title{font-size:.8rem;font-weight:700;color:var(--text-dark);flex:1;line-height:1.3}
-.nj-count{font-size:.68rem;padding:1px 7px;border-radius:20px;background:var(--green-50);color:var(--teal-600);font-weight:700;white-space:nowrap;flex-shrink:0}
-.nj-count.has{background:var(--teal-600);color:#fff}
-.nj-body{display:none;padding:.4rem .5rem .5rem}
-.nj-body.open{display:block}
-
-/* ── Суралцахуйн үр дүн ── */
-.surd-item{margin-bottom:.4rem}
-.surd-header{font-size:.72rem;color:var(--text-mid);font-weight:600;margin-bottom:.25rem;padding:.2rem .3rem;background:var(--green-50);border-radius:4px;line-height:1.4}
-.shalguur-row{display:flex;align-items:center;gap:.4rem;padding:.25rem .3rem;border-radius:5px;transition:background .1s}
-.shalguur-row:hover{background:var(--green-50)}
-.shalguur-check{display:flex;align-items:center;gap:.35rem;flex:1;cursor:pointer;min-width:0}
-.shalguur-check input[type=checkbox]{width:14px;height:14px;accent-color:var(--teal-600);flex-shrink:0;cursor:pointer}
-.shalguur-text{font-size:.72rem;color:var(--text-dark);line-height:1.4;flex:1;min-width:0}
-.shalguur-level{font-size:.63rem;padding:1px 5px;border-radius:10px;font-weight:700;flex-shrink:0}
-.level-М{background:#e8f5e9;color:#2e7d32}
-.level-Ч{background:#e3f2fd;color:#1565c0}
-.level-Х{background:#fff3e0;color:#e65100}
-.shalguur-num{display:flex;align-items:center;gap:2px;flex-shrink:0}
-.num-btn{width:20px;height:20px;border:1px solid var(--green-200);background:#fff;border-radius:4px;font-size:.78rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-mid);transition:all .1s;line-height:1}
-.num-btn:hover{border-color:var(--teal-600);color:var(--teal-600)}
-.num-val{font-size:.78rem;font-weight:700;color:var(--teal-600);min-width:16px;text-align:center}
-
-/* ── Нийт тооны мөр ── */
-.bp-total-bar{background:var(--teal-50);border:1.5px solid var(--teal-600);border-radius:8px;padding:.5rem .8rem;font-size:.8rem;display:flex;gap:1rem;flex-wrap:wrap;margin-top:.2rem}
-.bp-total-bar strong{color:var(--teal-600)}
-.level-summary{display:flex;gap:.6rem;font-size:.72rem;color:var(--text-mid)}
-.ls-item{display:flex;align-items:center;gap:.25rem}
-
-/* ── Үр дүн хэсэг ── */
-.exam-result-wrap{background:#fff;border-radius:12px;border:1.5px solid var(--green-100);padding:1.5rem}
-.exam-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
-.exam-title-row h2{font-size:1.05rem;font-weight:800;margin:0 0 .3rem}
-.exam-meta{display:flex;gap:.4rem;flex-wrap:wrap}
-.exam-badge{font-size:.7rem;padding:2px 9px;border-radius:20px;background:var(--green-50);border:1px solid var(--green-100);color:var(--text-mid);font-weight:600}
-.exam-stats{text-align:right;flex-shrink:0}
-.stat-block{margin-bottom:.2rem}
-.stat-num{font-size:1.8rem;font-weight:900;color:var(--teal-600);line-height:1}
-.stat-lbl{font-size:.68rem;color:var(--text-muted)}
-.exam-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin:1rem 0}
-
-/* ── Blueprint хүснэгт (үр дүнд харуулах) ── */
-.bp-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:1rem}
-.bp-table th{background:var(--green-50);padding:.35rem .6rem;text-align:left;font-size:.68rem;font-weight:700;color:var(--text-muted);border-bottom:2px solid var(--green-100)}
-.bp-table td{padding:.35rem .6rem;border-bottom:1px solid var(--green-50);vertical-align:top}
-.bp-table tr:last-child td{border-bottom:none}
-.bp-table .nj-col{font-weight:600;color:var(--text-dark)}
-.bp-table .sh-col{color:var(--text-mid);font-size:.72rem;line-height:1.4}
-.level-tag{display:inline-block;font-size:.63rem;padding:1px 6px;border-radius:10px;font-weight:700;margin-right:2px}
-.lvl-M{background:#e8f5e9;color:#2e7d32}
-.lvl-C{background:#e3f2fd;color:#1565c0}
-.lvl-X{background:#fff3e0;color:#e65100}
-
-/* ── Даалгаврын жагсаалт ── */
-.questions-list{display:flex;flex-direction:column;gap:.5rem}
-.q-item{background:#fff;border:1.5px solid var(--green-100);border-radius:8px;padding:.65rem .9rem;display:flex;gap:.7rem;align-items:flex-start}
-.q-num{min-width:26px;height:26px;border-radius:50%;background:var(--teal-600);color:#fff;font-size:.75rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.q-body{flex:1;min-width:0}
-.q-text{font-size:.85rem;line-height:1.7;color:var(--text-dark);margin-bottom:.25rem;word-break:break-word}
-.q-tags{display:flex;gap:.3rem;flex-wrap:wrap}
-.q-tag{font-size:.67rem;padding:1px 7px;border-radius:20px;font-weight:600}
-.q-score{font-size:.7rem;color:var(--text-muted);white-space:nowrap;flex-shrink:0}
-
-/* ── Задгай хэсэг ── */
-.zadgai-section{margin-top:1.2rem;border-top:2px solid var(--green-100);padding-top:1rem}
-.zadgai-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;flex-wrap:wrap;gap:.4rem}
-.zadgai-cards{display:flex;flex-direction:column;gap:.7rem;margin-top:.5rem}
-.zq-card{background:#fff;border:1.5px solid var(--green-100);border-radius:10px;padding:.85rem 1rem}
-.zq-card.ai-gen{border-color:#fde047;background:#fefce8}
-.zq-card.db-src{border-color:#86efac;background:#f0fdf4}
-.zq-card-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;flex-wrap:wrap}
-.zq-num{min-width:24px;height:24px;border-radius:50%;background:var(--teal-600);color:#fff;font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.zq-title{font-size:.8rem;font-weight:700;color:var(--text-dark);flex:1}
-.zq-score-badge{font-size:.7rem;padding:2px 7px;border-radius:20px;background:var(--green-50);border:1px solid var(--green-100);color:var(--teal-600);font-weight:700;cursor:pointer}
-.zq-score-edit{width:42px;padding:2px 5px;border:1.5px solid var(--teal-600);border-radius:5px;font-size:.78rem;text-align:center;display:none}
-.zq-body{font-size:.83rem;line-height:1.75;color:var(--text-dark);white-space:pre-wrap;word-break:break-word}
-.zq-edit-area{width:100%;min-height:70px;padding:.4rem;border:1.5px solid var(--teal-600);border-radius:7px;font-size:.82rem;font-family:inherit;resize:vertical;display:none;box-sizing:border-box;margin-top:.3rem}
-.zq-actions{display:flex;gap:.35rem;margin-top:.4rem;flex-wrap:wrap}
-.btn-xs{padding:2px 9px;font-size:.7rem;border-radius:5px;border:1.5px solid var(--green-200);background:#fff;cursor:pointer;font-weight:600;color:var(--text-mid);transition:all .12s}
-.btn-xs:hover{border-color:var(--teal-600);color:var(--teal-600)}
-.btn-xs.danger:hover{border-color:#ef4444;color:#ef4444}
-.zq-answer-toggle{font-size:.72rem;color:var(--teal-600);cursor:pointer;text-decoration:underline;margin-top:.25rem;display:inline-block}
-.zq-answer-box{background:var(--green-50);border-left:3px solid var(--teal-600);padding:.35rem .6rem;border-radius:0 5px 5px 0;font-size:.8rem;margin-top:.25rem;display:none;white-space:pre-wrap}
-.zq-source-label{font-size:.65rem;color:var(--text-muted);margin-top:.25rem}
-.zadgai-source-badge{font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600}
-.zadgai-source-db{background:#f0fdf4;border:1px solid #86efac;color:#166534}
-.zadgai-source-ai{background:#fef9c3;border:1px solid #fde047;color:#854d0e}
-.zadgai-source-mix{background:#eff6ff;border:1px solid #93c5fd;color:#1e40af}
-.zadgai-score-total{font-size:.8rem;color:var(--text-mid);display:flex;gap:.8rem;padding:.4rem .6rem;background:var(--green-50);border-radius:7px;margin-top:.4rem}
-.zadgai-action-bar{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem}
-
-/* ── Empty state ── */
-.empty-result{text-align:center;padding:4rem 2rem;color:var(--text-muted)}
-.empty-icon{font-size:2.5rem;margin-bottom:.7rem}
-
-/* ── Loader ── */
-.zq-loading{text-align:center;padding:1.5rem;color:var(--text-muted);font-size:.83rem}
-</style>
-
-<div class="bp-wrap">
-  <!-- ══ ЗҮҮН ПАНЕЛ ══ -->
-  <div class="bp-panel">
-
-    <!-- ① Шалгалтын төрөл -->
-    <div class="panel-section">
-      <div class="panel-label">① Шалгалтын төрөл</div>
-      <div class="exam-type-grid">
-        {% for eid, et in exam_types.items() %}
-        <button class="et-btn" id="etbtn-{{ eid }}" onclick="pickExam('{{ eid }}')">
-          <div class="et-name">{{ et.icon }} {{ et.name }}</div>
-          <div class="et-meta">{{ et.blueprint.duration }} · {{ et.blueprint.total }} даалгавар</div>
-        </button>
-        {% endfor %}
-      </div>
-    </div>
-
-    <!-- ② Анги -->
-    <div class="panel-section">
-      <div class="panel-label">② Анги</div>
-      <div class="grade-grid">
-        {% for g in range(1,13) %}
-        <button class="grade-btn" id="gbtn-{{ g }}" onclick="pickGrade({{ g }})">{{ g }}</button>
-        {% endfor %}
-      </div>
-      <div id="grade-exam-info" style="font-size:.72rem;color:var(--text-muted);margin-top:.3rem;min-height:14px"></div>
-    </div>
-
-    <!-- ③ Хичээл -->
-    <div class="panel-section">
-      <div class="panel-label">③ Хичээл</div>
-      <select class="select-full" id="subject-sel" onchange="loadBlueprint()">
-        {% for s in all_subjects %}<option>{{ s }}</option>{% endfor %}
-      </select>
-    </div>
-
-    <!-- ④ Үнэлгээний нэгж / Шалгуур — accordion -->
-    <div class="panel-section" style="flex:1;min-height:0">
-      <div class="panel-label" style="display:flex;align-items:center;justify-content:space-between">
-        <span>④ Блюпринт — Шалгуур</span>
-        <button onclick="selectAll()" style="font-size:.65rem;padding:1px 7px;border:1px solid var(--green-200);background:#fff;border-radius:5px;cursor:pointer;color:var(--text-mid)">Бүгд</button>
-      </div>
-      <div id="nj-accordion" class="nj-accordion">
-        <div style="text-align:center;padding:1rem;color:var(--text-muted);font-size:.8rem">
-          <div class="spinner" style="margin:0 auto .4rem"></div>
-          Блюпринт ачааллаж байна...
-        </div>
-      </div>
-    </div>
-
-    <!-- Нийт тоо -->
-    <div class="bp-total-bar" id="bp-total-bar">
-      <span>Нийт: <strong id="total-q">0</strong> даалгавар</span>
-      <span>Оноо: <strong id="total-s">0</strong></span>
-      <div class="level-summary">
-        <span class="ls-item"><span class="shalguur-level level-М">М</span> <strong id="total-m">0</strong></span>
-        <span class="ls-item"><span class="shalguur-level level-Ч">Ч</span> <strong id="total-c">0</strong></span>
-        <span class="ls-item"><span class="shalguur-level level-Х">Х</span> <strong id="total-x">0</strong></span>
-      </div>
-    </div>
-
-    <!-- Шалгалт үүсгэх товч -->
-    <button class="btn btn-primary btn-full" onclick="doGenerate()" style="margin-top:.2rem">✦ Шалгалт үүсгэх</button>
-    <div style="font-size:.68rem;color:var(--text-muted);text-align:center;margin-top:.2rem">
-      Сангаас татах · Дутуутай бол AI нэмнэ
-    </div>
-  </div>
-
-  <!-- ══ БАРУУН ТАЛБАР ══ -->
-  <div class="bp-main">
-    <div id="exam-empty" class="empty-result">
-      <div class="empty-icon">◈</div>
-      <p>Хичээл, блюпринтоо тохируулаад</p>
-      <p style="font-weight:700;margin-top:.3rem">"Шалгалт үүсгэх" дарна уу</p>
-    </div>
-
-    <div id="exam-result" style="display:none">
-      <div class="exam-result-wrap">
-        <!-- Толгой -->
-        <div class="exam-header">
-          <div class="exam-title-row">
-            <h2 id="exam-title"></h2>
-            <div class="exam-meta" id="exam-meta"></div>
-          </div>
-          <div class="exam-stats">
-            <div class="stat-block">
-              <div class="stat-num" id="stat-q">0</div>
-              <div class="stat-lbl">Тест</div>
-            </div>
-            <div class="stat-block">
-              <div class="stat-num" id="stat-s" style="color:#f0a500">0</div>
-              <div class="stat-lbl">Оноо</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Үйлдлийн товчнууд -->
-        <div class="exam-actions">
-          <button class="btn btn-primary" onclick="doPrint()">🖨 Хэвлэх</button>
-          <button class="btn btn-outline" onclick="doDownload()">⬇ Word</button>
-          <button class="btn btn-outline" onclick="doDownloadWithAnswers()">⬇ Word (хариулттай)</button>
-          <button class="btn btn-outline" id="btn-pdf-test" onclick="doDownloadPDF('test')">⬇ PDF</button>
-          <button class="btn btn-outline" id="btn-pdf-full" onclick="doDownloadPDF('full')">⬇ PDF (бүрэн)</button>
-          <button class="btn btn-outline" onclick="doGenerate()">↻ Дахин</button>
-        </div>
-
-        <!-- Blueprint хураангуй хүснэгт -->
-        <div id="bp-summary-wrap" style="display:none;margin-bottom:1rem">
-          <table class="bp-table" id="bp-summary-table">
-            <thead>
-              <tr>
-                <th style="width:28%">Үнэлгээний нэгж</th>
-                <th>Шалгуур</th>
-                <th style="width:6%;text-align:center">Д/т</th>
-                <th style="width:8%;text-align:center">Оноо</th>
-                <th style="width:8%;text-align:center">Түвшин</th>
-              </tr>
-            </thead>
-            <tbody id="bp-summary-tbody"></tbody>
-          </table>
-        </div>
-
-        <!-- Даалгаврын жагсаалт -->
-        <div class="questions-list" id="questions-list"></div>
-
-        <!-- II хэсэг — Задгай -->
-        <div id="zadgai-section" class="zadgai-section" style="display:none">
-          <div class="zadgai-head">
-            <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
-              <h3 style="font-size:.92rem;font-weight:800;margin:0">📝 II хэсэг — Задгай даалгавар</h3>
-              <span id="zadgai-source-badge" class="zadgai-source-badge" style="display:none"></span>
-            </div>
-            <div style="display:flex;gap:.4rem">
-              <button class="btn btn-sm btn-outline" id="btn-regen-zadgai" onclick="regenZadgai()" style="display:none">↻ Дахин</button>
-              <button class="btn btn-sm btn-primary" id="btn-gen-zadgai" onclick="genZadgai()">✦ Үүсгэх</button>
-            </div>
-          </div>
-          <div id="zadgai-info" style="font-size:.8rem;color:var(--text-muted);margin-bottom:.3rem"></div>
-          <div id="zadgai-cards" class="zadgai-cards"></div>
-          <div id="zadgai-score-total" class="zadgai-score-total" style="display:none">
-            <span>Бодлого: <strong id="zstat-q">0</strong></span>
-            <span>Оноо: <strong id="zstat-s">0</strong></span>
-          </div>
-          <div id="zadgai-action-bar" class="zadgai-action-bar" style="display:none">
-            <button class="btn btn-sm btn-outline" onclick="printZadgai()">🖨 II хэсэг</button>
-            <button class="btn btn-sm btn-outline" onclick="downloadZadgaiWord()">⬇ Word (II)</button>
-            <button class="btn btn-sm btn-outline" onclick="downloadFullWord()">⬇ Word (I+II)</button>
-            <button class="btn btn-sm btn-outline" onclick="doDownloadPDF('full')">⬇ PDF (I+II)</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-// ═══════════════════════════════════════════════════════════
-// ТОГТМОЛУУД — Jinja-с дамжина
-// ═══════════════════════════════════════════════════════════
-const ET       = {{ exam_types | tojson }};
-const GM       = {{ grade_exam_map | tojson }};
-const LEVELS   = {{ levels | tojson }};
-const LEVEL_SCORE = {"Мэдлэг ойлголт":1,"Чадвар":2,"Хэрэглээ":3};
-
-// ── Хичээл тус бүрийн блюпринт (Firebase-с ачаална) ──
-// Бүтэц: { "Математик": { nj: [{id, name, surd:[{id,name,shalguur:[{id,text,level,score}]}]}] } }
-var BLUEPRINTS = {};
-
-var curExamId  = null;
-var curGrade   = null;
-var examData   = null;
-var zadgaiCards= [];
-
-// Сонгосон шалгуур: { shalguurId: { count:N, score:S, level:"М"|"Ч"|"Х", njName, shalguurText } }
-var selected   = {};
-
-// ═══════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', function() {
-  var init = new URLSearchParams(location.search).get('exam') || Object.keys(ET)[0];
-  pickExam(init);
-  loadBlueprint();
-});
-
-// ═══════════════════════════════════════════════════════════
-// БЛЮПРИНТ АЧААЛАХ — /api/get-blueprint
-// ═══════════════════════════════════════════════════════════
-async function loadBlueprint() {
-  var subject = document.getElementById('subject-sel').value;
-  var acc = document.getElementById('nj-accordion');
-  acc.innerHTML = '<div class="zq-loading"><div class="spinner"></div><p>Ачааллаж байна...</p></div>';
-  selected = {};
-  updateTotalBar();
-
-  // Cache шалгах
-  if (BLUEPRINTS[subject]) {
-    renderAccordion(BLUEPRINTS[subject]);
-    return;
-  }
-
-  try {
-    var res = await fetch('/api/get-blueprint?subject='+encodeURIComponent(subject)+'&grade='+(curGrade||''));
-    if (!res.ok) throw new Error('HTTP '+res.status);
-    var ct = res.headers.get('content-type')||'';
-    if (!ct.includes('application/json')) throw new Error('JSON биш хариу');
-    var data = await res.json();
-    if (data.error) throw new Error(data.error);
-    BLUEPRINTS[subject] = data.blueprint || [];
-    renderAccordion(BLUEPRINTS[subject]);
-  } catch(e) {
-    // Fallback — хоосон бол түүвэр өгөгдөл харуулна
-    acc.innerHTML = '<div style="color:#c62828;font-size:.78rem;padding:.5rem">⚠ Блюпринт олдсонгүй: '+e.message+'<br><span style="color:var(--text-muted)">admin панелд блюпринт оруулна уу</span></div>';
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-// ACCORDION РЕНДЭР
-// Бүтэц: [{id, name, surd:[{id,name,shalguur:[{id,text,level,score}]}]}]
-// ═══════════════════════════════════════════════════════════
-function renderAccordion(njs) {
-  var acc = document.getElementById('nj-accordion');
-  if (!njs || njs.length === 0) {
-    acc.innerHTML = '<div style="color:var(--text-muted);font-size:.78rem;padding:.5rem;text-align:center">Блюпринт байхгүй байна</div>';
-    return;
-  }
-  acc.innerHTML = njs.map(function(nj, ni) {
-    var surds = (nj.surd||nj.surds||[]).map(function(surd) {
-      var shRows = (surd.shalguur||[]).map(function(sh) {
-        var lvlKey = levelKey(sh.level);
-        return '<div class="shalguur-row" id="shrow-'+sh.id+'">' +
-          '<label class="shalguur-check">' +
-            '<input type="checkbox" id="shch-'+sh.id+'" onchange="toggleSh(\''+sh.id+'\',this.checked,'+JSON.stringify(sh.score||1)+',\''+lvlKey+'\','+JSON.stringify(nj.name)+','+JSON.stringify(sh.text)+')">' +
-            '<span class="shalguur-text">'+escHtml(sh.text)+'</span>' +
-          '</label>' +
-          '<span class="shalguur-level level-'+lvlKey+'">'+lvlKey+'</span>' +
-          '<div class="shalguur-num" id="shnum-'+sh.id+'" style="display:none">' +
-            '<button class="num-btn" onclick="changeCount(\''+sh.id+'\','+sh.score+',-1)">−</button>' +
-            '<span class="num-val" id="shval-'+sh.id+'">1</span>' +
-            '<button class="num-btn" onclick="changeCount(\''+sh.id+'\','+sh.score+',1)">+</button>' +
-          '</div>' +
-        '</div>';
-      }).join('');
-      return '<div class="surd-item">' +
-        '<div class="surd-header">'+escHtml(surd.name||surd.text||'')+'</div>' +
-        shRows +
-      '</div>';
-    }).join('');
-    return '<div class="nj-item" id="njitem-'+nj.id+'">' +
-      '<div class="nj-header" id="njhead-'+nj.id+'" onclick="toggleNj(\''+nj.id+'\')">' +
-        '<span class="nj-icon" id="njicon-'+nj.id+'">▶</span>' +
-        '<span class="nj-title">'+escHtml(nj.name)+'</span>' +
-        '<span class="nj-count" id="njcnt-'+nj.id+'">0</span>' +
-      '</div>' +
-      '<div class="nj-body" id="njbody-'+nj.id+'">' + surds + '</div>' +
-    '</div>';
-  }).join('');
-}
-
-function levelKey(lvl) {
-  if (!lvl) return 'М';
-  var l = lvl.toString().toLowerCase();
-  if (l.startsWith('м') || l.startsWith('m') || l.includes('мэдлэг') || l.includes('ойлголт')) return 'М';
-  if (l.startsWith('ч') || l.includes('чадвар')) return 'Ч';
-  if (l.startsWith('х') || l.includes('хэрэглээ')) return 'Х';
-  return 'М';
-}
-
-function toggleNj(id) {
-  var head = document.getElementById('njhead-'+id);
-  var body = document.getElementById('njbody-'+id);
-  var icon = document.getElementById('njicon-'+id);
-  if (!head) return;
-  var open = body.classList.contains('open');
-  if (open) {
-    body.classList.remove('open');
-    head.classList.remove('open');
-    icon.classList.remove('open');
-  } else {
-    body.classList.add('open');
-    head.classList.add('open');
-    icon.classList.add('open');
-  }
-}
-
-// ── Checkbox toggle ──
-function toggleSh(id, checked, score, lvl, njName, text) {
-  var numEl = document.getElementById('shnum-'+id);
-  if (checked) {
-    selected[id] = {count:1, score:score, level:lvl, njName:njName, text:text};
-    if (numEl) numEl.style.display='flex';
-  } else {
-    delete selected[id];
-    if (numEl) numEl.style.display='none';
-  }
-  updateTotalBar();
-  updateNjCount();
-}
-
-// ── Тоо өөрчлөх ──
-function changeCount(id, score, delta) {
-  if (!selected[id]) return;
-  var newCount = (selected[id].count||1) + delta;
-  if (newCount < 1) {
-    // 0 болбол checkbox-г унтраах
-    var cb = document.getElementById('shch-'+id);
-    if (cb) { cb.checked=false; }
-    delete selected[id];
-    var numEl = document.getElementById('shnum-'+id);
-    if (numEl) numEl.style.display='none';
-  } else {
-    selected[id].count = newCount;
-  }
-  var valEl = document.getElementById('shval-'+id);
-  if (valEl && selected[id]) valEl.textContent = selected[id].count;
-  updateTotalBar();
-  updateNjCount();
-}
-
-function updateTotalBar() {
-  var totalQ=0, totalS=0, mCount=0, cCount=0, xCount=0;
-  Object.values(selected).forEach(function(s) {
-    totalQ += s.count;
-    totalS += s.count * (s.score||1);
-    if (s.level==='М') mCount+=s.count;
-    else if (s.level==='Ч') cCount+=s.count;
-    else if (s.level==='Х') xCount+=s.count;
-  });
-  setText('total-q', totalQ);
-  setText('total-s', totalS);
-  setText('total-m', mCount);
-  setText('total-c', cCount);
-  setText('total-x', xCount);
-}
-
-function updateNjCount() {
-  // NJ тус бүрийн сонгогдсон тоог badge-д харуулах
-  var subject = document.getElementById('subject-sel')?.value;
-  var bp = BLUEPRINTS[subject] || [];
-  bp.forEach(function(nj) {
-    var cnt = 0;
-    (nj.surd||nj.surds||[]).forEach(function(surd) {
-      (surd.shalguur||[]).forEach(function(sh) {
-        if (selected[sh.id]) cnt += selected[sh.id].count||1;
-      });
-    });
-    var badge = document.getElementById('njcnt-'+nj.id);
-    if (badge) {
-      badge.textContent = cnt;
-      badge.className = 'nj-count' + (cnt>0 ? ' has' : '');
-    }
-  });
-}
-
-// ── Бүгдийг сонгох ──
-function selectAll() {
-  var subject = document.getElementById('subject-sel')?.value;
-  var bp = BLUEPRINTS[subject] || [];
-  selected = {};
-  bp.forEach(function(nj) {
-    (nj.surd||nj.surds||[]).forEach(function(surd) {
-      (surd.shalguur||[]).forEach(function(sh) {
-        selected[sh.id] = {count:1, score:sh.score||1, level:levelKey(sh.level), njName:nj.name, text:sh.text};
-        var cb = document.getElementById('shch-'+sh.id);
-        if (cb) cb.checked = true;
-        var numEl = document.getElementById('shnum-'+sh.id);
-        if (numEl) numEl.style.display='flex';
-        var valEl = document.getElementById('shval-'+sh.id);
-        if (valEl) valEl.textContent = 1;
-      });
-    });
-  });
-  updateTotalBar();
-  updateNjCount();
-}
-
-// ═══════════════════════════════════════════════════════════
-// EXAM TYPE / GRADE
-// ═══════════════════════════════════════════════════════════
-function pickExam(eid) {
-  if (!ET[eid]) return;
-  curExamId = eid;
-  document.querySelectorAll('.et-btn').forEach(function(b){b.classList.remove('active')});
-  var eb = document.getElementById('etbtn-'+eid);
-  if (eb) eb.classList.add('active');
-  var grades = ET[eid].grades;
-  for (var g=1;g<=12;g++) {
-    var gb=document.getElementById('gbtn-'+g);
-    if (!gb) continue;
-    if (grades.indexOf(g)>=0){gb.classList.remove('dimmed')}
-    else{gb.classList.add('dimmed');gb.classList.remove('active')}
-  }
-  var gSel = (curGrade && grades.indexOf(curGrade)>=0) ? curGrade : grades[0];
-  curGrade = gSel;
-  document.querySelectorAll('.grade-btn').forEach(function(b){b.classList.remove('active')});
-  var sgb = document.getElementById('gbtn-'+gSel);
-  if (sgb) sgb.classList.add('active');
-  updateGradeInfo();
-}
-
-function pickGrade(g) {
-  curGrade = g;
-  document.querySelectorAll('.grade-btn').forEach(function(b){b.classList.remove('active')});
-  var gb = document.getElementById('gbtn-'+g);
-  if (gb) gb.classList.add('active');
-  if (curExamId && ET[curExamId] && ET[curExamId].grades.indexOf(g)<0) {
-    var eid = GM[g]||'devshih';
-    pickExam(eid); return;
-  }
-  updateGradeInfo();
-  // Анги өөрчлөгдвөл блюпринт дахин ачаалах
-  var subject = document.getElementById('subject-sel')?.value;
-  if (subject) { delete BLUEPRINTS[subject]; loadBlueprint(); }
-}
-
-function updateGradeInfo() {
-  var info = document.getElementById('grade-exam-info');
-  if (!info || !curExamId || !ET[curExamId]) return;
-  var et = ET[curExamId];
-  info.innerHTML = '<span style="color:'+et.color+'">'+et.icon+' '+curGrade+'-р анги — '+et.name+'</span>';
-}
-
-// ═══════════════════════════════════════════════════════════
-// ШАЛГАЛТ ҮҮСГЭХ
-// ═══════════════════════════════════════════════════════════
-async function doGenerate() {
-  var totalQ = Object.values(selected).reduce(function(a,s){return a+s.count},0);
-  if (totalQ === 0) { alert('Блюпринтийн шалгуур сонгоно уу'); return; }
-
-  var subject = document.getElementById('subject-sel').value;
-
-  // Blueprint-ийн тайлбар хүснэгт бэлдэх
-  var bpRows = [];
-  var subject_bp = BLUEPRINTS[subject] || [];
-  subject_bp.forEach(function(nj) {
-    (nj.surd||nj.surds||[]).forEach(function(surd) {
-      (surd.shalguur||[]).forEach(function(sh) {
-        if (selected[sh.id]) {
-          bpRows.push({
-            njName: nj.name,
-            shText: sh.text,
-            count: selected[sh.id].count,
-            score: sh.score||1,
-            level: levelKey(sh.level)
-          });
-        }
-      });
-    });
-  });
-
-  document.getElementById('exam-empty').style.display='none';
-  document.getElementById('exam-result').style.display='block';
-  document.getElementById('questions-list').innerHTML =
-    '<div style="text-align:center;padding:2rem"><div class="spinner"></div><p style="margin-top:.5rem">Шалгалт үүсгэж байна...</p></div>';
-  resetZadgaiSection();
-
-  // Blueprint хүснэгт харуулах
-  renderBpSummary(bpRows);
-
-  try {
-    var payload = {
-      grade: curGrade||9, subject: subject,
-      exam_id: curExamId||'devshih',
-      blueprint_rows: bpRows,
-      use_ai: true
-    };
-    var res = await fetch('/api/generate-exam', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-    var data = await res.json();
-    if (data.error) {
-      document.getElementById('questions-list').innerHTML =
-        '<div style="padding:1rem;background:#fff3f3;border-radius:8px;border:1px solid #ffcdd2">' +
-        '<p style="color:#c62828;font-weight:700">❌ '+data.error+'</p>' +
-        '<p style="color:#666;font-size:.8rem;margin-top:.3rem">💡 Даалгавар санд нэмэх эсвэл ANTHROPIC_API_KEY тохируулна уу</p></div>';
-      return;
-    }
-    renderExam(data, bpRows);
-  } catch(e) {
-    document.getElementById('questions-list').innerHTML =
-      '<p style="color:#c62828;padding:1rem">❌ '+e.message+'</p>';
-  }
-}
-
-// ── Blueprint хүснэгт ──
-function renderBpSummary(rows) {
-  var wrap = document.getElementById('bp-summary-wrap');
-  var tbody = document.getElementById('bp-summary-tbody');
-  if (!rows || rows.length===0) { wrap.style.display='none'; return; }
-
-  // NJ-аар бүлэглэх
-  var grouped = {};
-  rows.forEach(function(r) {
-    if (!grouped[r.njName]) grouped[r.njName]=[];
-    grouped[r.njName].push(r);
-  });
-
-  var html = '';
-  Object.keys(grouped).forEach(function(nj) {
-    var items = grouped[nj];
-    items.forEach(function(r, i) {
-      var lvlClass = {'М':'lvl-M','Ч':'lvl-C','Х':'lvl-X'}[r.level]||'lvl-M';
-      html += '<tr>' +
-        (i===0 ? '<td class="nj-col" rowspan="'+items.length+'">'+escHtml(nj)+'</td>' : '') +
-        '<td class="sh-col">'+escHtml(r.shText)+'</td>' +
-        '<td style="text-align:center;font-weight:700">'+r.count+'</td>' +
-        '<td style="text-align:center">'+r.count*r.score+'</td>' +
-        '<td style="text-align:center"><span class="level-tag '+lvlClass+'">'+r.level+'</span></td>' +
-      '</tr>';
-    });
-  });
-
-  // Нийт мөр
-  var totalQ = rows.reduce(function(a,r){return a+r.count},0);
-  var totalS = rows.reduce(function(a,r){return a+r.count*r.score},0);
-  html += '<tr style="background:var(--green-50);font-weight:700">' +
-    '<td colspan="2">Нийт</td>' +
-    '<td style="text-align:center">'+totalQ+'</td>' +
-    '<td style="text-align:center">'+totalS+'</td>' +
-    '<td></td></tr>';
-
-  tbody.innerHTML = html;
-  wrap.style.display = 'block';
-}
-
-// ═══════════════════════════════════════════════════════════
-// EXAM РЕНДЭР
-// ═══════════════════════════════════════════════════════════
-function renderExam(data, bpRows) {
-  examData = data;
-  examData.bpRows = bpRows;
-  setText('exam-title', data.title||'');
-  setText('stat-q', data.total_questions||0);
-  setText('stat-s', data.total_score||0);
-
-  var meta = document.getElementById('exam-meta');
-  meta.innerHTML =
-    '<span class="exam-badge">'+data.grade+'-р анги</span>' +
-    '<span class="exam-badge">⏱ '+data.duration+'</span>' +
-    (data.ai_generated ? '<span class="exam-badge">🤖 AI: '+data.ai_generated+'</span>' : '') +
-    (data.source_note ? '<span class="exam-badge">'+data.source_note+'</span>' : '');
-
-  var qs = data.questions||[];
-  var html = qs.map(function(q,i) {
-    var lvlCss = (q.level||'').replace(/ /g,'');
-    var opts='';
-    if (q.options && q.options.length) {
-      opts='<div style="display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.25rem">'+
-        q.options.map(function(o){return '<span class="q-tag" style="background:var(--green-50);border:1px solid var(--green-100);color:var(--text-mid)">'+enrichText(o)+'</span>'}).join('')+'</div>';
-    }
-    return '<div class="q-item">' +
-      '<div class="q-num">'+(i+1)+'</div>' +
-      '<div class="q-body">' +
-        '<div class="q-text">'+enrichText(q.question)+'</div>'+opts+
-        '<div class="q-tags">' +
-          '<span class="q-tag q-level level-'+lvlCss+'">'+q.level+'</span>' +
-          '<span class="q-tag" style="background:#f0f9ff;border:1px solid #bae6fd;color:#0369a1">'+q.bloom+'</span>' +
-        '</div></div>' +
-      '<div class="q-score">'+q.score+'п</div></div>';
-  }).join('');
-
-  document.getElementById('questions-list').innerHTML = html || '<p style="color:var(--text-muted);padding:1rem">Даалгавар байхгүй</p>';
-  var qlist = document.getElementById('questions-list');
-  if (window.mathRender) mathRender(qlist);
-
-  // Задгай хэсэг
-  document.getElementById('zadgai-section').style.display='block';
-  var specs = getZadgaiSpecs(bpRows);
-  var ztotal = specs.reduce(function(a,s){return a+s.score},0);
-  setText('zadgai-info', 'II хэсэг: '+specs.length+' бодлого · '+ztotal+' оноо');
-}
-
-// ── Задгай спецификаци — блюпринтийн Чадвар/Хэрэглээ мөрүүдээс ──
-function getZadgaiSpecs(bpRows) {
-  var specs = [], idx = 1;
-  (bpRows||[]).forEach(function(r) {
-    if (r.level==='Ч' || r.level==='Х') {
-      for (var i=0; i<r.count; i++) {
-        specs.push({
-          num: '2.'+idx,
-          label: (r.level==='Ч'?'Чадварын':'Хэрэглээний')+' бодлого'+(r.count>1?' '+(i+1):''),
-          level: r.level,
-          score: r.score * 2, // Задгай нь тестийн 2 дахин
-          shalguurText: r.shText
-        });
-        idx++;
-      }
-    }
-  });
-  // Хамгийн багадаа 1 задгай
-  if (specs.length===0) specs.push({num:'2.1', label:'Задгай бодлого', level:'Ч', score:4, shalguurText:''});
-  return specs;
-}
-
-// ═══════════════════════════════════════════════════════════
-// ЗАДГАЙ ХЭСЭГ
-// ═══════════════════════════════════════════════════════════
-function resetZadgaiSection() {
-  zadgaiCards=[];
-  var el = document.getElementById('zadgai-cards');
-  if (el) el.innerHTML='';
-  ['zadgai-score-total','zadgai-action-bar'].forEach(function(id){ var e=document.getElementById(id); if(e)e.style.display='none'; });
-  var rb=document.getElementById('btn-regen-zadgai'); if(rb)rb.style.display='none';
-  var gb=document.getElementById('btn-gen-zadgai'); if(gb)gb.style.display='inline-flex';
-  var sb=document.getElementById('zadgai-source-badge'); if(sb)sb.style.display='none';
-}
-
-async function genZadgai() {
-  if (!examData) return;
-  var specs = getZadgaiSpecs(examData.bpRows||[]);
-  var btn = document.getElementById('btn-gen-zadgai');
-  if (btn){ btn.disabled=true; btn.innerHTML='<span class="spinner-sm"></span>'; }
-  var cardsEl = document.getElementById('zadgai-cards');
-  cardsEl.innerHTML='<div class="zq-loading"><div class="spinner"></div><p>Сангаас хайж байна...</p></div>';
-  zadgaiCards=[];
-
-  try {
-    // 1. DB татах
-    var dbQuestions=[];
-    try {
-      var dbRes = await fetch('/api/get-open-questions',{
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({grade:examData.grade, subject:examData.subject, specs:specs})
-      });
-      if (dbRes.ok) {
-        var ct=dbRes.headers.get('content-type')||'';
-        if (ct.includes('application/json')) { var dbData=await dbRes.json(); dbQuestions=dbData.questions||[]; }
-      }
-    } catch(e){ console.warn('DB endpoint байхгүй:', e.message); }
-
-    // 2. Match хийх
-    var aiNeeded=[];
-    specs.forEach(function(spec,i){
-      var matched=dbQuestions.find(function(q){ return q.level===spec.level && !zadgaiCards.find(function(c){return c.db_id===q.id;}); });
-      if (matched) {
-        zadgaiCards.push({id:i,num:spec.num,title:spec.label,body:matched.question,answer:matched.answer||'',score:spec.score,source:'db',db_id:matched.id,editing:false});
-      } else { aiNeeded.push({spec:spec,idx:i}); }
-    });
-
-    // 3. AI нэмэх
-    if (aiNeeded.length>0) {
-      cardsEl.innerHTML='<div class="zq-loading"><div class="spinner"></div><p>'+aiNeeded.length+' бодлогыг AI-аар үүсгэж байна...</p></div>';
-      var aiPrompt = examData.grade+"-р ангийн "+examData.subject+" хичээлийн задгай даалгаврууд зохио.\n"+
-        "Шалгалт: "+examData.title+".\n"+
-        "Бодлогууд:\n"+
-        aiNeeded.map(function(an){ return an.spec.num+" — "+an.spec.label+" ("+an.spec.score+" оноо, шалгуур: "+an.spec.shalguurText+", а) б) в) дэд даалгавартай)"; }).join("\n")+
-        "\n\nЧУХАЛ: Зөвхөн JSON массив буцаа:\n"+
-        '[{"num":"2.1","body":"бодлогын текст","answer":"хариулт"},...]';
-
-      var aiRes=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:aiPrompt}]})});
-      if (!aiRes.ok) throw new Error('HTTP '+aiRes.status);
-      var aiCt=aiRes.headers.get('content-type')||'';
-      if (!aiCt.includes('application/json')) throw new Error('/api/chat JSON биш хариу буцааж байна');
-      var aiData=await aiRes.json();
-      if (aiData.error) throw new Error(aiData.error);
-      var aiQuestions=parseAIJson(aiData.reply||'',aiNeeded);
-      aiNeeded.forEach(function(an,i){
-        var aq=aiQuestions[i]||{};
-        zadgaiCards.push({id:an.idx,num:an.spec.num,title:an.spec.label,body:aq.body||aq.question||'',answer:aq.answer||'',score:an.spec.score,source:'ai',editing:false});
-      });
-    }
-
-    zadgaiCards.sort(function(a,b){return a.id-b.id;});
-    renderZadgaiCards();
-    var dbC=zadgaiCards.filter(function(c){return c.source==='db'}).length;
-    var aiC=zadgaiCards.filter(function(c){return c.source==='ai'}).length;
-    var sb=document.getElementById('zadgai-source-badge');
-    if (sb) {
-      sb.style.display='inline-block';
-      if (dbC>0&&aiC>0){sb.className='zadgai-source-badge zadgai-source-mix';sb.textContent='📚 '+dbC+' · 🤖 '+aiC;}
-      else if (dbC>0){sb.className='zadgai-source-badge zadgai-source-db';sb.textContent='📚 Сан: '+dbC;}
-      else{sb.className='zadgai-source-badge zadgai-source-ai';sb.textContent='🤖 AI: '+aiC;}
-    }
-    if (btn){btn.disabled=false;btn.style.display='none';}
-    var rb=document.getElementById('btn-regen-zadgai');if(rb)rb.style.display='inline-flex';
-  } catch(e) {
-    cardsEl.innerHTML='<div style="color:#c62828;padding:1rem;font-size:.82rem">❌ '+e.message+'</div>';
-    if (btn){btn.disabled=false;btn.innerHTML='✦ Үүсгэх';}
-  }
-}
-
-function regenZadgai(){ resetZadgaiSection(); genZadgai(); }
-
-function renderZadgaiCards() {
-  var el=document.getElementById('zadgai-cards');
-  if (!el||zadgaiCards.length===0){ if(el)el.innerHTML='<p style="color:var(--text-muted)">Задгай даалгавар байхгүй</p>'; return; }
-  el.innerHTML=zadgaiCards.map(function(c){
-    var cls=c.source==='ai'?'ai-gen':'db-src';
-    var srcLbl=c.source==='ai'?'🤖 AI':'📚 Сан';
-    return '<div class="zq-card '+cls+'" id="zcard-'+c.id+'">' +
-      '<div class="zq-card-header">' +
-        '<div class="zq-num">'+c.num+'</div>' +
-        '<div class="zq-title">'+escHtml(c.title)+'</div>' +
-        '<span class="zq-score-badge" id="zscore-badge-'+c.id+'" onclick="editScore('+c.id+')" title="Оноо засах">'+c.score+' оноо</span>' +
-        '<input type="number" min="1" max="30" class="zq-score-edit" id="zscore-input-'+c.id+'" value="'+c.score+'" onblur="saveScore('+c.id+')" onkeydown="if(event.key===\'Enter\')saveScore('+c.id+')">' +
-      '</div>' +
-      '<div class="zq-body" id="zbody-'+c.id+'">'+escHtml(c.body)+'</div>' +
-      '<textarea class="zq-edit-area" id="zedit-'+c.id+'" onkeydown="if(event.ctrlKey&&event.key===\'Enter\')saveEdit('+c.id+')">'+escHtml(c.body)+'</textarea>' +
-      '<div class="zq-actions">' +
-        '<button class="btn-xs" id="zbtn-edit-'+c.id+'" onclick="toggleEdit('+c.id+')">✏ Засах</button>' +
-        '<button class="btn-xs" id="zbtn-save-'+c.id+'" onclick="saveEdit('+c.id+')" style="display:none">💾 Хадгалах</button>' +
-        '<button class="btn-xs" onclick="regenSingle('+c.id+')">↻ Дахин</button>' +
-        '<button class="btn-xs danger" onclick="removeCard('+c.id+')">✕</button>' +
-      '</div>' +
-      (c.answer?'<span class="zq-answer-toggle" onclick="toggleAnswer('+c.id+')">▸ Хариулт</span><div class="zq-answer-box" id="zanswer-'+c.id+'">'+escHtml(c.answer)+'</div>':'')+
-      '<div class="zq-source-label">'+srcLbl+'</div>' +
-    '</div>';
-  }).join('');
-  if (window.mathRender) mathRender(el);
-  updateZStatBar();
-  var tot=document.getElementById('zadgai-score-total'); if(tot)tot.style.display='flex';
-  var act=document.getElementById('zadgai-action-bar'); if(act)act.style.display='flex';
-}
-
-function updateZStatBar(){
-  setText('zstat-q',zadgaiCards.length);
-  setText('zstat-s',zadgaiCards.reduce(function(a,c){return a+c.score},0));
-}
-
-// ── Задгай card үйлдлүүд ──
-function toggleEdit(id){
-  var c=zadgaiCards.find(function(x){return x.id===id}); if(!c)return;
-  c.editing=!c.editing;
-  var body=document.getElementById('zbody-'+id),edit=document.getElementById('zedit-'+id);
-  var be=document.getElementById('zbtn-edit-'+id),bs=document.getElementById('zbtn-save-'+id);
-  if(c.editing){body.style.display='none';edit.style.display='block';edit.value=c.body;edit.focus();if(be)be.style.display='none';if(bs)bs.style.display='inline-block';}
-  else{body.style.display='block';edit.style.display='none';if(be)be.style.display='inline-block';if(bs)bs.style.display='none';}
-}
-function saveEdit(id){
-  var c=zadgaiCards.find(function(x){return x.id===id}); if(!c)return;
-  var edit=document.getElementById('zedit-'+id); if(edit)c.body=edit.value;
-  c.editing=false; c.source='edited';
-  var body=document.getElementById('zbody-'+id); if(body){body.innerHTML=escHtml(c.body);body.style.display='block';}
-  var editEl=document.getElementById('zedit-'+id); if(editEl)editEl.style.display='none';
-  var be=document.getElementById('zbtn-edit-'+id),bs=document.getElementById('zbtn-save-'+id);
-  if(be)be.style.display='inline-block'; if(bs)bs.style.display='none';
-  var card=document.getElementById('zcard-'+id); if(card){var lbl=card.querySelector('.zq-source-label');if(lbl)lbl.textContent='✏ Засварласан';}
-  if(window.mathRender)mathRender(document.getElementById('zbody-'+id));
-}
-function editScore(id){
-  var badge=document.getElementById('zscore-badge-'+id),input=document.getElementById('zscore-input-'+id);
-  if(badge)badge.style.display='none'; if(input){input.style.display='inline-block';input.focus();input.select();}
-}
-function saveScore(id){
-  var c=zadgaiCards.find(function(x){return x.id===id}); if(!c)return;
-  var input=document.getElementById('zscore-input-'+id),badge=document.getElementById('zscore-badge-'+id);
-  if(input){c.score=parseInt(input.value)||1;input.style.display='none';}
-  if(badge){badge.textContent=c.score+' оноо';badge.style.display='inline-block';}
-  updateZStatBar();
-}
-function toggleAnswer(id){
-  var box=document.getElementById('zanswer-'+id),tog=document.querySelector('#zcard-'+id+' .zq-answer-toggle');
-  if(!box)return; var v=box.style.display==='block'; box.style.display=v?'none':'block';
-  if(tog)tog.textContent=(v?'▸':'▾')+' Хариулт';
-}
-function removeCard(id){ zadgaiCards=zadgaiCards.filter(function(c){return c.id!==id}); renderZadgaiCards(); }
-
-async function regenSingle(id){
-  if(!examData)return;
-  var c=zadgaiCards.find(function(x){return x.id===id}); if(!c)return;
-  var card=document.getElementById('zcard-'+id);
-  if(card){var b=card.querySelector('.zq-body');if(b)b.innerHTML='<span class="spinner-sm"></span> AI үүсгэж байна...';}
-  var prompt=examData.grade+"-р ангийн "+examData.subject+" хичээлийн 1 задгай бодлого зохио.\n"+
-    "Сэдэв: "+examData.title+". Түвшин: "+c.title+". Оноо: "+c.score+".\n"+
-    "ЧУХАЛ: Зөвхөн JSON:{\"body\":\"...\",\"answer\":\"...\"}";
-  try{
-    var res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}]})});
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    var ct=res.headers.get('content-type')||''; if(!ct.includes('application/json'))throw new Error('JSON биш');
-    var data=await res.json(); if(data.error)throw new Error(data.error);
-    var reply=(data.reply||'').trim();
-    var parsed=parseAIJson(reply,[{spec:{num:c.num}}]);
-    var pq=parsed[0]||{};
-    c.body=pq.body||pq.question||reply||''; c.answer=pq.answer||''; c.source='ai';
-  }catch(e){ c.body='⚠ Алдаа: '+e.message+'\n(✏ Засах дарж гараар оруулна уу)'; }
-  renderZadgaiCards();
-}
-
-// ── AI JSON parse helper ──
-function parseAIJson(text,aiNeeded){
-  if(!text)return[];
-  var blockMatch=text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  var src=blockMatch?blockMatch[1].trim():text.trim();
-  try{ var arr=JSON.parse(src); if(Array.isArray(arr))return arr; if(arr&&typeof arr==='object')return[arr]; }catch(e){}
-  var arrMatch=src.match(/\[\s*\{[\s\S]*?\}\s*\]/);
-  if(arrMatch){try{return JSON.parse(arrMatch[0]);}catch(e2){}}
-  var objs=[],objRe=/\{[^{}]*"body"[^{}]*\}/g,m;
-  while((m=objRe.exec(src))!==null){try{objs.push(JSON.parse(m[0]));}catch(e3){}}
-  if(objs.length>0)return objs;
-  return(aiNeeded||[]).map(function(an){return{num:(an.spec||{}).num||'2.1',body:src,answer:''};});
-}
-
-// ═══════════════════════════════════════════════════════════
-// ХЭВЛЭХ / ТАТАХ
-// ═══════════════════════════════════════════════════════════
-function enrichText(t){ if(!t)return''; var s=t.replace(/&(?!amp;|lt;|gt;)/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); return s; }
-function escHtml(t){ if(!t)return''; return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function setText(id,v){ var e=document.getElementById(id); if(e)e.textContent=v; }
-
-function doPrint(){
-  if(!examData)return;
-  var qs=examData.questions||[];
-  var LABELS=['А','Б','В','Г'];
-  var body='<h2 style="text-align:center;border-bottom:2px solid #333;padding-bottom:8px">'+examData.title+'</h2>'+
-    '<p style="text-align:center;font-size:10pt;color:#555">'+examData.grade+'-р анги · '+examData.subject+' · '+examData.duration+'</p>'+
-    '<p style="font-weight:700;margin:6px 0">I ХЭСЭГ — Тест</p><hr style="margin:6px 0">';
-  qs.forEach(function(q,i){
-    var opts='';
-    if(q.options&&q.options.length){
-      opts='<table style="margin:4px 0 4px 20px;width:90%"><tr>';
-      q.options.forEach(function(o,j){opts+='<td style="width:50%;padding:2px 4px">'+(LABELS[j]||j+1)+'. '+o+'</td>';});
-      opts+='</tr></table>';
-    }
-    body+='<div style="margin:9px 0;padding:6px 0 3px;border-left:3px solid #2e7d32;padding-left:7px;page-break-inside:avoid">'+
-      '<b style="color:#1b5e20">'+(i+1)+'.</b> '+q.question+' <span style="font-size:9pt;color:#888">/'+q.score+' оноо/</span>'+opts+'</div>';
-  });
-  if(zadgaiCards.length>0){
-    var zt=zadgaiCards.reduce(function(a,c){return a+c.score},0);
-    body+='<div style="page-break-before:always"><h2 style="border-bottom:2px solid #333;padding-bottom:8px">II ХЭСЭГ — Задгай /'+zt+' оноо/</h2>';
-    zadgaiCards.forEach(function(c){ body+='<div style="margin:12px 0;page-break-inside:avoid"><p style="font-weight:700;color:#1b5e20">'+c.num+'. '+c.title+' /'+c.score+' оноо/</p><p style="line-height:2">'+escHtml(c.body)+'</p><div style="border-bottom:1px dotted #ccc;min-height:55px;margin-top:6px"></div></div>'; });
-    body+='</div>';
-  }
-  var win=window.open('','_blank');
-  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><script>window.MathJax={tex:{inlineMath:[["$","$"]]}};<\/script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"><\/script><style>body{font-family:serif;font-size:11pt;padding:15mm;line-height:1.8}@media print{@page{margin:15mm;size:A4}button{display:none}}</style></head><body><button onclick="window.print()" style="margin-bottom:8px;padding:5px 14px">🖨 Хэвлэх</button>'+body+'</body></html>');
-  win.document.close();
-}
-
-function buildDocxHtml(title,qs,showAnswers,includeZadgai){
-  var LABELS=['А','Б','В','Г'];
-  var h='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:"Times New Roman",serif;font-size:12pt;margin:2cm;line-height:1.8}h1{font-size:14pt;text-align:center;border-bottom:2pt solid #000;padding-bottom:6pt}h2{font-size:12pt;font-weight:700;border-bottom:1pt solid #555;padding-bottom:4pt;margin-top:14pt}.q{margin:10pt 0}.opts{margin-left:18pt}.opt{display:inline-block;width:45%}.ok{font-weight:bold;color:#1b5e20}.ab{page-break-before:always}.ws{border-bottom:1pt dotted #aaa;min-height:45pt;margin-top:5pt}</style></head><body>';
-  h+='<h1>'+escHtml(title)+'</h1><p style="text-align:center">'+examData.grade+'-р анги · '+examData.subject+' · '+examData.duration+'</p>';
-  h+='<h2>I ХЭСЭГ — Тест /'+examData.total_questions+' даалгавар, '+examData.total_score+' оноо/</h2>';
-  qs.forEach(function(q,i){
-    h+='<div class="q"><b>'+(i+1)+'.</b> '+escHtml(q.question)+' <span style="font-size:9pt;color:#888">/'+(q.score||1)+' оноо/</span>';
-    if(q.options&&q.options.length){h+='<div class="opts">';q.options.forEach(function(o,j){var L=LABELS[j]||j+1,ok=showAnswers&&L===q.answer;h+='<span class="opt'+(ok?' ok':'')+'">'+L+'. '+escHtml(o)+'&nbsp;&nbsp;</span>';});h+='</div>';}
-    h+='</div>';
-  });
-  if(showAnswers){h+='<div class="ab"><h2>Зөв хариулт — I хэсэг</h2><p>';qs.forEach(function(q,i){h+=(i+1)+'. <b>'+escHtml(q.answer||'')+'</b>&nbsp;&nbsp;';});h+='</p></div>';}
-  if(includeZadgai&&zadgaiCards.length>0){
-    var zt=zadgaiCards.reduce(function(a,c){return a+c.score},0);
-    h+='<div class="ab"><h2>II ХЭСЭГ — Задгай /'+zt+' оноо/</h2>';
-    zadgaiCards.forEach(function(c){h+='<div style="margin:12pt 0"><p style="font-weight:700;color:#1b5e20">'+escHtml(c.num)+'. '+escHtml(c.title)+' /'+c.score+' оноо/</p><p style="line-height:2">'+escHtml(c.body).replace(/\n/g,'<br>')+'</p><div class="ws"></div></div>';});
-    if(showAnswers){h+='<h2>Хариулт — II хэсэг</h2>';zadgaiCards.forEach(function(c){if(c.answer)h+='<p><b>'+escHtml(c.num)+'.</b> '+escHtml(c.answer)+'</p>';});}
-    h+='</div>';
-  }
-  h+='</body></html>'; return h;
-}
-
-function _dlBlob(html,name){var blob=new Blob(['\uFEFF'+html],{type:'application/msword'});var url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);}
-function doDownload(){if(!examData)return;_dlBlob(buildDocxHtml(examData.title,examData.questions,false,false),(examData.grade+'_'+examData.subject+'_тест.doc').replace(/ /g,'_'));}
-function doDownloadWithAnswers(){if(!examData)return;_dlBlob(buildDocxHtml(examData.title+'_хариулттай',examData.questions,true,false),(examData.grade+'_'+examData.subject+'_хариулт.doc').replace(/ /g,'_'));}
-function downloadZadgaiWord(){if(!examData||zadgaiCards.length===0){alert('Эхлээд задгай үүсгэнэ үү');return;}var zt=zadgaiCards.reduce(function(a,c){return a+c.score},0);var h='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:"Times New Roman",serif;font-size:12pt;margin:2cm;line-height:2}h1{font-size:13pt;text-align:center;border-bottom:2pt solid #000;padding-bottom:6pt}.ws{border-bottom:1pt dotted #aaa;min-height:55pt;margin:5pt 0 12pt}</style></head><body><h1>'+escHtml(examData.title)+'</h1><p style="text-align:center">'+examData.grade+'-р анги · '+examData.subject+'</p><h1 style="font-size:12pt;margin-top:6pt">II ХЭСЭГ — Задгай /'+zt+' оноо/</h1><hr>';zadgaiCards.forEach(function(c){h+='<h2 style="font-size:11pt;color:#1b5e20">'+escHtml(c.num)+'. '+escHtml(c.title)+' /'+c.score+' оноо/</h2><p style="line-height:2">'+escHtml(c.body).replace(/\n/g,'<br>')+'</p><div class="ws"></div>';});h+='</body></html>';_dlBlob(h,(examData.grade+'_'+examData.subject+'_задгай.doc').replace(/ /g,'_'));}
-function downloadFullWord(){if(!examData)return;_dlBlob(buildDocxHtml(examData.title,examData.questions,true,true),(examData.grade+'_'+examData.subject+'_бүрэн.doc').replace(/ /g,'_'));}
-function printZadgai(){if(!examData||zadgaiCards.length===0)return;var zt=zadgaiCards.reduce(function(a,c){return a+c.score},0);var body='<h1 style="text-align:center;border-bottom:2px solid #000;padding-bottom:8px">'+examData.title+'</h1><p style="text-align:center">'+examData.grade+'-р анги · '+examData.subject+'</p><h2 style="text-align:center">II ХЭСЭГ — Задгай /'+zt+' оноо/</h2><hr>';zadgaiCards.forEach(function(c){body+='<div style="margin:13px 0;page-break-inside:avoid"><p style="font-weight:700;color:#1b5e20">'+c.num+'. '+c.title+' /'+c.score+' оноо/</p><p style="line-height:2">'+escHtml(c.body)+'</p><div style="border-bottom:1px dotted #ccc;min-height:55px;margin-top:7px"></div></div>';});var win=window.open('','_blank');win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:serif;font-size:11pt;padding:15mm;line-height:1.9}@media print{@page{margin:15mm;size:A4}button{display:none}}</style></head><body><button onclick="window.print()" style="margin-bottom:8px;padding:5px 14px">🖨 Хэвлэх</button>'+body+'</body></html>');win.document.close();}
-
-async function doDownloadPDF(mode){
-  if(!examData)return;
-  var btn=document.getElementById(mode==='test'?'btn-pdf-test':'btn-pdf-full');
-  var orig=btn?btn.textContent:'';
-  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span> PDF...';}
-  var payload={mode:mode,title:examData.title,grade:examData.grade,subject:examData.subject,duration:examData.duration,questions:examData.questions||[],zadgai:(mode==='full'?zadgaiCards:[])};
-  try{
-    var res=await fetch('/api/generate-pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    if(!res.ok){var err=await res.json().catch(function(){return{error:'Серверийн алдаа'};});throw new Error(err.error||'HTTP '+res.status);}
-    var blob=await res.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');
-    a.href=url;a.download=(examData.grade+'_'+examData.subject+'_'+(mode==='full'?'бүрэн':'тест')+'.pdf').replace(/ /g,'_');a.click();
-    setTimeout(function(){URL.revokeObjectURL(url);},2000);
-  }catch(e){alert('PDF алдаа: '+e.message);}
-  finally{if(btn){btn.disabled=false;btn.textContent=orig;}}
-}
-</script>
-{% endblock %}
+"""Блюпринт өгөгдлийн удирдлага — SQLite + PostgreSQL хоёуланд ажиллана"""
+
+import re
+import json
+from flask import request, jsonify
+
+
+def _get_db():
+    from app import get_db
+    return get_db()
+
+
+def _is_sqlite(conn):
+    import sqlite3
+    return isinstance(conn, sqlite3.Connection)
+
+
+def init_blueprint_table():
+    conn = _get_db()
+    try:
+        if _is_sqlite(conn):
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS blueprints (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    subject TEXT NOT NULL,
+                    grade INTEGER NOT NULL,
+                    nj TEXT NOT NULL DEFAULT '[]',
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(subject, grade)
+                )""")
+        else:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS blueprints (
+                    id SERIAL PRIMARY KEY,
+                    subject TEXT NOT NULL,
+                    grade INTEGER NOT NULL,
+                    nj JSONB NOT NULL DEFAULT '[]',
+                    updated_at TIMESTAMP DEFAULT NOW(),
+                    UNIQUE(subject, grade)
+                )""")
+        conn.commit()
+        print("✅ blueprints table ready")
+    except Exception as e:
+        print(f"⚠️ blueprints table create error: {e}")
+    finally:
+        try: conn.close()
+        except Exception: pass
+
+
+def _save_blueprint(subject, grade, nj_list):
+    nj_json = json.dumps(nj_list, ensure_ascii=False)
+    conn = _get_db()
+    try:
+        if _is_sqlite(conn):
+            conn.execute(
+                "INSERT OR REPLACE INTO blueprints (subject, grade, nj, updated_at) "
+                "VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
+                (subject, int(grade), nj_json))
+        else:
+            conn.execute(
+                "INSERT INTO blueprints (subject, grade, nj, updated_at) "
+                "VALUES (?, ?, ?, NOW()) "
+                "ON CONFLICT (subject, grade) "
+                "DO UPDATE SET nj = EXCLUDED.nj, updated_at = NOW()",
+                (subject, int(grade), nj_json))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"⚠️ _save_blueprint error: {e}")
+        try:
+            conn.execute("DELETE FROM blueprints WHERE subject=? AND grade=?", (subject, int(grade)))
+            conn.execute("INSERT INTO blueprints (subject, grade, nj) VALUES (?, ?, ?)",
+                         (subject, int(grade), nj_json))
+            conn.commit()
+            return True
+        except Exception as e2:
+            print(f"⚠️ _save_blueprint fallback error: {e2}")
+            return False
+    finally:
+        try: conn.close()
+        except Exception: pass
+
+
+def get_blueprint_route():
+    subject = request.args.get('subject', '').strip()
+    grade   = request.args.get('grade', '').strip()
+    if not subject:
+        return jsonify({'error': 'subject заавал шаардлагатай'}), 400
+    conn = _get_db()
+    try:
+        row = None
+        if grade:
+            r = conn.execute("SELECT nj FROM blueprints WHERE subject=? AND grade=?",
+                             (subject, int(grade))).fetchone()
+            row = dict(r) if r else None
+        if not row:
+            r = conn.execute("SELECT nj FROM blueprints WHERE subject=? ORDER BY grade DESC LIMIT 1",
+                             (subject,)).fetchone()
+            row = dict(r) if r else None
+        if not row:
+            return jsonify({'blueprint': [],
+                'warning': f'"{subject}" хичээлийн блюпринт байхгүй. Admin → Блюпринт оруулах.'})
+        nj_data = row.get('nj', '[]')
+        if isinstance(nj_data, str):
+            nj_data = json.loads(nj_data)
+        return jsonify({'blueprint': nj_data})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        try: conn.close()
+        except Exception: pass
+
+
+def save_blueprint_route():
+    from flask import session
+    if not session.get('admin'):
+        return jsonify({'error': 'Зөвхөн admin хандах боломжтой'}), 403
+    data    = request.get_json(force=True)
+    subject = data.get('subject', '').strip()
+    grade   = int(data.get('grade', 0))
+    nj      = data.get('nj', [])
+    if not subject or not grade:
+        return jsonify({'error': 'subject, grade заавал шаардлагатай'}), 400
+    ok = _save_blueprint(subject, grade, nj)
+    if ok:
+        return jsonify({'ok': True, 'subject': subject, 'grade': grade, 'nj_count': len(nj)})
+    return jsonify({'error': 'Хадгалахад алдаа гарлаа'}), 500
+
+
+def _clean(t):
+    if not t: return ''
+    return re.sub(r'\s+', ' ', str(t)).strip()
+
+
+def _to_int(val):
+    try:
+        return int(str(val).strip()) if val else 0
+    except (ValueError, TypeError):
+        return 0
+
+
+def _find_col(headers, keywords):
+    for i, h in enumerate(headers):
+        h_low = (h or '').lower()
+        if any(k.lower() in h_low for k in keywords):
+            return i
+    return -1
+
+
+def parse_blueprint_pdf(pdf_path, subject, grade):
+    try:
+        import pdfplumber
+    except ImportError:
+        raise RuntimeError("pdfplumber суулгаагүй. requirements.txt-д нэмнэ үү")
+    nj_list = []
+    nj_map  = {}
+    cur_nj  = None
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            tables = page.extract_tables()
+            if not tables:
+                continue
+            for table in tables:
+                if not table or len(table) < 3:
+                    continue
+                header_row = None
+                data_start = 0
+                for i, row in enumerate(table[:4]):
+                    cells = [_clean(c) for c in (row or [])]
+                    row_text = ' '.join(cells).lower()
+                    if ('мэдлэг' in row_text or 'ойлголт' in row_text) and 'чадвар' in row_text:
+                        header_row = cells
+                        data_start = i + 1
+                        break
+                if header_row is None:
+                    header_row = [_clean(c) for c in (table[0] or [])]
+                    data_start = 1
+                col_nj   = _find_col(header_row, ['үнэлгээний нэгж', 'нэгж'])
+                col_surd = _find_col(header_row, ['суралцахуйн үр дүн', 'үр дүн'])
+                col_sh   = _find_col(header_row, ['шалгуур'])
+                col_m    = _find_col(header_row, ['мэдлэг', 'ойлголт'])
+                col_c    = _find_col(header_row, ['чадвар'])
+                col_x    = _find_col(header_row, ['хэрэглээ'])
+                if col_sh < 0:
+                    continue
+                for row in table[data_start:]:
+                    cells = [_clean(c) for c in (row or [])]
+                    if not any(cells):
+                        continue
+                    nj_text   = cells[col_nj]  if col_nj  >= 0 and col_nj  < len(cells) else ''
+                    surd_text = cells[col_surd] if col_surd >= 0 and col_surd < len(cells) else ''
+                    sh_text   = cells[col_sh]   if col_sh  < len(cells) else ''
+                    if not sh_text or len(sh_text) < 5:
+                        continue
+                    def get_pair(idx):
+                        if idx < 0 or idx >= len(cells):
+                            return 0, 0
+                        v1 = _to_int(cells[idx])
+                        v2 = _to_int(cells[idx+1]) if idx+1 < len(cells) else v1
+                        return v1, v2
+                    m_dt, m_on = get_pair(col_m)
+                    c_dt, c_on = get_pair(col_c)
+                    x_dt, x_on = get_pair(col_x)
+                    if nj_text and nj_text not in nj_map:
+                        nj_obj = {'id': f'nj_{len(nj_list)+1}', 'name': nj_text, 'surd': []}
+                        nj_map[nj_text] = nj_obj
+                        nj_list.append(nj_obj)
+                    if nj_text:
+                        cur_nj = nj_map[nj_text]
+                    if cur_nj is None:
+                        if not nj_list:
+                            nj_obj = {'id': 'nj_1', 'name': subject, 'surd': []}
+                            nj_list.append(nj_obj)
+                            cur_nj = nj_obj
+                        else:
+                            cur_nj = nj_list[-1]
+                    existing_surd = None
+                    surd_key = surd_text or '__default__'
+                    for s in cur_nj['surd']:
+                        if s['name'] == surd_key:
+                            existing_surd = s
+                            break
+                    if existing_surd is None:
+                        existing_surd = {
+                            'id':       cur_nj['id'] + '_s' + str(len(cur_nj['surd'])+1),
+                            'name':     surd_text,
+                            'shalguur': []}
+                        cur_nj['surd'].append(existing_surd)
+                    base_id = existing_surd['id'] + '_sh' + str(len(existing_surd['shalguur'])+1)
+                    if m_dt > 0:
+                        existing_surd['shalguur'].append({
+                            'id': base_id + '_m', 'text': sh_text, 'level': 'Мэдлэг ойлголт',
+                            'score': max(1, m_on // m_dt if m_dt else 1), 'd_too': m_dt, 'd_onoo': m_on})
+                    if c_dt > 0:
+                        existing_surd['shalguur'].append({
+                            'id': base_id + '_c', 'text': sh_text, 'level': 'Чадвар',
+                            'score': max(1, c_on // c_dt if c_dt else 2), 'd_too': c_dt, 'd_onoo': c_on})
+                    if x_dt > 0:
+                        existing_surd['shalguur'].append({
+                            'id': base_id + '_x', 'text': sh_text, 'level': 'Хэрэглээ',
+                            'score': max(1, x_on // x_dt if x_dt else 3), 'd_too': x_dt, 'd_onoo': x_on})
+                    if m_dt == 0 and c_dt == 0 and x_dt == 0:
+                        existing_surd['shalguur'].append({
+                            'id': base_id, 'text': sh_text, 'level': 'Мэдлэг ойлголт',
+                            'score': 1, 'd_too': 1, 'd_onoo': 1})
+    return nj_list
+
+
+def import_from_pdf(pdf_path, subject, grade):
+    print(f"📄 PDF задалж байна: {pdf_path}")
+    nj_list = parse_blueprint_pdf(pdf_path, subject, grade)
+    total_sh = sum(len(sh['shalguur']) for nj in nj_list for sh in nj.get('surd', []))
+    print(f"✅ Олдсон: {len(nj_list)} нэгж, {total_sh} шалгуур")
+    _save_blueprint(subject, grade, nj_list)
+    return nj_list
