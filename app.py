@@ -6,7 +6,11 @@ try:
     import anthropic
 except ImportError:
     anthropic = None
-
+try:
+    from blueprint_data import get_blueprint_route, save_blueprint_route, init_blueprint_table
+    _HAS_BLUEPRINT = True
+except ImportError:
+    _HAS_BLUEPRINT = False
 # Curriculum data
 import json as _json
 _curr_path = os.path.join(os.path.dirname(__file__), 'templates', 'curriculum.json')
@@ -341,7 +345,17 @@ class PGConn:
 
     def __exit__(self, *a):
         self.close()
+@app.route("/api/get-blueprint", methods=["GET"])
+def api_get_blueprint():
+    if not _HAS_BLUEPRINT:
+        return jsonify({"blueprint": [], "warning": "blueprint_data.py олдсонгүй"}), 200
+    return get_blueprint_route()
 
+@app.route("/api/save-blueprint", methods=["POST"])
+def api_save_blueprint():
+    if not _HAS_BLUEPRINT:
+        return jsonify({"error": "blueprint_data.py олдсонгүй"}), 500
+    return save_blueprint_route()
 def get_db():
     """PostgreSQL (psycopg2) / Supabase REST / SQLite буцаана"""
     if USE_PG and _HAS_PG:
@@ -1309,3 +1323,8 @@ except Exception as _ie:
 if __name__=="__main__":
     port=int(os.environ.get("PORT",5000))
     app.run(host="0.0.0.0",port=port)
+try:
+    if _HAS_BLUEPRINT:
+        init_blueprint_table()
+except Exception as _be:
+    print(f"⚠️ blueprint table: {_be}")
