@@ -27,6 +27,17 @@
 .grade-exam-info{font-size:.75rem;color:var(--text-muted);margin-top:.3rem;min-height:16px}
 .guitsegdel-note{font-size:.72rem;color:#ef4444;display:none}
 
+/* Задгай блюпринт slider */
+.zadgai-bp-box{background:var(--green-50);border:1.5px solid var(--green-100);border-radius:8px;padding:.6rem .8rem;margin-top:.4rem}
+.zadgai-bp-title{font-size:.68rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem}
+.zadgai-slider-row{display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem}
+.zadgai-slider-label{font-size:.72rem;width:52px;flex-shrink:0;color:var(--text-mid)}
+.zadgai-slider-num{flex-shrink:0;width:18px;text-align:right;font-size:.8rem;font-weight:700;color:var(--teal-600)}
+.zadgai-score-row{display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem}
+.zadgai-score-label{font-size:.72rem;width:52px;flex-shrink:0;color:var(--text-mid)}
+.zadgai-score-input{width:44px;padding:2px 6px;border:1.5px solid var(--green-200);border-radius:6px;font-size:.8rem;font-weight:700;text-align:center;color:var(--teal-600)}
+.zadgai-total-bar{font-size:.78rem;color:var(--text-mid);margin-top:.3rem;display:flex;gap:.8rem}
+
 /* Үр дүн */
 .exam-result{background:#fff;border-radius:12px;border:1.5px solid var(--green-100);padding:1.5rem}
 .exam-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.2rem;flex-wrap:wrap}
@@ -47,17 +58,50 @@
 .empty-result{text-align:center;padding:4rem 2rem;color:var(--text-muted)}
 .empty-icon{font-size:3rem;margin-bottom:.8rem}
 
-/* Задгай */
+/* ── Задгай хэсэг ── */
 .zadgai-section{margin-top:1.2rem;border-top:2px solid var(--green-100);padding-top:1.2rem}
-.zadgai-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
-.ai-out{background:var(--green-50);border:1.5px solid var(--green-100);border-radius:8px;padding:1rem;font-size:.88rem;line-height:1.8;margin-top:.6rem;display:none;white-space:pre-wrap}
-.ai-out.show{display:block}
+.zadgai-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;flex-wrap:wrap;gap:.4rem}
+.zadgai-head-left{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.zadgai-source-badge{font-size:.7rem;padding:2px 8px;border-radius:20px;font-weight:600}
+.zadgai-source-db{background:#f0fdf4;border:1px solid #86efac;color:#166534}
+.zadgai-source-ai{background:#fef9c3;border:1px solid #fde047;color:#854d0e}
+.zadgai-source-mix{background:#eff6ff;border:1px solid #93c5fd;color:#1e40af}
+
+/* Задгай даалгаврын картууд */
+.zadgai-cards{display:flex;flex-direction:column;gap:.8rem;margin-top:.6rem}
+.zq-card{background:#fff;border:1.5px solid var(--green-100);border-radius:10px;padding:.9rem 1rem;position:relative}
+.zq-card.ai-gen{border-color:#fde047;background:#fefce8}
+.zq-card.db-src{border-color:#86efac;background:#f0fdf4}
+.zq-card-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;flex-wrap:wrap}
+.zq-num{min-width:26px;height:26px;border-radius:50%;background:var(--teal-600);color:#fff;font-size:.75rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.zq-title{font-size:.82rem;font-weight:700;color:var(--text-dark);flex:1}
+.zq-score-badge{font-size:.72rem;padding:2px 8px;border-radius:20px;background:var(--green-50);border:1px solid var(--green-100);color:var(--teal-600);font-weight:700;cursor:pointer;transition:all .15s}
+.zq-score-badge:hover{border-color:var(--teal-600)}
+.zq-score-edit{width:44px;padding:2px 6px;border:1.5px solid var(--teal-600);border-radius:6px;font-size:.8rem;font-weight:700;text-align:center;color:var(--teal-600);display:none}
+.zq-body{font-size:.85rem;line-height:1.75;color:var(--text-dark);white-space:pre-wrap;word-break:break-word}
+.zq-edit-area{width:100%;min-height:80px;padding:.5rem;border:1.5px solid var(--teal-600);border-radius:8px;font-size:.84rem;line-height:1.7;font-family:inherit;resize:vertical;display:none;box-sizing:border-box;margin-top:.4rem}
+.zq-actions{display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap}
+.btn-xs{padding:3px 10px;font-size:.72rem;border-radius:6px;border:1.5px solid var(--green-200);background:#fff;cursor:pointer;transition:all .15s;font-weight:600;color:var(--text-mid)}
+.btn-xs:hover{border-color:var(--teal-600);color:var(--teal-600)}
+.btn-xs.danger:hover{border-color:#ef4444;color:#ef4444}
+.zq-answer-toggle{font-size:.75rem;color:var(--teal-600);cursor:pointer;text-decoration:underline;margin-top:.3rem;display:inline-block}
+.zq-answer-box{background:var(--green-50);border-left:3px solid var(--teal-600);padding:.4rem .7rem;border-radius:0 6px 6px 0;font-size:.82rem;color:var(--text-dark);margin-top:.3rem;display:none;white-space:pre-wrap}
+.zq-source-label{font-size:.68rem;color:var(--text-muted);margin-top:.3rem}
+
+/* Задгай хэсгийн оноо нийт */
+.zadgai-score-total{font-size:.82rem;color:var(--text-mid);display:flex;gap:.8rem;padding:.4rem .6rem;background:var(--green-50);border-radius:8px;margin-top:.5rem}
+
+/* Хуурамч loader */
+.zq-loading{text-align:center;padding:2rem;color:var(--text-muted);font-size:.85rem}
+
+/* Action bar */
+.zadgai-action-bar{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem}
 
 @media(max-width:700px){.bp-wrap{grid-template-columns:1fr}.bp-panel{border-right:none;border-bottom:2px solid var(--green-100)}}
 </style>
 
 <div class="bp-wrap">
-  <!-- ЗҮҮН ПАНЕЛ -->
+  <!-- ── ЗҮҮН ПАНЕЛ ── -->
   <div class="bp-panel">
     <div class="panel-section">
       <div class="panel-title">① Шалгалтын төрөл</div>
@@ -87,8 +131,8 @@
     </div>
 
     <div class="panel-section">
-      <div class="panel-title">④ Блюпринт</div>
-      <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:.5rem;line-height:1.4;word-break:keep-all;white-space:normal">Түвшин тус бүрд хэдэн даалгавар оруулахыг тохируулна</div>
+      <div class="panel-title">④ I хэсэг — Тест блюпринт</div>
+      <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:.5rem;line-height:1.4">Тест даалгаврын тоо түвшин тус бүрээр</div>
       <div class="blueprint-sliders">
         {% for lvl in levels %}
         {% set lvl_css = lvl | replace(' ','') %}
@@ -108,6 +152,43 @@
       <span class="guitsegdel-note" id="guitsegdel-note">⚠ Гүйцэтгэлийн үнэлгээ оноогоор дүгнэхгүй</span>
     </div>
 
+    <!-- ── II хэсэг — Задгай блюпринт ── -->
+    <div class="panel-section">
+      <div class="panel-title">⑤ II хэсэг — Задгай блюпринт</div>
+      <div class="zadgai-bp-box">
+        <div class="zadgai-bp-title">Задгай даалгаврын тоо ба оноо</div>
+
+        <div class="zadgai-slider-row">
+          <span class="zadgai-slider-label">Чадвар</span>
+          <input type="range" min="0" max="5" value="1" id="zslider-chaдвар" class="bp-slider"
+                 oninput="onZSlider('чадвар',this.value)">
+          <span class="zadgai-slider-num" id="zval-чадвар">1</span>
+        </div>
+        <div class="zadgai-score-row">
+          <span class="zadgai-score-label" style="padding-left:8px;font-size:.68rem;color:var(--text-muted)">↳ оноо/бодлого</span>
+          <input type="number" min="1" max="20" value="3" id="zscore-чадвар"
+                 class="zadgai-score-input" oninput="updateZTotal()">
+        </div>
+
+        <div class="zadgai-slider-row" style="margin-top:.2rem">
+          <span class="zadgai-slider-label">Хэрэглээ</span>
+          <input type="range" min="0" max="5" value="1" id="zslider-хэрэглээ" class="bp-slider"
+                 oninput="onZSlider('хэрэглээ',this.value)">
+          <span class="zadgai-slider-num" id="zval-хэрэглээ">1</span>
+        </div>
+        <div class="zadgai-score-row">
+          <span class="zadgai-score-label" style="padding-left:8px;font-size:.68rem;color:var(--text-muted)">↳ оноо/бодлого</span>
+          <input type="number" min="1" max="20" value="4" id="zscore-хэрэглээ"
+                 class="zadgai-score-input" oninput="updateZTotal()">
+        </div>
+
+        <div class="zadgai-total-bar">
+          <span>Бодлого: <strong id="ztotal-q">2</strong></span>
+          <span>Оноо: <strong id="ztotal-s">7</strong></span>
+        </div>
+      </div>
+    </div>
+
     <button class="btn btn-primary btn-full" style="margin-top:.5rem" onclick="doGenerate()">
       ✦ Шалгалт үүсгэх
     </button>
@@ -116,7 +197,7 @@
     </div>
   </div>
 
-  <!-- БАРУУН ХЭВ -->
+  <!-- ── БАРУУН ТАЛБАР ── -->
   <div class="bp-main">
     <div id="exam-empty" class="empty-result">
       <div class="empty-icon">◈</div>
@@ -132,7 +213,7 @@
           </div>
           <div class="exam-stats">
             <div class="stat-num" id="stat-q">0</div>
-            <div class="stat-lbl">Даалгавар</div>
+            <div class="stat-lbl">Тест</div>
             <div class="stat-num" id="stat-s" style="color:#f0a500">0</div>
             <div class="stat-lbl">Оноо</div>
           </div>
@@ -140,20 +221,40 @@
         <div class="exam-actions">
           <button class="btn btn-primary" onclick="doPrint()">🖨 Хэвлэх</button>
           <button class="btn btn-outline" onclick="doDownload()">⬇ Word</button>
-          <button class="btn btn-outline" onclick="doDownloadWithAnswers()">⬇ Хариулттай</button>
+          <button class="btn btn-outline" onclick="doDownloadWithAnswers()">⬇ Word (хариулттай)</button>
+          <button class="btn btn-outline" id="btn-pdf-test" onclick="doDownloadPDF('test')">⬇ PDF</button>
+          <button class="btn btn-outline" id="btn-pdf-answers" onclick="doDownloadPDF('answers')">⬇ PDF (хариулттай)</button>
           <button class="btn btn-outline" onclick="doGenerate()">↻ Дахин</button>
         </div>
         <div class="questions-list" id="questions-list"></div>
-        <!-- Задгай -->
+
+        <!-- ── II ХЭСЭГ — Задгай даалгавар ── -->
         <div id="zadgai-section" class="zadgai-section" style="display:none">
           <div class="zadgai-head">
-            <h3 style="font-size:.95rem;font-weight:800;margin:0">📝 Задгай даалгавар (II хэсэг)</h3>
-            <button class="btn btn-sm btn-primary" onclick="genZadgai()">✦ AI-аар үүсгэх</button>
+            <div class="zadgai-head-left">
+              <h3 style="font-size:.95rem;font-weight:800;margin:0">📝 II хэсэг — Задгай даалгавар</h3>
+              <span id="zadgai-source-badge" class="zadgai-source-badge" style="display:none"></span>
+            </div>
+            <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+              <button class="btn btn-sm btn-outline" id="btn-regen-zadgai" onclick="regenZadgai()" style="display:none">↻ Дахин</button>
+              <button class="btn btn-sm btn-primary" id="btn-gen-zadgai" onclick="genZadgai()">✦ Задгай үүсгэх</button>
+            </div>
           </div>
-          <div id="zadgai-info" style="font-size:.82rem;color:var(--text-muted)"></div>
-          <div id="zadgai-out" class="ai-out"></div>
-          <div id="zadgai-actions" style="display:none;margin-top:.5rem">
-            <button class="btn btn-sm btn-outline" onclick="printZadgai()">🖨 Хэвлэх</button>
+          <div id="zadgai-info" style="font-size:.82rem;color:var(--text-muted);margin-bottom:.4rem"></div>
+          <!-- Задгай карт контейнер -->
+          <div id="zadgai-cards" class="zadgai-cards"></div>
+          <!-- Нийт оноо -->
+          <div id="zadgai-score-total" class="zadgai-score-total" style="display:none">
+            <span>Бодлого: <strong id="zstat-q">0</strong></span>
+            <span>Нийт оноо: <strong id="zstat-s">0</strong></span>
+          </div>
+          <!-- Action bar -->
+          <div id="zadgai-action-bar" class="zadgai-action-bar" style="display:none">
+            <button class="btn btn-sm btn-outline" onclick="printZadgai()">🖨 II хэсэг хэвлэх</button>
+            <button class="btn btn-sm btn-outline" onclick="downloadZadgaiWord()">⬇ Word (II хэсэг)</button>
+            <button class="btn btn-sm btn-outline" onclick="downloadFullWord()">⬇ Word (I+II хэсэг)</button>
+            <button class="btn btn-sm btn-outline" onclick="doDownloadPDF('full')">⬇ PDF (I+II хэсэг)</button>
+            <button class="btn btn-sm btn-outline" onclick="doDownloadPDF('zadgai')">⬇ PDF (II хэсэг)</button>
           </div>
         </div>
       </div>
@@ -161,8 +262,8 @@
   </div>
 </div>
 {% endblock %}
-{% block scripts %}
 
+{% block scripts %}
 <script>
 const ET = {{ exam_types | tojson }};
 const GM = {{ grade_exam_map | tojson }};
@@ -170,14 +271,21 @@ const LEVELS = {{ levels | tojson }};
 const LEVEL_SCORE = {"Мэдлэг ойлголт":1,"Чадвар":2,"Хэрэглээ":3};
 
 var curExam = null, curGrade = null, curExamId = null, examData = null;
+// Задгай даалгаврын өгөгдөл — массив [{id, title, body, score, source, answer, editing}]
+var zadgaiCards = [];
 
-// ── INIT ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
   var init = new URLSearchParams(location.search).get('exam') || Object.keys(ET)[0];
   pickExam(init);
+  updateZTotal();
 });
 
-// ── EXAM TYPE ────────────────────────────────────────
+// ═══════════════════════════════════════════════
+// EXAM TYPE / GRADE / SLIDER (өмнөхтэй ижил)
+// ═══════════════════════════════════════════════
 function pickExam(eid) {
   if (!ET[eid]) return;
   curExamId = eid;
@@ -189,76 +297,53 @@ function pickExam(eid) {
   for (var g=1; g<=12; g++) {
     var gb = document.getElementById('gbtn-'+g);
     if (!gb) continue;
-    if (grades.indexOf(g) >= 0) {
-      gb.classList.remove('dimmed');
-    } else {
-      gb.classList.add('dimmed');
-      gb.classList.remove('active');
-    }
+    if (grades.indexOf(g) >= 0) { gb.classList.remove('dimmed'); }
+    else { gb.classList.add('dimmed'); gb.classList.remove('active'); }
   }
   document.getElementById('guitsegdel-note').style.display = eid==='guitsegdel'?'inline':'none';
-  // Slider утгуудыг тохируулах
-  var mo = bp['Мэдлэг ойлголт'] || 0;
-  var ch = bp['Чадвар'] || 0;
-  var he = bp['Хэрэглээ'] || 0;
-  setSlider('Мэдлэг ойлголт', mo);
-  setSlider('Чадвар', ch);
-  setSlider('Хэрэглээ', he);
+  setSlider('Мэдлэг ойлголт', bp['Мэдлэг ойлголт']||0);
+  setSlider('Чадвар', bp['Чадвар']||0);
+  setSlider('Хэрэглээ', bp['Хэрэглээ']||0);
   updateTotal();
-  // Анги — шалгалтад хамаарах анги сонгох
-  var gradeToSelect = (curGrade && grades.indexOf(curGrade) >= 0) ? curGrade : grades[0];
+  var gradeToSelect = (curGrade && grades.indexOf(curGrade)>=0) ? curGrade : grades[0];
   curGrade = gradeToSelect;
   document.querySelectorAll('.grade-btn').forEach(function(b){b.classList.remove('active')});
   var selgb = document.getElementById('gbtn-'+gradeToSelect);
   if (selgb) selgb.classList.add('active');
-  var selEt = ET[eid];
   var selInfo = document.getElementById('grade-exam-info');
-  if (selInfo && selEt) selInfo.innerHTML = '<span style="color:'+selEt.color+'">'+selEt.icon+' '+gradeToSelect+'-р анги — '+selEt.name+'</span>';
+  if (selInfo) selInfo.innerHTML = '<span style="color:'+ET[eid].color+'">'+ET[eid].icon+' '+gradeToSelect+'-р анги — '+ET[eid].name+'</span>';
 }
 
-// ── GRADE ────────────────────────────────────────────
 function pickGrade(g) {
   curGrade = g;
   document.querySelectorAll('.grade-btn').forEach(function(b){b.classList.remove('active')});
   var gb = document.getElementById('gbtn-'+g);
   if (gb) gb.classList.add('active');
-  // Одоогийн шалгалтын төрөлд энэ анги хамаарвал өөрчлөхгүй
   var eid;
-  if (curExamId && ET[curExamId] && ET[curExamId].grades.indexOf(g) >= 0) {
-    eid = curExamId;
-  } else {
-    eid = GM[g] || 'devshih';
-    pickExam(eid);
-    return;
-  }
+  if (curExamId && ET[curExamId] && ET[curExamId].grades.indexOf(g)>=0) { eid = curExamId; }
+  else { eid = GM[g]||'devshih'; pickExam(eid); return; }
   var et = ET[eid];
   var info = document.getElementById('grade-exam-info');
   if (info && et) info.innerHTML = '<span style="color:'+et.color+'">'+et.icon+' '+g+'-р анги — '+et.name+'</span>';
 }
 
-// ── SLIDER ───────────────────────────────────────────
 function setSlider(key, val) {
   var sl = document.getElementById('slider-'+key);
   var vl = document.getElementById('val-'+key);
   if (sl) sl.value = val;
   if (vl) vl.textContent = val;
 }
-
-
 function onSlider(key, val) {
   var vl = document.getElementById('val-'+key);
   if (vl) vl.textContent = val;
   updateTotal();
 }
-
-
 function updateTotal() {
-  var total = 0, score = 0;
+  var total=0, score=0;
   LEVELS.forEach(function(k) {
     var sl = document.getElementById('slider-'+k);
     var v = sl ? parseInt(sl.value)||0 : 0;
-    total += v;
-    score += v * (LEVEL_SCORE[k]||1);
+    total += v; score += v*(LEVEL_SCORE[k]||1);
   });
   var tq = document.getElementById('total-q');
   var ts = document.getElementById('total-s');
@@ -266,9 +351,60 @@ function updateTotal() {
   if (ts) ts.textContent = score;
 }
 
-// ── GENERATE ─────────────────────────────────────────
+// ═══════════════════════════════════════════════
+// ЗАДГАЙ БЛЮПРИНТ SLIDER
+// ═══════════════════════════════════════════════
+function onZSlider(key, val) {
+  var vl = document.getElementById('zval-'+key);
+  if (vl) vl.textContent = val;
+  updateZTotal();
+}
+function updateZTotal() {
+  var chadvar_n  = parseInt(document.getElementById('zslider-chaдвар')?.value || document.getElementById('zval-чадвар')?.textContent || 1)||0;
+  var hereglee_n = parseInt(document.getElementById('zslider-хэрэглээ')?.value || document.getElementById('zval-хэрэглээ')?.textContent || 1)||0;
+  var chadvar_s  = parseInt(document.getElementById('zscore-чадвар')?.value||3)||0;
+  var hereglee_s = parseInt(document.getElementById('zscore-хэрэглээ')?.value||4)||0;
+
+  // slider утгыг шууд авах
+  var zsc = document.getElementById('zslider-chaдвар');
+  var zsh = document.getElementById('zslider-хэрэглээ');
+  var cn = zsc ? parseInt(zsc.value)||0 : chadvar_n;
+  var hn = zsh ? parseInt(zsh.value)||0 : hereglee_n;
+
+  var tq = cn + hn;
+  var ts = cn*chadvar_s + hn*hereglee_s;
+  var ztq = document.getElementById('ztotal-q');
+  var zts = document.getElementById('ztotal-s');
+  if (ztq) ztq.textContent = tq;
+  if (zts) zts.textContent = ts;
+}
+
+// ── Задгай блюпринт утгуудыг авах ──
+function getZBlueprintSpec() {
+  var zsc = document.getElementById('zslider-chaдвар');
+  var zsh = document.getElementById('zslider-хэрэглээ');
+  var cn = zsc ? parseInt(zsc.value)||0 : 1;
+  var hn = zsh ? parseInt(zsh.value)||0 : 1;
+  var cs = parseInt(document.getElementById('zscore-чадвар')?.value||3)||3;
+  var hs = parseInt(document.getElementById('zscore-хэрэглээ')?.value||4)||4;
+  var specs = [];
+  var idx = 1;
+  for (var i=0; i<cn; i++) {
+    specs.push({num:'2.'+idx, score:cs, level:'Чадвар', label:'Чадварын бодлого '+(cn>1?i+1:'')});
+    idx++;
+  }
+  for (var i=0; i<hn; i++) {
+    specs.push({num:'2.'+idx, score:hs, level:'Хэрэглээ', label:'Хэрэглээний бодлого '+(hn>1?i+1:'')});
+    idx++;
+  }
+  return specs;
+}
+
+// ═══════════════════════════════════════════════
+// GENERATE EXAM (I хэсэг)
+// ═══════════════════════════════════════════════
 async function doGenerate() {
-  var grade = curGrade || 9;
+  var grade = curGrade||9;
   var subject = document.getElementById('subject-sel').value;
   var blueprint = {};
   LEVELS.forEach(function(k) {
@@ -278,26 +414,26 @@ async function doGenerate() {
   var total = LEVELS.reduce(function(s,k){return s+blueprint[k]}, 0);
   if (total === 0) { alert('Блюпринтийн slider-г тохируулна уу'); return; }
 
+  // Задгай хэсгийг дахин тэглэх
+  zadgaiCards = [];
   document.getElementById('exam-empty').style.display = 'none';
   document.getElementById('exam-result').style.display = 'block';
   document.getElementById('questions-list').innerHTML =
     '<div style="text-align:center;padding:2rem"><div class="spinner"></div><p style="margin-top:.5rem">Шалгалт үүсгэж байна...</p></div>';
+  // Задгай хэсэг reset
+  resetZadgaiSection();
 
   try {
     var res = await fetch('/api/generate-exam', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        grade: grade, subject: subject,
-        exam_id: curExamId||'devshih',
-        blueprint: blueprint, use_ai: true
-      })
+      body: JSON.stringify({grade, subject, exam_id: curExamId||'devshih', blueprint, use_ai:true})
     });
     var data = await res.json();
     if (data.error) {
       document.getElementById('questions-list').innerHTML =
         '<div style="padding:1rem;background:#fff3f3;border-radius:8px;border:1px solid #ffcdd2">' +
         '<p style="color:#c62828;font-weight:700">❌ '+data.error+'</p>' +
-        '<p style="color:#666;font-size:.82rem;margin-top:.4rem">💡 Шийдэл: Даалгавар санд тухайн хичээлийн даалгавар нэмэх эсвэл Render → Environment → ANTHROPIC_API_KEY тохируулна уу.</p>' +
+        '<p style="color:#666;font-size:.82rem;margin-top:.4rem">💡 Шийдэл: Даалгавар санд тухайн хичээлийн даалгавар нэмэх эсвэл ANTHROPIC_API_KEY тохируулна уу.</p>' +
         '</div>';
       return;
     }
@@ -308,311 +444,27 @@ async function doGenerate() {
   }
 }
 
-// ── МАТЕМАТИК РЕНДЭР (MathJax 3) ─────────────────────────
-function enrichText(text) {
-  if (!text) return '';
-  // HTML-д аюулгүй болгох ($, \-г хамгаалахгүй — MathJax хэрэгтэй)
-  var safe = text
-    .replace(/&(?!amp;|lt;|gt;|#[0-9]+;|[a-zA-Z]+;)/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-  // Геометрийн SVG дүрс нэмэх
-  var fig = geoFigureSVG(text);
-  return (fig ? '<span class="geo-fig">'+fig+'</span> ' : '') + safe;
-}
-
-// ── ГЕОМЕТРИЙН БҮРЭН SVG ДҮРСҮҮД ─────────────────────────
-function geoFigureSVG(text) {
-  if (!text) return '';
-  var t = text.toLowerCase();
-  var S = 'stroke="#2e7d32" stroke-width="1.8" fill="none"';
-  var SB = 'stroke="#1565c0" stroke-width="1.8" fill="none"';
-  var SR = 'stroke="#c62828" stroke-width="1.8" fill="none"';
-  var SO = 'stroke="#e65100" stroke-width="1.8" fill="none"';
-
-  // ── Хавтгайн дүрсүүд ──
-  if (/гурвалжин|triangle/.test(t))
-    return '<svg width="52" height="46" viewBox="0 0 52 46"><polygon points="26,3 49,43 3,43" '+S+'/>'+
-      '<text x="26" y="41" text-anchor="middle" font-size="7" fill="#555">A</text>'+
-      '<text x="3" y="43" font-size="7" fill="#555">B</text>'+
-      '<text x="46" y="43" font-size="7" fill="#555">C</text></svg>';
-
-  if (/тэгш өнцөгт гурвалжин|right.*triangle|right triangle/.test(t))
-    return '<svg width="52" height="46" viewBox="0 0 52 46">'+
-      '<polygon points="3,43 49,43 3,5" '+S+'/>'+
-      '<rect x="3" y="37" width="6" height="6" '+S+'/></svg>';
-
-  if (/тэгш талт гурвалжин|equilateral/.test(t))
-    return '<svg width="52" height="46" viewBox="0 0 52 46"><polygon points="26,3 49,43 3,43" '+SB+'/>'+
-      '<line x1="26" y1="3" x2="26" y2="43" stroke="#1565c0" stroke-width="0.8" stroke-dasharray="3"/>'+
-      '</svg>';
-
-  if (/тойрог|circle|circumference/.test(t))
-    return '<svg width="50" height="50" viewBox="0 0 50 50">'+
-      '<circle cx="25" cy="25" r="21" '+SB+'/>'+
-      '<line x1="25" y1="25" x2="46" y2="25" stroke="#1565c0" stroke-width="1.2"/>'+
-      '<text x="33" y="22" font-size="8" fill="#1565c0">r</text>'+
-      '<circle cx="25" cy="25" r="2" fill="#1565c0"/></svg>';
-
-  if (/хагас тойрог|semicircle/.test(t))
-    return '<svg width="54" height="34" viewBox="0 0 54 34">'+
-      '<path d="M4,30 A23,23 0 0,1 50,30" '+SB+'/>'+
-      '<line x1="4" y1="30" x2="50" y2="30" '+SB+'/></svg>';
-
-  if (/квадрат|square/.test(t))
-    return '<svg width="46" height="46" viewBox="0 0 46 46">'+
-      '<rect x="4" y="4" width="38" height="38" '+S+'/>'+
-      '<line x1="4" y1="4" x2="8" y2="4" stroke="#2e7d32" stroke-width="1.5"/>'+
-      '<line x1="4" y1="4" x2="4" y2="8" stroke="#2e7d32" stroke-width="1.5"/>'+
-      '</svg>';
-
-  if (/тэгш өнцөгт|rectangle/.test(t))
-    return '<svg width="58" height="42" viewBox="0 0 58 42">'+
-      '<rect x="4" y="4" width="50" height="34" '+S+'/>'+
-      '<text x="29" y="24" text-anchor="middle" font-size="8" fill="#666">a×b</text></svg>';
-
-  if (/ромб|rhombus|diamond/.test(t))
-    return '<svg width="50" height="50" viewBox="0 0 50 50">'+
-      '<polygon points="25,3 47,25 25,47 3,25" '+SR+'/>'+
-      '<line x1="25" y1="3" x2="25" y2="47" stroke="#c62828" stroke-width="0.8" stroke-dasharray="3"/>'+
-      '<line x1="3" y1="25" x2="47" y2="25" stroke="#c62828" stroke-width="0.8" stroke-dasharray="3"/>'+
-      '</svg>';
-
-  if (/трапец|trapez/.test(t))
-    return '<svg width="58" height="44" viewBox="0 0 58 44">'+
-      '<polygon points="14,4 44,4 54,40 4,40" '+SO+'/>'+
-      '<line x1="14" y1="4" x2="4" y2="40" stroke="#e65100" stroke-width="0.8" stroke-dasharray="2"/>'+
-      '</svg>';
-
-  if (/паралл|parallelogram/.test(t))
-    return '<svg width="58" height="44" viewBox="0 0 58 44">'+
-      '<polygon points="12,4 54,4 46,40 4,40" '+S+'/>'+
-      '</svg>';
-
-  if (/пентагон|pentagon/.test(t))
-    return '<svg width="50" height="50" viewBox="0 0 50 50">'+
-      '<polygon points="25,3 48,19 39,44 11,44 2,19" '+SB+'/></svg>';
-
-  if (/зэрэгцээ шулуун|parallel lines/.test(t))
-    return '<svg width="50" height="40" viewBox="0 0 50 40">'+
-      '<line x1="4" y1="12" x2="46" y2="12" stroke="#2e7d32" stroke-width="2"/>'+
-      '<line x1="4" y1="28" x2="46" y2="28" stroke="#2e7d32" stroke-width="2"/>'+
-      '<text x="48" y="14" font-size="8" fill="#555">a</text>'+
-      '<text x="48" y="30" font-size="8" fill="#555">b</text></svg>';
-
-  if (/огтлолцох|intersect/.test(t))
-    return '<svg width="50" height="50" viewBox="0 0 50 50">'+
-      '<line x1="5" y1="5" x2="45" y2="45" stroke="#2e7d32" stroke-width="2"/>'+
-      '<line x1="45" y1="5" x2="5" y2="45" stroke="#1565c0" stroke-width="2"/>'+
-      '<circle cx="25" cy="25" r="3" fill="#c62828"/></svg>';
-
-  // ── Огторгуйн дүрсүүд ──
-  if (/куб|cube/.test(t))
-    return '<svg width="52" height="52" viewBox="0 0 52 52">'+
-      '<rect x="4" y="16" width="30" height="30" '+S+'/>'+
-      '<polygon points="4,16 18,4 48,4 34,16" '+S+'/>'+
-      '<line x1="34" y1="16" x2="48" y2="4" '+S+'/>'+
-      '<line x1="48" y1="4" x2="48" y2="34" '+S+'/>'+
-      '<line x1="34" y1="46" x2="48" y2="34" '+S+'/>'+
-      '</svg>';
-
-  if (/бөмбөл|sphere|ball/.test(t))
-    return '<svg width="50" height="50" viewBox="0 0 50 50">'+
-      '<circle cx="25" cy="25" r="21" '+SB+'/>'+
-      '<ellipse cx="25" cy="25" rx="21" ry="8" '+SB+' stroke-dasharray="4,3"/>'+
-      '<ellipse cx="25" cy="25" rx="8" ry="21" stroke="#1565c0" stroke-width="0.8" fill="none" stroke-dasharray="4,3"/>'+
-      '</svg>';
-
-  if (/цилиндр|cylinder/.test(t))
-    return '<svg width="46" height="56" viewBox="0 0 46 56">'+
-      '<ellipse cx="23" cy="10" rx="19" ry="7" '+S+'/>'+
-      '<ellipse cx="23" cy="46" rx="19" ry="7" '+S+'/>'+
-      '<line x1="4" y1="10" x2="4" y2="46" '+S+'/>'+
-      '<line x1="42" y1="10" x2="42" y2="46" '+S+'/>'+
-      '</svg>';
-
-  if (/конус|cone/.test(t))
-    return '<svg width="50" height="54" viewBox="0 0 50 54">'+
-      '<ellipse cx="25" cy="44" rx="21" ry="7" '+SR+'/>'+
-      '<line x1="4" y1="44" x2="25" y2="4" '+SR+'/>'+
-      '<line x1="46" y1="44" x2="25" y2="4" '+SR+'/>'+
-      '</svg>';
-
-  if (/пирамид|pyramid/.test(t))
-    return '<svg width="54" height="52" viewBox="0 0 54 52">'+
-      '<polygon points="4,46 50,46 50,46" fill="none"/>'+
-      '<line x1="4" y1="46" x2="27" y2="4" stroke="#e65100" stroke-width="1.8"/>'+
-      '<line x1="50" y1="46" x2="27" y2="4" stroke="#e65100" stroke-width="1.8"/>'+
-      '<line x1="4" y1="46" x2="50" y2="46" stroke="#e65100" stroke-width="1.8"/>'+
-      '<line x1="15" y1="30" x2="27" y2="4" stroke="#e65100" stroke-width="0.8" stroke-dasharray="3"/>'+
-      '<polygon points="4,46 50,46 38,30 15,30" stroke="#e65100" stroke-width="1" fill="none" stroke-dasharray="3,3"/>'+
-      '</svg>';
-
-  if (/призм|prism/.test(t))
-    return '<svg width="56" height="52" viewBox="0 0 56 52">'+
-      '<polygon points="4,46 28,46 40,28 16,28" '+S+'/>'+
-      '<polygon points="4,46 16,28 16,8 4,26" '+S+'/>'+
-      '<polygon points="16,28 40,28 40,8 16,8" '+S+'/>'+
-      '<line x1="4" y1="26" x2="28" y2="26" stroke="#2e7d32" stroke-width="0.8" stroke-dasharray="3"/>'+
-      '</svg>';
-
-  // Координатын тэнхлэг
-  if (/координат|coordinate|graph|график|функц|f\(x\)/.test(t))
-    return '<svg width="52" height="52" viewBox="0 0 52 52">'+
-      '<line x1="4" y1="26" x2="48" y2="26" stroke="#555" stroke-width="1.5"/>'+
-      '<line x1="26" y1="48" x2="26" y2="4" stroke="#555" stroke-width="1.5"/>'+
-      '<polygon points="48,26 42,23 42,29" fill="#555"/>'+
-      '<polygon points="26,4 23,10 29,10" fill="#555"/>'+
-      '<text x="46" y="23" font-size="8" fill="#555">x</text>'+
-      '<text x="28" y="8" font-size="8" fill="#555">y</text>'+
-      '</svg>';
-
-  // Вектор
-  if (/вектор|vector/.test(t))
-    return '<svg width="52" height="36" viewBox="0 0 52 36">'+
-      '<line x1="4" y1="18" x2="44" y2="18" stroke="#1565c0" stroke-width="2"/>'+
-      '<polygon points="48,18 40,14 40,22" fill="#1565c0"/>'+
-      '<text x="24" y="14" text-anchor="middle" font-size="8" fill="#1565c0">a⃗</text></svg>';
-
-  // ── Координатын системд цэг, шулуун, функц ──────────────
-  // y=mx+b, y=ax^2, цэг A(x,y), шулуун x=c, y=c
-  if (/[Yy]\s*=\s*[-\d.]*\s*[Xx]|[Yy]\s*=\s*[-\d.x^]+|[A-Za-z]\s*\(\s*[-\d.]+\s*,\s*[-\d.]+\s*\)/.test(text)) {
-    return drawCoordPlane(text);
-  }
-
-  return '';
-}
-
-// ── КООРДИНАТЫН ХАВТГАЙ ЗУРАГЧ ──────────────────────────
-function drawCoordPlane(text) {
-  var W=200, H=180, CX=90, CY=90, SCALE=20;
-  var svg = '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="vertical-align:middle;border:1px solid #eee;border-radius:4px;margin:4px">';
-
-  // Торлог
-  for (var gx=-4;gx<=4;gx++) {
-    var px=CX+gx*SCALE;
-    svg += '<line x1="'+px+'" y1="10" x2="'+px+'" y2="'+(H-10)+'" stroke="#e0e0e0" stroke-width="0.5"/>';
-    if (gx!==0) svg += '<text x="'+px+'" y="'+(CY+12)+'" text-anchor="middle" font-size="8" fill="#aaa">'+gx+'</text>';
-  }
-  for (var gy=-3;gy<=3;gy++) {
-    var py=CY-gy*SCALE;
-    svg += '<line x1="10" y1="'+py+'" x2="'+(W-10)+'" y2="'+py+'" stroke="#e0e0e0" stroke-width="0.5"/>';
-    if (gy!==0) svg += '<text x="'+(CX-6)+'" y="'+(py+3)+'" text-anchor="end" font-size="8" fill="#aaa">'+gy+'</text>';
-  }
-
-  // Тэнхлэгүүд
-  svg += '<line x1="10" y1="'+CY+'" x2="'+(W-10)+'" y2="'+CY+'" stroke="#555" stroke-width="1.5"/>';
-  svg += '<line x1="'+CX+'" y1="10" x2="'+CX+'" y2="'+(H-10)+'" stroke="#555" stroke-width="1.5"/>';
-  svg += '<polygon points="'+(W-10)+','+CY+' '+(W-16)+','+(CY-3)+' '+(W-16)+','+(CY+3)+'" fill="#555"/>';
-  svg += '<polygon points="'+CX+',10 '+(CX-3)+',16 '+(CX+3)+',16" fill="#555"/>';
-  svg += '<text x="'+(W-8)+'" y="'+(CY-5)+'" font-size="9" fill="#333">x</text>';
-  svg += '<text x="'+(CX+5)+'" y="16" font-size="9" fill="#333">y</text>';
-
-  // Функц/шулуун зурах
-  var funcs = parseFunctions(text);
-  var COLORS = ['#c62828','#1565c0','#2e7d32','#e65100','#6a1b9a'];
-  funcs.forEach(function(fn, fi) {
-    var col = COLORS[fi % COLORS.length];
-    if (fn.type === 'linear') {
-      // y = mx + b
-      var x1s = -4, x2s = 4;
-      var y1s = fn.m * x1s + fn.b;
-      var y2s = fn.m * x2s + fn.b;
-      var px1 = CX + x1s*SCALE, py1 = CY - y1s*SCALE;
-      var px2 = CX + x2s*SCALE, py2 = CY - y2s*SCALE;
-      svg += '<line x1="'+px1+'" y1="'+py1+'" x2="'+px2+'" y2="'+py2+'" stroke="'+col+'" stroke-width="2"/>';
-      // Тэгшитгэл label
-      svg += '<text x="'+(CX+3*SCALE)+'" y="'+(CY-fn.m*3*SCALE-fn.b*SCALE+0)+'" font-size="8" fill="'+col+'">'+fn.label+'</text>';
-    } else if (fn.type === 'quad') {
-      // y = ax^2 + bx + c
-      var pts = [];
-      for (var xi=-4; xi<=4; xi+=0.2) {
-        var yi = fn.a*xi*xi + fn.bq*xi + fn.c;
-        var px = CX+xi*SCALE, py = CY-yi*SCALE;
-        if (py>5 && py<H-5) pts.push(px+','+py);
-      }
-      if (pts.length>1) svg += '<polyline points="'+pts.join(' ')+'" stroke="'+col+'" stroke-width="2" fill="none"/>';
-    } else if (fn.type === 'vline') {
-      // x = c
-      var px = CX + fn.c*SCALE;
-      svg += '<line x1="'+px+'" y1="15" x2="'+px+'" y2="'+(H-15)+'" stroke="'+col+'" stroke-width="2" stroke-dasharray="4,2"/>';
-      svg += '<text x="'+(px+3)+'" y="20" font-size="8" fill="'+col+'">x='+fn.c+'</text>';
-    } else if (fn.type === 'hline') {
-      // y = c
-      var py = CY - fn.c*SCALE;
-      svg += '<line x1="15" y1="'+py+'" x2="'+(W-15)+'" y2="'+py+'" stroke="'+col+'" stroke-width="2" stroke-dasharray="4,2"/>';
-      svg += '<text x="'+(CX+5)+'" y="'+(py-3)+'" font-size="8" fill="'+col+'">y='+fn.c+'</text>';
-    } else if (fn.type === 'point') {
-      // A(x,y) цэг
-      var px = CX + fn.x*SCALE, py = CY - fn.y*SCALE;
-      svg += '<circle cx="'+px+'" cy="'+py+'" r="4" fill="'+col+'" stroke="#fff" stroke-width="1"/>';
-      svg += '<text x="'+(px+5)+'" y="'+(py-4)+'" font-size="9" fill="'+col+'" font-weight="bold">'+fn.label+'</text>';
-    }
-  });
-
-  svg += '</svg>';
-  return svg;
-}
-
-
-function parseFunctions(text) {
-  var results = [];
-  // y = 1.5x + 2, y=2x-3, y=-x, y=x
-  var linPat = /[Yy][ ]*=[ ]*([-\d.]+)?[ ]*[*]?[ ]*[Xx][ ]*([+-][ ]*[\d.]+)?/g;
-  var m;
-  while ((m=linPat.exec(text))!==null) {
-    var ms = (m[1]||'1').replace(/\s/g,'');
-    var bs = (m[2]||'0').replace(/\s/g,'');
-    var mv = parseFloat(ms==='−'||ms==='-'?-1:ms)||1;
-    var bv = parseFloat(bs)||0;
-    results.push({type:'linear', m:mv, b:bv, label:m[0].replace(/\s/g,'')});
-  }
-  // y = ax^2
-  var quadPat = /[Yy][ ]*=[ ]*([-\d.]+)?[ ]*[*]?[ ]*[Xx][ ]*[\^\u00B2]2/g;
-  while ((m=quadPat.exec(text))!==null) {
-    var av = parseFloat((m[1]||'1'))||1;
-    results.push({type:'quad', a:av, bq:0, c:0, label:m[0]});
-  }
-  // x = c (тогтмол шулуун)
-  var vlinPat = /x\s*=\s*([-\d.]+)/gi;
-  while ((m=vlinPat.exec(text))!==null) {
-    results.push({type:'vline', c:parseFloat(m[1])||0});
-  }
-  // y = c (тогтмол шулуун)
-  var hlinPat = /y\s*=\s*([-\d.]+)/gi;
-  while ((m=hlinPat.exec(text))!==null) {
-    if (!isNaN(parseFloat(m[1])) && !/[Xx]/.test(text.slice(m.index,m.index+20)))
-      results.push({type:'hline', c:parseFloat(m[1])||0});
-  }
-  // A(2,3), B(-1,4) цэгүүд
-  var ptPat = /([A-Za-z])\s*\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)/g;
-  while ((m=ptPat.exec(text))!==null) {
-    results.push({type:'point', x:parseFloat(m[2]), y:parseFloat(m[3]), label:m[1]+'('+m[2]+','+m[3]+')'});
-  }
-  return results;
-}
-
-
+// ═══════════════════════════════════════════════
+// RENDER EXAM
+// ═══════════════════════════════════════════════
 function renderExam(data, bp) {
   examData = data;
-  document.getElementById('exam-title').textContent = data.title || '';
-  document.getElementById('stat-q').textContent = data.total_questions || 0;
-  document.getElementById('stat-s').textContent = data.total_score || 0;
+  document.getElementById('exam-title').textContent = data.title||'';
+  document.getElementById('stat-q').textContent = data.total_questions||0;
+  document.getElementById('stat-s').textContent = data.total_score||0;
   var meta = document.getElementById('exam-meta');
   meta.innerHTML =
     '<span class="exam-badge">'+data.grade+'-р анги</span>' +
     '<span class="exam-badge">⏱ '+data.duration+'</span>' +
     (data.ai_generated ? '<span class="exam-badge">🤖 AI нэмсэн: '+data.ai_generated+'</span>' : '') +
     (data.source_note ? '<span class="exam-badge">'+data.source_note+'</span>' : '');
-
-  var qs = data.questions || [];
+  var qs = data.questions||[];
   var html = qs.map(function(q,i) {
     var lvlCss = (q.level||'').replace(/ /g,'');
     var opts = '';
     if (q.options && q.options.length) {
       opts = '<div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.3rem">' +
-        q.options.map(function(o){ return '<span class="q-tag" style="background:var(--green-50);border:1px solid var(--green-100);color:var(--text-mid)">'+enrichText(o)+'</span>'}).join('') +
-        '</div>';
+        q.options.map(function(o){ return '<span class="q-tag" style="background:var(--green-50);border:1px solid var(--green-100);color:var(--text-mid)">'+enrichText(o)+'</span>'}).join('')+'</div>';
     }
     return '<div class="q-item">' +
       '<div class="q-num">'+(i+1)+'</div>' +
@@ -621,243 +473,584 @@ function renderExam(data, bp) {
         '<div class="q-tags">' +
           '<span class="q-tag q-level level-'+lvlCss+'">'+q.level+'</span>' +
           '<span class="q-tag" style="background:#f0f9ff;border:1px solid #bae6fd;color:#0369a1">'+q.bloom+'</span>' +
-        '</div>' +
-      '</div>' +
-      '<div class="q-score">'+q.score+'п</div>' +
-    '</div>';
+        '</div></div>' +
+      '<div class="q-score">'+q.score+'п</div></div>';
   }).join('');
   document.getElementById('questions-list').innerHTML = html || '<p style="color:var(--text-muted);padding:1rem">Даалгавар байхгүй</p>';
-
-  // KaTeX render — DOM шинэчлэгдсэний дараа дуудах
+  if (examData) examData.blueprint = bp||{};
   var qlist = document.getElementById('questions-list');
-  // base.html-д тодорхойлсон mathRender ашиглах
-  // Задгай хэсэг харуулах
-  var zs = document.getElementById('zadgai-section');
-  if (zs) zs.style.display = 'block';
-  // examData-д blueprint хадгалах
-  if (examData) examData.blueprint = bp || {};
-
-  if (window.mathRender) {
-    mathRender(qlist);
-  } else if (window.renderMathInElement) {
-    try {
-      renderMathInElement(qlist, {
-        delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
-        throwOnError:false
-      });
-    } catch(e) {}
+  if (window.mathRender) mathRender(qlist);
+  else if (window.renderMathInElement) {
+    try { renderMathInElement(qlist, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false}); } catch(e){}
   }
-
-  // Задгай хэсэг
-  var bp_info = data.blueprint_info || {};
-  var zs = document.getElementById('zadgai-section');
-  if (zs) {
-    if (bp_info.zadgai_total > 0) {
-      zs.style.display = 'block';
-      var zi = document.getElementById('zadgai-info');
-      if (zi) zi.textContent = 'Нийт '+bp_info.zadgai_total+' задгай даалгавар · '+bp_info.zadgai_score+' оноо';
-    } else {
-      zs.style.display = 'none';
-    }
-  }
+  // II хэсэг харуулах
+  document.getElementById('zadgai-section').style.display = 'block';
+  var specs = getZBlueprintSpec();
+  var totalScore = specs.reduce(function(a,s){return a+s.score},0);
+  document.getElementById('zadgai-info').textContent =
+    'II хэсэг: '+specs.length+' бодлого · Нийт '+totalScore+' оноо (Сангаас татах + AI нэмэх)';
 }
 
-// ── ЗАДГАЙ ───────────────────────────────────────────
+// ═══════════════════════════════════════════════
+// ЗАДГАЙ ХЭСЭГ RESET
+// ═══════════════════════════════════════════════
+function resetZadgaiSection() {
+  zadgaiCards = [];
+  document.getElementById('zadgai-cards').innerHTML = '';
+  document.getElementById('zadgai-score-total').style.display = 'none';
+  document.getElementById('zadgai-action-bar').style.display = 'none';
+  document.getElementById('btn-regen-zadgai').style.display = 'none';
+  document.getElementById('btn-gen-zadgai').style.display = 'inline-flex';
+  var sb = document.getElementById('zadgai-source-badge');
+  sb.style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════
+// ЗАДГАЙ ҮҮСГЭХ — DB + AI fallback
+// ═══════════════════════════════════════════════
 async function genZadgai() {
   if (!examData) return;
-  var out  = document.getElementById('zadgai-out');
-  var info = document.getElementById('zadgai-info');
-  var btn  = document.querySelector('[onclick="genZadgai()"]');
+  var specs = getZBlueprintSpec();
+  if (specs.length === 0) { alert('Задгай даалгаврын тоог тохируулна уу'); return; }
+
+  var btn = document.getElementById('btn-gen-zadgai');
+  var rbtn = document.getElementById('btn-regen-zadgai');
   if (btn) { btn.disabled=true; btn.innerHTML='<span class="spinner-sm"></span>'; }
-  out.className = 'ai-out show';
-  out.textContent = '⏳ Задгай даалгавар үүсгэж байна...';
 
-  // Блюпринтийн дагуу задгай даалгаврын тоо тооцох
-  var blueprint = examData.blueprint || {};
-  var zadgaiCount = 0;
-  var zadgaiSpec = [];
-  // Чадвар: 1 том бодлого (3 оноо), Хэрэглээ: 1 том бодлого (4 оноо)
-  if ((blueprint['Чадвар']||0) > 0) { zadgaiSpec.push({num:'2.1', score:3, label:'Чадварын бодлого'}); zadgaiCount++; }
-  if ((blueprint['Хэрэглээ']||0) > 0) { zadgaiSpec.push({num:'2.2', score:4, label:'Хэрэглээний бодлого'}); zadgaiCount++; }
-  if (zadgaiCount === 0) {
-    zadgaiSpec = [
-      {num:'2.1', score:3, label:'Задгай бодлого'},
-      {num:'2.2', score:4, label:'Задгай бодлого'}
-    ];
-  }
-  // Нэмэлт 2.3 — Системтэй бодлого
-  zadgaiSpec.push({num:'2.'+(zadgaiSpec.length+1), score:3, label:'Системтэй бодлого'});
+  var cardsEl = document.getElementById('zadgai-cards');
+  cardsEl.innerHTML = '<div class="zq-loading"><div class="spinner"></div><p style="margin-top:.5rem">Сангаас задгай даалгавар хайж байна...</p></div>';
 
-  var specText = zadgaiSpec.map(function(s){
-    return s.num+' — '+s.label+' ('+s.score+' оноо, '+s.score+' дэд даалгавар)';
-  }).join(String.fromCharCode(10));
+  zadgaiCards = [];
 
-  var totalScore = zadgaiSpec.reduce(function(a,s){return a+s.score},0);
-  info.textContent = '2-р хэсэг: '+zadgaiSpec.length+' бодлого · Нийт '+totalScore+' оноо';
+  try {
+    // ── 1. DB-с задгай даалгавар татах ──
+    var dbRes = await fetch('/api/get-open-questions', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        grade: examData.grade,
+        subject: examData.subject,
+        specs: specs
+      })
+    });
+    var dbData = await dbRes.json();
+    var dbQuestions = dbData.questions || [];
 
-  var prompt = examData.grade+"-р ангийн "+examData.subject+" хичээлийн задгай даалгавар (II хэсэг) зохио. "+
-    "Сэдэв: "+examData.title+". "+
-    "Блюпринт: "+JSON.stringify(blueprint)+". "+
-    "Бодлогуудыг зохио: "+specText+". "+
-    "Шаардлага: Монгол хэлээр. Томьёо $...$ хэлбэрт. "+
-    "Дэд даалгавар а) б) в) дугаарлах. Ажлын зай дурдах. "+
-    "Зөв хариулт хамт өгөх. Амьдрал практиктай холбох.";
-;
+    // ── 2. Спецификацийн дагуу нөхөх ──
+    var aiNeeded = [];
+    specs.forEach(function(spec, i) {
+      var matched = dbQuestions.find(function(q) {
+        return q.level === spec.level && !zadgaiCards.find(function(c){ return c.db_id === q.id; });
+      });
+      if (matched) {
+        zadgaiCards.push({
+          id: i, num: spec.num, title: spec.label,
+          body: matched.question, answer: matched.answer||'',
+          score: spec.score, source: 'db', db_id: matched.id,
+          editing: false, showAnswer: false
+        });
+      } else {
+        aiNeeded.push({spec, idx: i});
+      }
+    });
 
-  fetch('/api/chat', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({messages:[{role:'user', content:prompt}]})
-  }).then(function(r){ return r.json(); })
-  .then(function(data) {
-    if (btn) { btn.disabled=false; btn.textContent='✦ AI-аар үүсгэх'; }
-    if (data.error) {
-      out.innerHTML = '<div style="color:#c62828">❌ '+data.error+'</div>';
-      return;
+    // ── 3. AI-аар дутуугийг нэмэх ──
+    if (aiNeeded.length > 0) {
+      cardsEl.innerHTML = '<div class="zq-loading"><div class="spinner"></div><p style="margin-top:.5rem">'+aiNeeded.length+' бодлогыг AI-аар үүсгэж байна...</p></div>';
+      var aiPrompt = examData.grade+"-р ангийн "+examData.subject+" хичээлийн задгай даалгаврууд зохио.\n" +
+        "Шалгалтын сэдэв: "+examData.title+".\n" +
+        "Дараах бодлогуудыг зохио:\n" +
+        aiNeeded.map(function(an){
+          return an.spec.num+" — "+an.spec.label+" ("+an.spec.score+" оноо, дэд даалгавар а) б) в) дугаарлах)";
+        }).join("\n") +
+        "\n\nШаардлага:\n- Монгол хэлээр\n- Томьёо $...$ хэлбэрт\n- Амьдрал практиктай холбох\n- Зөв хариулт хамт өгөх [ХАРИУЛТ: ...] хэлбэрт\n- JSON массив хэлбэрт буцаах:\n" +
+        '[{"num":"2.1","body":"бодлогын текст...","answer":"хариулт..."},...]';
+
+      var aiRes = await fetch('/api/chat', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          messages:[{role:'user', content:aiPrompt}],
+          json_mode: true
+        })
+      });
+      var aiData = await aiRes.json();
+      var aiReply = aiData.reply || '[]';
+      var aiQuestions = [];
+      try {
+        var clean = aiReply.replace(/```json|```/g,'').trim();
+        aiQuestions = JSON.parse(clean);
+      } catch(e) {
+        // JSON биш бол plain text-ийг хуваах
+        aiQuestions = aiNeeded.map(function(an, i) {
+          return {num: an.spec.num, body: aiReply, answer: ''};
+        });
+      }
+      aiNeeded.forEach(function(an, i) {
+        var aq = aiQuestions[i] || {num: an.spec.num, body: '(AI үүсгэсэн бодлого)', answer: ''};
+        zadgaiCards.push({
+          id: an.idx, num: an.spec.num, title: an.spec.label,
+          body: aq.body || aq.question || '', answer: aq.answer||'',
+          score: an.spec.score, source: 'ai',
+          editing: false, showAnswer: false
+        });
+      });
     }
-    var reply = data.reply || '';
-    // Форматлах
-    out.innerHTML = reply
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/[*][*](.+?)[*][*]/g,'<strong>$1</strong>')
-      .replace(/^(2[.]\d+.*?)$/gm,'<h4 style="color:var(--teal-600);margin:1rem 0 .3rem;font-size:.9rem">$1</h4>')
-      .replace(/^([аабвгд][).])(.+)$/gm,'<div style="margin:.3rem 0 .3rem 1rem">$1$2</div>')
-      .replaceAll(String.fromCharCode(10),'<br>');
-    // MathJax render
-    if (window.mathRender) mathRender(out);
-    // Actions
-    var act = document.getElementById('zadgai-actions');
-    if (act) act.style.display='flex';
-    // examData-д хадгалах
-    examData.zadgai = reply;
-    examData.zadgaiSpec = zadgaiSpec;
-  }).catch(function(e) {
-    if (btn) { btn.disabled=false; btn.textContent='✦ AI-аар үүсгэх'; }
-    out.innerHTML = '<div style="color:#c62828">❌ '+e.message+'</div>';
-  });
+
+    // ID дугаарлалт засах
+    zadgaiCards.sort(function(a,b){ return a.id - b.id; });
+
+    renderZadgaiCards();
+
+    // Badge
+    var dbCount = zadgaiCards.filter(function(c){return c.source==='db'}).length;
+    var aiCount = zadgaiCards.filter(function(c){return c.source==='ai'}).length;
+    var sb = document.getElementById('zadgai-source-badge');
+    sb.style.display = 'inline-block';
+    if (dbCount>0 && aiCount>0) {
+      sb.className = 'zadgai-source-badge zadgai-source-mix';
+      sb.textContent = '📚 Сан: '+dbCount+' · 🤖 AI: '+aiCount;
+    } else if (dbCount>0) {
+      sb.className = 'zadgai-source-badge zadgai-source-db';
+      sb.textContent = '📚 Сангаас: '+dbCount;
+    } else {
+      sb.className = 'zadgai-source-badge zadgai-source-ai';
+      sb.textContent = '🤖 AI үүсгэсэн: '+aiCount;
+    }
+
+    if (btn) { btn.disabled=false; btn.style.display='none'; }
+    if (rbtn) rbtn.style.display='inline-flex';
+
+  } catch(e) {
+    cardsEl.innerHTML = '<div style="color:#c62828;padding:1rem">❌ Алдаа: '+e.message+'</div>';
+    if (btn) { btn.disabled=false; btn.innerHTML='✦ Задгай үүсгэх'; }
+  }
 }
 
-
-function printZadgai() {
-  if (!examData || !examData.zadgai) return;
-  var win = window.open('','_blank');
-  var spec = examData.zadgaiSpec || [];
-  var totalScore = spec.reduce(function(a,s){return a+s.score},0);
-  win.document.write(
-    '<!DOCTYPE html><html><head><meta charset="UTF-8">'+
-    '<script>window.MathJax={tex:{inlineMath:[["$","$"]],displayMath:[["$$","$$"]]}};<'+'/script>'+
-    '<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"><'+'/script>'+
-    '<style>'+
-    'body{font-family:serif;font-size:11pt;padding:15mm;line-height:2}'+
-    'h1{font-size:13pt;text-align:center;border-bottom:2px solid #000;padding-bottom:5px}'+
-    'h2{font-size:12pt;text-align:center;font-weight:normal}'+
-    'h3{font-size:11pt;color:#1b5e20;margin:1.2rem 0 .4rem;border-left:3px solid #1b5e20;padding-left:8px}'+
-    '.work-space{border-bottom:1px dotted #ccc;min-height:60px;margin:.5rem 0}'+
-    '@media print{button{display:none}@page{margin:15mm;size:A4}}'+
-    '</style></head><body>'+
-    '<button onclick="window.print()" style="margin-bottom:10px;padding:5px 14px">🖨 Хэвлэх</button>'+
-    '<h1>'+examData.title+'</h1>'+
-    '<h2>'+examData.grade+'-р анги &nbsp;·&nbsp; '+examData.subject+'</h2>'+
-    '<h2 style="margin-top:0">II ХЭСЭГ — Задгай даалгавар &nbsp;/Нийт '+totalScore+' оноо/</h2>'+
-    '<hr>'+
-    examData.zadgai
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/[*][*](.+?)[*][*]/g,'<strong>$1</strong>')
-      .replace(/^(2[.]\d+.*)$/gm,'<h3>$1</h3>')
-      .replace(/\n/g,'<br>')+
-    '<br><br><hr><p style="font-size:9pt;color:#888;text-align:right">Орхонтуул ЕБС &nbsp;·&nbsp; '+new Date().getFullYear()+'</p>'+
-    '</body></html>'
-  );
-  win.document.close();
+// ── Дахин үүсгэх ──
+function regenZadgai() {
+  resetZadgaiSection();
+  genZadgai();
 }
 
-// ── ХЭВЛЭХ / ТАТАХ ───────────────────────────────────
+// ═══════════════════════════════════════════════
+// ЗАДГАЙ КАРТУУДЫГ РЕНДЭР ХИЙХ
+// ═══════════════════════════════════════════════
+function renderZadgaiCards() {
+  var cardsEl = document.getElementById('zadgai-cards');
+  if (zadgaiCards.length === 0) {
+    cardsEl.innerHTML = '<p style="color:var(--text-muted);padding:1rem">Задгай даалгавар байхгүй</p>';
+    return;
+  }
+  cardsEl.innerHTML = zadgaiCards.map(function(c) {
+    var srcCls = c.source==='ai' ? 'ai-gen' : 'db-src';
+    var srcLbl = c.source==='ai' ? '🤖 AI үүсгэсэн' : '📚 Сангаас';
+    return '<div class="zq-card '+srcCls+'" id="zcard-'+c.id+'">' +
+      '<div class="zq-card-header">' +
+        '<div class="zq-num">'+c.num+'</div>' +
+        '<div class="zq-title">'+c.title+'</div>' +
+        '<span class="zq-score-badge" id="zscore-badge-'+c.id+'" onclick="editScore('+c.id+')" title="Оноо засах">'+c.score+' оноо</span>' +
+        '<input type="number" min="1" max="30" class="zq-score-edit" id="zscore-input-'+c.id+'"' +
+          ' value="'+c.score+'" onblur="saveScore('+c.id+')" onkeydown="if(event.key===\'Enter\')saveScore('+c.id+')">' +
+      '</div>' +
+      '<div class="zq-body" id="zbody-'+c.id+'">'+escHtml(c.body)+'</div>' +
+      '<textarea class="zq-edit-area" id="zedit-'+c.id+'" onkeydown="if(event.ctrlKey&&event.key===\'Enter\')saveEdit('+c.id+')">'+escHtml(c.body)+'</textarea>' +
+      '<div class="zq-actions">' +
+        '<button class="btn-xs" id="zbtn-edit-'+c.id+'" onclick="toggleEdit('+c.id+')">✏ Засах</button>' +
+        '<button class="btn-xs" id="zbtn-save-'+c.id+'" onclick="saveEdit('+c.id+')" style="display:none">💾 Хадгалах</button>' +
+        '<button class="btn-xs" onclick="regenSingle('+c.id+')">↻ AI дахин</button>' +
+        '<button class="btn-xs danger" onclick="removeCard('+c.id+')">✕ Хасах</button>' +
+      '</div>' +
+      (c.answer ? '<span class="zq-answer-toggle" onclick="toggleAnswer('+c.id+')">▸ Хариулт харах</span>' +
+        '<div class="zq-answer-box" id="zanswer-'+c.id+'">'+escHtml(c.answer)+'</div>' : '') +
+      '<div class="zq-source-label">'+srcLbl+'</div>' +
+    '</div>';
+  }).join('');
+
+  // MathJax render
+  var el = document.getElementById('zadgai-cards');
+  if (window.mathRender) mathRender(el);
+
+  // Нийт оноо шинэчлэх
+  updateZStatBar();
+  document.getElementById('zadgai-score-total').style.display = 'flex';
+  document.getElementById('zadgai-action-bar').style.display = 'flex';
+}
+
+function updateZStatBar() {
+  var total = zadgaiCards.reduce(function(a,c){return a+c.score},0);
+  document.getElementById('zstat-q').textContent = zadgaiCards.length;
+  document.getElementById('zstat-s').textContent = total;
+}
+
+// ═══════════════════════════════════════════════
+// ЗАДГАЙ КАРТ ҮЙЛДЛҮҮД
+// ═══════════════════════════════════════════════
+function escHtml(t) {
+  if (!t) return '';
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function toggleEdit(id) {
+  var c = zadgaiCards.find(function(x){return x.id===id});
+  if (!c) return;
+  c.editing = !c.editing;
+  var body = document.getElementById('zbody-'+id);
+  var edit = document.getElementById('zedit-'+id);
+  var btnEdit = document.getElementById('zbtn-edit-'+id);
+  var btnSave = document.getElementById('zbtn-save-'+id);
+  if (c.editing) {
+    body.style.display='none'; edit.style.display='block';
+    edit.value = c.body;
+    edit.focus();
+    if (btnEdit) btnEdit.style.display='none';
+    if (btnSave) btnSave.style.display='inline-block';
+  } else {
+    body.style.display='block'; edit.style.display='none';
+    if (btnEdit) btnEdit.style.display='inline-block';
+    if (btnSave) btnSave.style.display='none';
+  }
+}
+
+function saveEdit(id) {
+  var c = zadgaiCards.find(function(x){return x.id===id});
+  if (!c) return;
+  var edit = document.getElementById('zedit-'+id);
+  if (edit) c.body = edit.value;
+  c.editing = false;
+  c.source = 'edited';
+  var body = document.getElementById('zbody-'+id);
+  if (body) body.innerHTML = escHtml(c.body);
+  var editEl = document.getElementById('zedit-'+id);
+  if (editEl) editEl.style.display='none';
+  if (body) body.style.display='block';
+  var btnEdit = document.getElementById('zbtn-edit-'+id);
+  var btnSave = document.getElementById('zbtn-save-'+id);
+  if (btnEdit) btnEdit.style.display='inline-block';
+  if (btnSave) btnSave.style.display='none';
+  // Source label шинэчлэх
+  var card = document.getElementById('zcard-'+id);
+  if (card) {
+    var lbl = card.querySelector('.zq-source-label');
+    if (lbl) lbl.textContent = '✏ Засварласан';
+  }
+  if (window.mathRender) mathRender(document.getElementById('zbody-'+id));
+}
+
+function editScore(id) {
+  var badge = document.getElementById('zscore-badge-'+id);
+  var input = document.getElementById('zscore-input-'+id);
+  if (badge) badge.style.display='none';
+  if (input) { input.style.display='inline-block'; input.focus(); input.select(); }
+}
+
+function saveScore(id) {
+  var c = zadgaiCards.find(function(x){return x.id===id});
+  if (!c) return;
+  var input = document.getElementById('zscore-input-'+id);
+  var badge = document.getElementById('zscore-badge-'+id);
+  if (input) { c.score = parseInt(input.value)||1; input.style.display='none'; }
+  if (badge) { badge.textContent = c.score+' оноо'; badge.style.display='inline-block'; }
+  updateZStatBar();
+}
+
+function toggleAnswer(id) {
+  var box = document.getElementById('zanswer-'+id);
+  var toggle = document.querySelector('#zcard-'+id+' .zq-answer-toggle');
+  if (!box) return;
+  var visible = box.style.display==='block';
+  box.style.display = visible?'none':'block';
+  if (toggle) toggle.textContent = (visible?'▸':'▾')+' Хариулт харах';
+}
+
+function removeCard(id) {
+  zadgaiCards = zadgaiCards.filter(function(c){return c.id!==id});
+  renderZadgaiCards();
+}
+
+async function regenSingle(id) {
+  if (!examData) return;
+  var c = zadgaiCards.find(function(x){return x.id===id});
+  if (!c) return;
+  var card = document.getElementById('zcard-'+id);
+  if (card) {
+    var body = card.querySelector('.zq-body');
+    if (body) body.innerHTML = '<span class="spinner-sm"></span> AI үүсгэж байна...';
+  }
+  var prompt = examData.grade+"-р ангийн "+examData.subject+" хичээлийн 1 задгай бодлого зохио.\n"+
+    "Сэдэв: "+examData.title+". Түвшин: "+c.title+". Оноо: "+c.score+".\n"+
+    "Формат: {\"body\":\"бодлогын текст\",\"answer\":\"хариулт\"} JSON хэлбэрт.";
+  try {
+    var res = await fetch('/api/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({messages:[{role:'user',content:prompt}]})
+    });
+    var data = await res.json();
+    var reply = data.reply||'{}';
+    var clean = reply.replace(/```json|```/g,'').trim();
+    var parsed = JSON.parse(clean);
+    c.body = parsed.body||parsed.question||reply;
+    c.answer = parsed.answer||'';
+    c.source = 'ai';
+  } catch(e) {
+    c.body = '(Алдаа гарлаа: '+e.message+')';
+  }
+  renderZadgaiCards();
+}
+
+// ═══════════════════════════════════════════════
+// МАТЕМАТИК РЕНДЭР
+// ═══════════════════════════════════════════════
+function enrichText(text) {
+  if (!text) return '';
+  var safe = text
+    .replace(/&(?!amp;|lt;|gt;|#[0-9]+;|[a-zA-Z]+;)/g,'&amp;')
+    .replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  var fig = geoFigureSVG(text);
+  return (fig?'<span class="geo-fig">'+fig+'</span> ':'')+safe;
+}
+
+function geoFigureSVG(text) {
+  if (!text) return '';
+  var t = text.toLowerCase();
+  var S='stroke="#2e7d32" stroke-width="1.8" fill="none"';
+  var SB='stroke="#1565c0" stroke-width="1.8" fill="none"';
+  var SR='stroke="#c62828" stroke-width="1.8" fill="none"';
+  var SO='stroke="#e65100" stroke-width="1.8" fill="none"';
+  if (/гурвалжин|triangle/.test(t))
+    return '<svg width="52" height="46" viewBox="0 0 52 46"><polygon points="26,3 49,43 3,43" '+S+'/><text x="26" y="41" text-anchor="middle" font-size="7" fill="#555">A</text><text x="3" y="43" font-size="7" fill="#555">B</text><text x="46" y="43" font-size="7" fill="#555">C</text></svg>';
+  if (/тойрог|circle/.test(t))
+    return '<svg width="50" height="50" viewBox="0 0 50 50"><circle cx="25" cy="25" r="21" '+SB+'/><line x1="25" y1="25" x2="46" y2="25" stroke="#1565c0" stroke-width="1.2"/><text x="33" y="22" font-size="8" fill="#1565c0">r</text><circle cx="25" cy="25" r="2" fill="#1565c0"/></svg>';
+  if (/квадрат|square/.test(t))
+    return '<svg width="46" height="46" viewBox="0 0 46 46"><rect x="4" y="4" width="38" height="38" '+S+'/></svg>';
+  if (/тэгш өнцөгт|rectangle/.test(t))
+    return '<svg width="58" height="42" viewBox="0 0 58 42"><rect x="4" y="4" width="50" height="34" '+S+'/><text x="29" y="24" text-anchor="middle" font-size="8" fill="#666">a×b</text></svg>';
+  if (/куб|cube/.test(t))
+    return '<svg width="52" height="52" viewBox="0 0 52 52"><rect x="4" y="16" width="30" height="30" '+S+'/><polygon points="4,16 18,4 48,4 34,16" '+S+'/><line x1="34" y1="16" x2="48" y2="4" '+S+'/><line x1="48" y1="4" x2="48" y2="34" '+S+'/><line x1="34" y1="46" x2="48" y2="34" '+S+'/></svg>';
+  if (/координат|график|функц/.test(t))
+    return '<svg width="52" height="52" viewBox="0 0 52 52"><line x1="4" y1="26" x2="48" y2="26" stroke="#555" stroke-width="1.5"/><line x1="26" y1="48" x2="26" y2="4" stroke="#555" stroke-width="1.5"/><polygon points="48,26 42,23 42,29" fill="#555"/><polygon points="26,4 23,10 29,10" fill="#555"/><text x="46" y="23" font-size="8" fill="#555">x</text><text x="28" y="8" font-size="8" fill="#555">y</text></svg>';
+  return '';
+}
+
+// ═══════════════════════════════════════════════
+// ХЭВЛЭХ / ТАТАХ
+// ═══════════════════════════════════════════════
 function doPrint() {
   if (!examData) return;
-  var qs = examData.questions || [];
-  var LABELS = ['А','Б','В','Г'];
-  var body = '<h2 style="text-align:center;border-bottom:2px solid #333;padding-bottom:8px">' +
-    examData.title + '</h2>' +
-    '<p style="text-align:center;font-size:10pt;color:#555">' +
-    examData.grade + '-р анги &nbsp;·&nbsp; ' + examData.subject +
-    ' &nbsp;·&nbsp; ' + examData.duration + '</p><hr style="margin:8px 0">';
+  var qs = examData.questions||[];
+  var LABELS=['А','Б','В','Г'];
+  var body='<h2 style="text-align:center;border-bottom:2px solid #333;padding-bottom:8px">'+examData.title+'</h2>'+
+    '<p style="text-align:center;font-size:10pt;color:#555">'+examData.grade+'-р анги · '+examData.subject+' · '+examData.duration+'</p>'+
+    '<p style="font-weight:700;margin:6px 0">I ХЭСЭГ — Тест даалгавар</p><hr style="margin:8px 0">';
   qs.forEach(function(q,i){
-    var fig = geoFigureSVG(q.question) || '';
-    var opts = '';
+    var opts='';
     if (q.options && q.options.length) {
-      opts = '<table style="margin:4px 0 4px 20px;width:90%"><tr>';
-      q.options.forEach(function(o,j){
-        var L=LABELS[j]||j+1, ok=(L===q.answer);
-        opts += '<td style="width:50%;padding:2px 6px">'+L+'. '+o+'</td>';
-      });
-      opts += '</tr></table>';
+      opts='<table style="margin:4px 0 4px 20px;width:90%"><tr>';
+      q.options.forEach(function(o,j){ opts+='<td style="width:50%;padding:2px 6px">'+(['А','Б','В','Г'][j]||j+1)+'. '+o+'</td>'; });
+      opts+='</tr></table>';
     }
-    body += '<div style="margin:10px 0;padding:8px 0 4px;border-left:3px solid #2e7d32;padding-left:8px;page-break-inside:avoid">' +
-      '<b style="color:#1b5e20">'+(i+1)+'.</b> '+fig+enrichText(q.question)+
-      ' <span style="font-size:9pt;color:#888">/'+q.score+' оноо/</span>'+opts+'</div>';
+    body+='<div style="margin:10px 0;padding:8px 0 4px;border-left:3px solid #2e7d32;padding-left:8px;page-break-inside:avoid">'+
+      '<b style="color:#1b5e20">'+(i+1)+'.</b> '+enrichText(q.question)+' <span style="font-size:9pt;color:#888">/'+q.score+' оноо/</span>'+opts+'</div>';
   });
+  // Задгай хэсэг
+  if (zadgaiCards.length > 0) {
+    var ztotal = zadgaiCards.reduce(function(a,c){return a+c.score},0);
+    body += '<div style="page-break-before:always"><h2 style="border-bottom:2px solid #333;padding-bottom:8px">II ХЭСЭГ — Задгай даалгавар /Нийт '+ztotal+' оноо/</h2>';
+    zadgaiCards.forEach(function(c,i) {
+      body += '<div style="margin:14px 0;page-break-inside:avoid">'+
+        '<p style="font-weight:700;color:#1b5e20;margin-bottom:4px">'+c.num+'. '+c.title+' /'+c.score+' оноо/</p>'+
+        '<p style="line-height:1.9">'+escHtml(c.body)+'</p>'+
+        '<div style="border-bottom:1px dotted #ccc;min-height:60px;margin-top:8px"></div></div>';
+    });
+    body += '</div>';
+  }
   var win = window.open('','_blank');
-  win.document.write(
-    '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
-    '<script>window.MathJax={tex:{inlineMath:[["$","$"]],displayMath:[["$$","$$"]]}};<\/script>' +
-    '<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"><\/script>' +
-    '<style>body{font-family:serif;font-size:11pt;padding:15mm;line-height:1.8}' +
-    'svg{vertical-align:middle}button{display:none}' +
-    '@media print{button{display:none}@page{margin:15mm;size:A4}}</style></head>' +
-    '<body><button onclick="window.print()" style="display:block;margin-bottom:10px;padding:6px 16px;cursor:pointer">🖨 Хэвлэх</button>' +
-    body + '</body></html>'
-  );
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+
+    '<script>window.MathJax={tex:{inlineMath:[["$","$"]],displayMath:[["$$","$$"]]}};<\/script>'+
+    '<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"><\/script>'+
+    '<style>body{font-family:serif;font-size:11pt;padding:15mm;line-height:1.8}button{display:none}'+
+    '@media print{@page{margin:15mm;size:A4}}</style></head>'+
+    '<body><button onclick="window.print()" style="display:block;margin-bottom:10px;padding:6px 16px">🖨 Хэвлэх</button>'+
+    body+'</body></html>');
   win.document.close();
 }
 
-// ── DOCX EXPORT (browser-д шууд) ──────────────────────────
-function buildDocxBlob(title, qs, showAnswers) {
-  var LABELS = ['А','Б','В','Г'];
-  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' +
-    'body{font-family:"Times New Roman",serif;font-size:12pt;margin:2cm;line-height:1.6}' +
-    'h1{font-size:14pt;text-align:center;border-bottom:2pt solid #000;padding-bottom:6pt}' +
-    'h2{font-size:11pt;text-align:center;font-weight:normal;margin-bottom:12pt}' +
-    '.q{margin:10pt 0 4pt}.qn{font-weight:bold}.sc{font-size:9pt;color:#888}' +
-    '.opts{margin-left:20pt;margin-top:4pt}.opt{display:inline-block;width:45%}' +
-    '.ok{font-weight:bold;color:#1b5e20}.ab{page-break-before:always}' +
+// ── Word export helper ──
+function buildDocxHtml(title, qs, showAnswers, includeZadgai) {
+  var LABELS=['А','Б','В','Г'];
+  var h = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+
+    'body{font-family:"Times New Roman",serif;font-size:12pt;margin:2cm;line-height:1.8}'+
+    'h1{font-size:14pt;text-align:center;border-bottom:2pt solid #000;padding-bottom:6pt}'+
+    'h2{font-size:12pt;font-weight:700;border-bottom:1pt solid #555;padding-bottom:4pt;margin-top:16pt}'+
+    '.q{margin:10pt 0 4pt}.qn{font-weight:bold}.sc{font-size:9pt;color:#888}'+
+    '.opts{margin-left:20pt}.opt{display:inline-block;width:45%}.ok{font-weight:bold;color:#1b5e20}'+
+    '.ab{page-break-before:always}.ws{border-bottom:1pt dotted #aaa;min-height:50pt;margin-top:6pt}'+
     '</style></head><body>';
-  html += '<h1>' + (title||'').replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</h1>';
-  html += '<p style="text-align:center">Нийт ' + qs.length + ' даалгавар</p><hr>';
+  h += '<h1>'+(title||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</h1>';
+  h += '<p style="text-align:center">'+examData.grade+'-р анги · '+examData.subject+' · '+examData.duration+'</p>';
+  h += '<h2>I ХЭСЭГ — Тест даалгавар /Нийт '+examData.total_questions+' даалгавар, '+examData.total_score+' оноо/</h2>';
   qs.forEach(function(q,i){
-    html += '<div class="q"><span class="qn">'+(i+1)+'. </span>' +
-      (q.question||'').replace(/&/g,'&amp;').replace(/</g,'&lt;') +
+    h += '<div class="q"><span class="qn">'+(i+1)+'. </span>'+(q.question||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')+
       ' <span class="sc">/'+(q.score||1)+' оноо/</span>';
     if (q.options && q.options.length) {
-      html += '<div class="opts">';
+      h += '<div class="opts">';
       q.options.forEach(function(o,j){
         var L=LABELS[j]||j+1, ok=showAnswers&&L===q.answer;
-        html += '<span class="opt'+(ok?' ok':'')+'">'+L+'. '+(o||'').replace(/&/g,'&amp;')+'&nbsp;&nbsp;</span>';
+        h += '<span class="opt'+(ok?' ok':'')+'">'+L+'. '+(o||'').replace(/&/g,'&amp;')+'&nbsp;&nbsp;</span>';
       });
-      html += '</div>';
+      h += '</div>';
     }
-    html += '</div>';
+    h += '</div>';
   });
   if (showAnswers) {
-    html += '<div class="ab"><h2>Зөв хариулт</h2><p>';
-    qs.forEach(function(q,i){ html += (i+1)+'. <b>'+(q.answer||'')+'</b>&nbsp;&nbsp;'; });
-    html += '</p></div>';
+    h += '<div class="ab"><h2>Зөв хариулт — I хэсэг</h2><p>';
+    qs.forEach(function(q,i){ h += (i+1)+'. <b>'+(q.answer||'')+'</b>&nbsp;&nbsp;'; });
+    h += '</p></div>';
   }
-  html += '</body></html>';
-  return new Blob(['﻿'+html], {type:'application/msword'});
+  if (includeZadgai && zadgaiCards.length > 0) {
+    var ztotal = zadgaiCards.reduce(function(a,c){return a+c.score},0);
+    h += '<div class="ab"><h2>II ХЭСЭГ — Задгай даалгавар /Нийт '+ztotal+' оноо/</h2>';
+    zadgaiCards.forEach(function(c){
+      h += '<div style="margin:14pt 0">'+
+        '<p style="font-weight:700;color:#1b5e20">'+c.num+'. '+c.title+' /'+c.score+' оноо/</p>'+
+        '<p style="line-height:2">'+(c.body||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</p>'+
+        '<div class="ws"></div></div>';
+    });
+    if (showAnswers) {
+      h += '<h2 style="margin-top:20pt">Хариулт — II хэсэг</h2>';
+      zadgaiCards.forEach(function(c){
+        if (c.answer) h += '<p><b>'+c.num+'.</b> '+c.answer.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</p>';
+      });
+    }
+    h += '</div>';
+  }
+  h += '</body></html>';
+  return h;
 }
-function _dlBlob(blob, name) {
+
+function _dlBlob(html, name) {
+  var blob = new Blob(['﻿'+html], {type:'application/msword'});
   var url=URL.createObjectURL(blob), a=document.createElement('a');
   a.href=url; a.download=name; a.click();
   setTimeout(function(){URL.revokeObjectURL(url);},1000);
 }
-function doDownload(){
-  if(!examData) return;
-  _dlBlob(buildDocxBlob(examData.title,examData.questions,false),
-    (examData.grade+'-р_анги_'+examData.subject+'.doc').replace(/ /g,'_'));
+
+function doDownload() {
+  if (!examData) return;
+  _dlBlob(buildDocxHtml(examData.title, examData.questions, false, false),
+    (examData.grade+'_'+examData.subject+'_тест.doc').replace(/ /g,'_'));
 }
-function doDownloadWithAnswers(){
-  if(!examData) return;
-  _dlBlob(buildDocxBlob(examData.title+' — Хариулттай',examData.questions,true),
-    (examData.grade+'-р_анги_'+examData.subject+'_хариулт.doc').replace(/ /g,'_'));
+function doDownloadWithAnswers() {
+  if (!examData) return;
+  _dlBlob(buildDocxHtml(examData.title+' — Хариулттай', examData.questions, true, false),
+    (examData.grade+'_'+examData.subject+'_тест_хариулт.doc').replace(/ /g,'_'));
+}
+function downloadZadgaiWord() {
+  if (!examData || zadgaiCards.length===0) { alert('Эхлээд задгай даалгавар үүсгэнэ үү'); return; }
+  var ztotal = zadgaiCards.reduce(function(a,c){return a+c.score},0);
+  var h = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'+
+    'body{font-family:"Times New Roman",serif;font-size:12pt;margin:2cm;line-height:2}'+
+    'h1{font-size:14pt;text-align:center;border-bottom:2pt solid #000;padding-bottom:6pt}'+
+    'h2{font-size:12pt;font-weight:700;margin-top:12pt}'+
+    '.ws{border-bottom:1pt dotted #aaa;min-height:60pt;margin:6pt 0 14pt}'+
+    '</style></head><body>'+
+    '<h1>'+examData.title.replace(/&/g,'&amp;')+'</h1>'+
+    '<p style="text-align:center">'+examData.grade+'-р анги · '+examData.subject+'</p>'+
+    '<h1 style="font-size:13pt;margin-top:8pt">II ХЭСЭГ — Задгай даалгавар /Нийт '+ztotal+' оноо/</h1><hr>';
+  zadgaiCards.forEach(function(c){
+    h += '<h2>'+c.num+'. '+c.title+' /'+c.score+' оноо/</h2>'+
+      '<p style="line-height:2">'+(c.body||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</p>'+
+      '<div class="ws"></div>';
+  });
+  h += '<p style="font-size:9pt;color:#888;text-align:right;margin-top:20pt">Орхонтуул ЕБС · '+new Date().getFullYear()+'</p></body></html>';
+  _dlBlob(h, (examData.grade+'_'+examData.subject+'_задгай.doc').replace(/ /g,'_'));
+}
+function downloadFullWord() {
+  if (!examData) return;
+  _dlBlob(buildDocxHtml(examData.title, examData.questions, true, true),
+    (examData.grade+'_'+examData.subject+'_бүрэн_хариулт.doc').replace(/ /g,'_'));
+}
+
+function printZadgai() {
+  if (!examData || zadgaiCards.length===0) return;
+  var ztotal = zadgaiCards.reduce(function(a,c){return a+c.score},0);
+  var body = '<h1 style="text-align:center;border-bottom:2px solid #000;padding-bottom:8px">'+
+    examData.title+'</h1>'+
+    '<p style="text-align:center">'+examData.grade+'-р анги · '+examData.subject+'</p>'+
+    '<h2 style="text-align:center;margin-top:0">II ХЭСЭГ — Задгай даалгавар /Нийт '+ztotal+' оноо/</h2><hr>';
+  zadgaiCards.forEach(function(c){
+    body += '<div style="margin:14px 0;page-break-inside:avoid">'+
+      '<p style="font-weight:700;color:#1b5e20">'+c.num+'. '+c.title+' /'+c.score+' оноо/</p>'+
+      '<p style="line-height:2">'+escHtml(c.body)+'</p>'+
+      '<div style="border-bottom:1px dotted #ccc;min-height:60px;margin-top:8px"></div></div>';
+  });
+  body += '<p style="font-size:9pt;color:#888;text-align:right;margin-top:20pt">Орхонтуул ЕБС · '+new Date().getFullYear()+'</p>';
+  var win = window.open('','_blank');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'+
+    '<script>window.MathJax={tex:{inlineMath:[["$","$"]],displayMath:[["$$","$$"]]}};<\/script>'+
+    '<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"><\/script>'+
+    '<style>body{font-family:serif;font-size:11pt;padding:15mm;line-height:1.9}'+
+    '@media print{button{display:none}@page{margin:15mm;size:A4}}</style></head>'+
+    '<body><button onclick="window.print()" style="margin-bottom:10px;padding:5px 14px">🖨 Хэвлэх</button>'+
+    body+'</body></html>');
+  win.document.close();
+}
+
+// ═══════════════════════════════════════════════
+// PDF ТАТАХ — /api/generate-pdf endpoint дуудах
+// mode: 'test' | 'answers' | 'zadgai' | 'full'
+// ═══════════════════════════════════════════════
+async function doDownloadPDF(mode) {
+  if (!examData) return;
+
+  // Товчийг олж disabled болгох
+  var btnMap = {
+    'test':    document.getElementById('btn-pdf-test'),
+    'answers': document.getElementById('btn-pdf-answers'),
+    'full':    document.querySelector('[onclick="doDownloadPDF(\'full\')"]'),
+    'zadgai':  document.querySelector('[onclick="doDownloadPDF(\'zadgai\')"]')
+  };
+  var btn = btnMap[mode];
+  var origText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled=true; btn.innerHTML='<span class="spinner-sm"></span> PDF...'; }
+
+  // Payload бэлдэх
+  var payload = {
+    mode: mode,
+    title: examData.title,
+    grade: examData.grade,
+    subject: examData.subject,
+    duration: examData.duration,
+    questions: examData.questions || [],
+    zadgai: (mode === 'full' || mode === 'zadgai') ? zadgaiCards : []
+  };
+
+  try {
+    var res = await fetch('/api/generate-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      var err = await res.json().catch(function(){ return {error: 'Серверийн алдаа'}; });
+      throw new Error(err.error || 'HTTP ' + res.status);
+    }
+
+    // PDF blob татах
+    var blob = await res.blob();
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var suffix = {test:'тест', answers:'тест_хариулт', zadgai:'задгай', full:'бүрэн'}[mode] || mode;
+    a.href = url;
+    a.download = (examData.grade + '_' + examData.subject + '_' + suffix + '.pdf').replace(/ /g,'_');
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+
+  } catch(e) {
+    alert('PDF үүсгэхэд алдаа гарлаа: ' + e.message +
+          '\n\nШийдэл: сервер дээр WeasyPrint суулгасан эсэхийг шалгана уу.\npip install weasyprint');
+  } finally {
+    if (btn) { btn.disabled=false; btn.textContent=origText; }
+  }
 }
 </script>
 {% endblock %}
