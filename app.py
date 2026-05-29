@@ -124,7 +124,6 @@ SUBJECTS = {
     "10-12": ["Монгол хэл, уран зохиол","Математик","Физик","Хими","Биологи","Газарзүй","Түүх","Англи хэл","Нийгмийн ухаан"]
 }
 
-# Бүх хичээлийн нэгдсэн жагсаалт (давхардалгүй, дарааллаар)
 ALL_SUBJECTS = [
     "Монгол хэл, уран зохиол","Монгол хэл","Математик","Байгалийн ухаан","Нийгэм судлал",
     "Физик","Хими","Биологи","Газарзүй","Түүх","Англи хэл","Орос хэл","Нийгмийн ухаан",
@@ -137,14 +136,13 @@ BLOOM       = ["Мэдлэг","Ойлголт","Хэрэглээ","Шинжил�
 Q_TYPES     = ["Нэг сонголт","Олон сонголт","Нээлттэй","Гүйцэтгэлийн","Олимпиад"]
 ADMIN_PW    = os.environ.get("ADMIN_PASSWORD","orkhontul2025")
 LEVEL_SCORE = {"Мэдлэг ойлголт":1,"Чадвар":2,"Хэрэглээ":3}
+TEACHER_PASSWORD = os.environ.get("TEACHER_PASSWORD", "orkhontul-bagsh")
 
 class SupabaseRestConn:
     """Supabase REST API (PostgREST) ашиглан CRUD хийх — psycopg2 шаардахгүй"""
-
     def __init__(self):
         self._rows      = []
         self._lastrowid = None
-
     def _hdr(self):
         return {
             "apikey":        SUPABASE_KEY,
@@ -152,17 +150,13 @@ class SupabaseRestConn:
             "Content-Type":  "application/json",
             "Prefer":        "return=representation"
         }
-
     def _url(self, table):
         return SUPABASE_URL + "/rest/v1/" + table
-
     def execute(self, sql, params=()):
         import re as _re, requests as _rq, json as _j
         sql_s = sql.strip()
         sql_u = sql_s.upper().replace("\n", " ").replace("  ", " ")
-
         try:
-            # ── SELECT COUNT(*) ─────────────────────────────────
             if "SELECT COUNT(*)" in sql_u:
                 m = _re.search(r"FROM\s+(\w+)(.*)", sql_s, _re.IGNORECASE | _re.DOTALL)
                 if not m:
@@ -174,14 +168,11 @@ class SupabaseRestConn:
                 params_url = "?select=id"
                 if "WHERE" in rest.upper():
                     params_url += self._where_params(rest, params)
-                r = _rq.head(self._url(table) + params_url,
-                             headers=hdrs, timeout=10)
+                r = _rq.head(self._url(table) + params_url, headers=hdrs, timeout=10)
                 cr = r.headers.get("content-range", "0/0")
                 cnt = int(cr.split("/")[-1]) if cr and "/" in cr else 0
                 self._rows = [{"count": cnt}]
                 return self
-
-            # ── SELECT ─────────────────────────────────────────
             elif sql_u.startswith("SELECT"):
                 m = _re.search(r"FROM\s+(\w+)(.*)", sql_s, _re.IGNORECASE | _re.DOTALL)
                 if not m:
@@ -197,12 +188,8 @@ class SupabaseRestConn:
                 r = _rq.get(url, headers=self._hdr(), timeout=15)
                 self._rows = r.json() if r.status_code == 200 else []
                 return self
-
-            # ── INSERT ─────────────────────────────────────────
             elif sql_u.startswith("INSERT"):
-                m = _re.search(
-                    r"INSERT\s+(?:OR\s+IGNORE\s+)?INTO\s+(\w+)\s*\(([^)]+)\)",
-                    sql_s, _re.IGNORECASE | _re.DOTALL)
+                m = _re.search(r"INSERT\s+(?:OR\s+IGNORE\s+)?INTO\s+(\w+)\s*\(([^)]+)\)", sql_s, _re.IGNORECASE | _re.DOTALL)
                 if not m: return self
                 table = m.group(1).strip()
                 cols  = [col.strip() for col in m.group(2).split(",")]
@@ -212,83 +199,60 @@ class SupabaseRestConn:
                         row[col] = params[i]
                 hdrs = dict(self._hdr())
                 hdrs["Prefer"] = "return=representation,resolution=ignore-duplicates"
-                r = _rq.post(self._url(table), headers=hdrs,
-                             json=row, timeout=15)
+                r = _rq.post(self._url(table), headers=hdrs, json=row, timeout=15)
                 if r.status_code in (200, 201):
                     data = r.json()
                     if data and isinstance(data, list) and data[0].get("id"):
                         self._lastrowid = data[0]["id"]
                 elif r.status_code == 409:
-                    pass  # UNIQUE conflict — алгасна
+                    pass
                 return self
-
-            # ── DELETE ─────────────────────────────────────────
             elif sql_u.startswith("DELETE"):
                 m = _re.search(r"FROM\s+(\w+)\s+WHERE\s+id\s*=", sql_s, _re.IGNORECASE)
                 if m and params:
                     table = m.group(1).strip()
-                    _rq.delete(self._url(table) + "?id=eq." + str(params[0]),
-                               headers=self._hdr(), timeout=10)
+                    _rq.delete(self._url(table) + "?id=eq." + str(params[0]), headers=self._hdr(), timeout=10)
                 return self
-
-            # ── UPDATE ─────────────────────────────────────────
             elif sql_u.startswith("UPDATE"):
-                m = _re.search(r"UPDATE\s+(\w+)\s+SET\s+(.+?)\s+WHERE\s+id\s*=",
-                               sql_s, _re.IGNORECASE | _re.DOTALL)
+                m = _re.search(r"UPDATE\s+(\w+)\s+SET\s+(.+?)\s+WHERE\s+id\s*=", sql_s, _re.IGNORECASE | _re.DOTALL)
                 if m and params:
                     table = m.group(1).strip()
                     set_part = m.group(2)
                     cols = [c2.split("=")[0].strip() for c2 in set_part.split(",")]
-                    update_data = {col: params[i]
-                                   for i, col in enumerate(cols)
-                                   if i < len(params)-1}
-                    _rq.patch(self._url(table) + "?id=eq." + str(params[-1]),
-                              headers=self._hdr(), json=update_data, timeout=10)
+                    update_data = {col: params[i] for i, col in enumerate(cols) if i < len(params)-1}
+                    _rq.patch(self._url(table) + "?id=eq." + str(params[-1]), headers=self._hdr(), json=update_data, timeout=10)
                 return self
-
-            # ── DDL (CREATE/ALTER) — Supabase dashboard-д хийгдсэн байна ─
             elif sql_u.startswith(("CREATE", "ALTER", "DROP")):
                 return self
-
         except Exception as e:
             print(f"SupabaseREST error: {e}")
         return self
-
     def _where_params(self, rest, params):
-        """WHERE хэсгийг Supabase query params болгох"""
         import re as _re
         result = ""
         wi = rest.upper().find("WHERE")
         if wi < 0: return result
         where = rest[wi+5:].strip()
-        # AND-аар хуваах
         parts = _re.split(r"\s+AND\s+", where, flags=_re.IGNORECASE)
         pi = 0
         for part in parts:
             part = part.strip()
-            # col = ? эсвэл col = %s
             m = _re.match(r"(\w+)\s*=\s*(?:[?]|%s)", part, _re.IGNORECASE)
             if m and pi < len(params):
                 col = m.group(1)
                 val = params[pi]
                 result += f"&{col}=eq.{val}"
                 pi += 1
-            # RANDOM() → алгасна
         return result
-
     def fetchall(self):
         return self._rows or []
-
     def fetchone(self):
         rows = self._rows or []
         return rows[0] if rows else None
-
     @property
     def lastrowid(self):
         return self._lastrowid
-
-    def commit(self): pass  # REST API auto-commit
-
+    def commit(self): pass
     def close(self):
         try:
             self._conn.close()
@@ -300,19 +264,15 @@ class PGConn:
     """psycopg2 connection-г sqlite3-тай адил interface болгох wrapper"""
     def __init__(self, conn):
         self._conn = conn
-
     def execute(self, sql, params=()):
         sql_pg = sql.replace("?", "%s")
-        # INSERT OR IGNORE → ON CONFLICT DO NOTHING (PostgreSQL)
         sql_pg = sql_pg.replace("INSERT OR IGNORE INTO", "INSERT INTO")
         sql_pg = sql_pg.replace("INSERT OR REPLACE INTO", "INSERT INTO")
-        # INSERT-д RETURNING id нэмэх
         is_insert = sql_pg.strip().upper().startswith("INSERT")
         if is_insert and "RETURNING" not in sql_pg.upper() and "ON CONFLICT" not in sql_pg.upper():
             last = sql_pg.rfind(")")
             if last >= 0:
                 sql_pg = sql_pg[:last+1] + " ON CONFLICT (q_code) DO NOTHING RETURNING id"
-            
         cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(sql_pg, params)
         if is_insert:
@@ -327,47 +287,30 @@ class PGConn:
         else:
             cur.lastrowid = None
         return cur
-
     def executemany(self, sql, params_list):
         sql_pg = sql.replace("?", "%s")
         cur = self._conn.cursor()
         cur.executemany(sql_pg, params_list)
         return cur
-
     def commit(self):
         self._conn.commit()
-
     def close(self):
         self._conn.close()
-
     def __enter__(self):
         return self
-
     def __exit__(self, *a):
         self.close()
-@app.route("/api/get-blueprint", methods=["GET"])
-def api_get_blueprint():
-    if not _HAS_BLUEPRINT:
-        return jsonify({"blueprint": [], "warning": "blueprint_data.py олдсонгүй"}), 200
-    return get_blueprint_route()
 
-@app.route("/api/save-blueprint", methods=["POST"])
-def api_save_blueprint():
-    if not _HAS_BLUEPRINT:
-        return jsonify({"error": "blueprint_data.py олдсонгүй"}), 500
-    return save_blueprint_route()
+
 def get_db():
     """PostgreSQL (psycopg2) / Supabase REST / SQLite буцаана"""
     if USE_PG and _HAS_PG:
-        # psycopg2 байвал шууд холбогдоно
         try:
-            conn = psycopg2.connect(
-                DATABASE_URL, sslmode='require', connect_timeout=10)
+            conn = psycopg2.connect(DATABASE_URL, sslmode='require', connect_timeout=10)
             return PGConn(conn)
         except Exception as e:
             print(f"PG холболт алдаа: {e} — SQLite ашиглана")
     elif USE_PG and SUPABASE_KEY and not _HAS_PG:
-        # psycopg2 байхгүй, SUPABASE_KEY байвал REST API ашиглана
         return SupabaseRestConn()
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -375,7 +318,6 @@ def get_db():
 
 
 def _fetch_scalar(conn, sql, params=()):
-    """SELECT COUNT → int, PostgreSQL болон SQLite хоёуланд ажилладаг"""
     try:
         row = conn.execute(sql, params).fetchone()
         if row is None: return 0
@@ -387,7 +329,6 @@ def _fetch_scalar(conn, sql, params=()):
 
 
 def init_db():
-    """DB table үүсгэх — PGConn.execute эсвэл sqlite3, хоёуланд ажилладаг"""
     import sqlite3 as _sq
     conn = get_db()
     is_pg = USE_PG and _HAS_PG and not isinstance(conn, _sq.Connection)
@@ -445,38 +386,71 @@ def login_required(f):
         return f(*a,**kw)
     return dec
 
+def teacher_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if session.get("teacher_logged_in") or session.get("admin"):
+            return f(*args, **kwargs)
+        return redirect(url_for("teacher_login_page"))
+    return decorated
+
+
+def _get_blueprint_list():
+    try:
+        conn = get_db()
+        rows = conn.execute(
+            "SELECT subject, grade, nj FROM blueprints ORDER BY subject, grade"
+        ).fetchall()
+        conn.close()
+        import json as _j
+        result = []
+        for r in rows:
+            nj = r['nj'] if isinstance(r['nj'], list) else _j.loads(r.get('nj') or '[]')
+            result.append({"subject": r['subject'], "grade": r['grade'], "nj_count": len(nj)})
+        return result
+    except Exception:
+        return []
+
 # ══ PUBLIC ════════════════════════════════════════════════
 @app.route("/")
 def index():
     return render_template("index.html", subjects=SUBJECTS,
-        all_subjects=ALL_SUBJECTS,
-        exam_types=EXAM_TYPES, grade_exam_map=GRADE_EXAM_MAP)
+        all_subjects=ALL_SUBJECTS, exam_types=EXAM_TYPES, grade_exam_map=GRADE_EXAM_MAP)
 
 @app.route("/questions")
 def questions_page():
     return render_template("questions.html", subjects=SUBJECTS,
-        all_subjects=ALL_SUBJECTS,
-        levels=LEVELS, blooms=BLOOM,
+        all_subjects=ALL_SUBJECTS, levels=LEVELS, blooms=BLOOM,
         exam_types=EXAM_TYPES, grade_exam_map=GRADE_EXAM_MAP)
 
 @app.route("/blueprint")
 def blueprint_page():
     return render_template("blueprint.html", subjects=SUBJECTS,
-        all_subjects=ALL_SUBJECTS,
-        exam_types=EXAM_TYPES, levels=LEVELS,
+        all_subjects=ALL_SUBJECTS, exam_types=EXAM_TYPES, levels=LEVELS,
         blooms=BLOOM, grade_exam_map=GRADE_EXAM_MAP)
 
 @app.route("/olympiad")
 def olympiad_page():
     return render_template("olympiad.html", subjects=SUBJECTS,
-        all_subjects=ALL_SUBJECTS,
-        levels=LEVELS, blooms=BLOOM, grade_exam_map=GRADE_EXAM_MAP)
+        all_subjects=ALL_SUBJECTS, levels=LEVELS, blooms=BLOOM, grade_exam_map=GRADE_EXAM_MAP)
 
 @app.route("/interactive")
 def interactive_page():
     return render_template("interactive.html", subjects=SUBJECTS,
-        all_subjects=ALL_SUBJECTS,
-        levels=LEVELS, blooms=BLOOM, grade_exam_map=GRADE_EXAM_MAP)
+        all_subjects=ALL_SUBJECTS, levels=LEVELS, blooms=BLOOM, grade_exam_map=GRADE_EXAM_MAP)
+
+# ══ БЛЮПРИНТ API ══════════════════════════════════════════
+@app.route("/api/get-blueprint", methods=["GET"])
+def api_get_blueprint():
+    if not _HAS_BLUEPRINT:
+        return jsonify({"blueprint": [], "warning": "blueprint_data.py олдсонгүй"}), 200
+    return get_blueprint_route()
+
+@app.route("/api/save-blueprint", methods=["POST"])
+def api_save_blueprint():
+    if not _HAS_BLUEPRINT:
+        return jsonify({"error": "blueprint_data.py олдсонгүй"}), 500
+    return save_blueprint_route()
 
 # ══ БОСГО ШАЛГАЛТ ═════════════════════════════════════════
 @app.route("/mongol-bichig")
@@ -492,8 +466,7 @@ def mongol_bichig_page():
         "SELECT COUNT(*) FROM questions WHERE subject='Монгол хэл бичгийн босго шалгалт'")
     conn.close()
     return render_template("mongol_bichig.html",
-        years=[r['topic'] for r in years],
-        recent=recent, total=total,
+        years=[r['topic'] for r in years], recent=recent, total=total,
         levels=LEVELS, blooms=BLOOM)
 
 @app.route("/api/update-topic")
@@ -503,9 +476,7 @@ def update_topic():
     if not subject or not topic:
         return jsonify({"ok": False})
     conn = get_db()
-    conn.execute(
-        "UPDATE questions SET topic=? WHERE subject=? AND (topic IS NULL OR topic='')",
-        (topic, subject))
+    conn.execute("UPDATE questions SET topic=? WHERE subject=? AND (topic IS NULL OR topic='')", (topic, subject))
     conn.commit(); conn.close()
     return jsonify({"ok": True})
 
@@ -531,14 +502,10 @@ def api_questions():
 
 @app.route("/api/export-docx", methods=["POST"])
 def export_docx():
-    """Шалгалтыг Word (.docx) файлаар татах"""
     import io as _io
     from docx import Document
     from docx.shared import Pt, Cm, RGBColor
     from docx.enum.text import WD_ALIGN_PARAGRAPH
-    from docx.oxml.ns import qn
-    from docx.oxml import OxmlElement
-
     data     = request.json
     title    = data.get("title", "Шалгалт")
     grade    = data.get("grade", "")
@@ -546,46 +513,25 @@ def export_docx():
     duration = data.get("duration", "")
     questions= data.get("questions", [])
     show_ans = data.get("show_answers", False)
-
     doc = Document()
-
-    # Хуудасны тохиргоо
     section = doc.sections[0]
     section.page_width  = Cm(21)
     section.page_height = Cm(29.7)
     section.left_margin = section.right_margin = Cm(2.5)
     section.top_margin  = section.bottom_margin = Cm(2)
-
-    # Гарчиг
     h = doc.add_heading(title, level=0)
     h.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = h.runs[0]
-    run.font.size = Pt(14)
-    run.font.bold = True
-
-    # Мета мэдээлэл
-    meta = doc.add_paragraph()
-    meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = h.runs[0]; run.font.size = Pt(14); run.font.bold = True
+    meta = doc.add_paragraph(); meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
     meta.add_run(f"{grade}-р анги  ·  {subject}  ·  {duration}").font.size = Pt(11)
-
-    # Хуваагч шугам
     doc.add_paragraph("─" * 60)
-
-    # Даалгаварууд
     for i, q in enumerate(questions, 1):
-        # Асуулт
         p = doc.add_paragraph()
-        num_run = p.add_run(f"{i}. ")
-        num_run.bold = True
-        num_run.font.size = Pt(11)
-        q_run = p.add_run(q.get("question", ""))
-        q_run.font.size = Pt(11)
-        score_run = p.add_run(f"  /{q.get('score',1)} оноо/")
-        score_run.font.size = Pt(9)
+        num_run = p.add_run(f"{i}. "); num_run.bold = True; num_run.font.size = Pt(11)
+        q_run = p.add_run(q.get("question", "")); q_run.font.size = Pt(11)
+        score_run = p.add_run(f"  /{q.get('score',1)} оноо/"); score_run.font.size = Pt(9)
         score_run.font.color.rgb = RGBColor(0x88, 0x88, 0x88)
         p.paragraph_format.space_before = Pt(6)
-
-        # Сонголтууд
         opts = q.get("options", [])
         if opts:
             labels = ["А", "Б", "В", "Г"]
@@ -595,31 +541,21 @@ def export_docx():
             for j, opt in enumerate(opts):
                 label = labels[j] if j < len(labels) else str(j+1)
                 is_ans = show_ans and label == q.get("answer","")
-                run = opt_p.add_run(f"{label}. {opt}     ")
-                run.font.size = Pt(10)
+                run = opt_p.add_run(f"{label}. {opt}     "); run.font.size = Pt(10)
                 if is_ans:
-                    run.bold = True
-                    run.font.color.rgb = RGBColor(0x1B, 0x5E, 0x20)
-
-    # Хариулт хуудас
+                    run.bold = True; run.font.color.rgb = RGBColor(0x1B, 0x5E, 0x20)
     if show_ans:
         doc.add_page_break()
         doc.add_heading("Зөв хариулт", level=1)
         ans_p = doc.add_paragraph()
         for i, q in enumerate(questions, 1):
             ans_p.add_run(f"{i}. {q.get('answer','')}   ")
-
-    buf = _io.BytesIO()
-    doc.save(buf)
-    buf.seek(0)
-
+    buf = _io.BytesIO(); doc.save(buf); buf.seek(0)
     from flask import Response
     safe_name = title.replace(" ", "_").replace("/","")[:50]
-    return Response(
-        buf.read(),
+    return Response(buf.read(),
         mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={"Content-Disposition": f"attachment; filename={safe_name}.docx"}
-    )
+        headers={"Content-Disposition": f"attachment; filename={safe_name}.docx"})
 
 @app.route("/api/generate-exam",methods=["POST"])
 def generate_exam():
@@ -648,9 +584,7 @@ def generate_exam():
                     math_hint = (
                         'Томьёог ЗААВАЛ LaTeX форматаар бич ($...$). '
                         'Жишээ: зэрэг=$a^2+b^2=c^2$, язгуур=$\\sqrt{x+1}$, '
-                        'бутархай=$\\frac{a}{b}$, тригонометр=$\\sin^2x+\\cos^2x=1$, '
-                        'матриц=$\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}$, '
-                        'интеграл=$\\int_0^1 x^2dx$, хязгаар=$\\lim_{x\\to 0}\\frac{\\sin x}{x}$. '
+                        'бутархай=$\\frac{a}{b}$, тригонометр=$\\sin^2x+\\cos^2x=1$. '
                         'Геометрийн бодлогод: гурвалжин/тойрог/куб/цилиндр гэсэн үг заавал оруул.'
                         if is_math else '')
                     prompt = (
@@ -710,31 +644,24 @@ def generate_exam():
 
 @app.route("/api/db-init")
 def db_init():
-    """DB table шалгаж шаардлагатай бол үүсгэх"""
     try:
         init_db()
         conn = get_db()
         cnt = _fetch_scalar(conn, "SELECT COUNT(*) FROM questions") or 0
         conn.close()
-        return jsonify({
-            "status": "ok",
+        return jsonify({"status": "ok",
             "db": "rest_api" if (USE_PG and not _HAS_PG and SUPABASE_KEY) else
                   "postgresql" if (USE_PG and _HAS_PG) else "sqlite",
-            "questions": cnt
-        })
+            "questions": cnt})
     except Exception as e:
         import traceback
-        return jsonify({"status": "error", "error": str(e),
-                        "trace": traceback.format_exc()[:500]}), 500
+        return jsonify({"status": "error", "error": str(e), "trace": traceback.format_exc()[:500]}), 500
 
 @app.route("/api/version")
 def version():
-    return jsonify({
-        "version": "2025-v5",
+    return jsonify({"version": "2025-v6",
         "db": "postgresql" if (USE_PG and _HAS_PG) else "sqlite",
-        "psycopg2": _HAS_PG,
-        "use_pg": USE_PG
-    })
+        "psycopg2": _HAS_PG, "use_pg": USE_PG})
 
 @app.route("/api/stats")
 def stats():
@@ -795,8 +722,7 @@ def admin_add():
         conn.close()
         return redirect(url_for("admin_list"))
     return render_template("admin_add.html",q=None,
-        subjects=SUBJECTS,
-        all_subjects=ALL_SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
+        subjects=SUBJECTS, all_subjects=ALL_SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
 
 @app.route("/admin/edit/<int:qid>",methods=["GET","POST"])
 @login_required
@@ -812,8 +738,7 @@ def admin_edit(qid):
         conn.commit(); conn.close(); return redirect(url_for("admin_list"))
     q=conn.execute("SELECT * FROM questions WHERE id=?",(qid,)).fetchone(); conn.close()
     return render_template("admin_add.html",q=q,
-        subjects=SUBJECTS,
-        all_subjects=ALL_SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
+        subjects=SUBJECTS, all_subjects=ALL_SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
 
 @app.route("/admin/list")
 @login_required
@@ -843,17 +768,15 @@ def admin_import():
         from file_importer import extract_from_pdf,extract_from_docx,parse_raw_text
         f=request.files.get("file"); grade=int(request.form.get("grade",9))
         subject=request.form.get("subject","Математик")
-        # default_level өгөгдөөгүй бол автоматаар тодорхойлно
         lvl=request.form.get("default_level","auto")
         if not f or f.filename=="":
             return jsonify({"error":"Файл сонгоогүй байна"}),400
         file_bytes=f.read(); fname=f.filename.lower()
         try:
             if fname.endswith(".pdf"):
-                # PDF хуудасны тоог 10-аар хязгаарлах (timeout-аас сэргийлэх)
                 import pdfplumber, io as _io
                 with pdfplumber.open(_io.BytesIO(file_bytes)) as pdf:
-                    pages = pdf.pages[:50]  # Max 50 хуудас
+                    pages = pdf.pages[:50]
                     raw = "\n".join(p.extract_text() or "" for p in pages)
             elif fname.endswith((".docx",".doc")): raw=extract_from_docx(file_bytes)
             elif fname.endswith(".txt"):            raw=file_bytes.decode("utf-8",errors="ignore")
@@ -876,8 +799,7 @@ def admin_import():
             if not questions:
                 return jsonify({"error":"Даалгавар илрүүлж чадсангүй."}),400
             init_db()
-            conn=get_db()
-            saved=skipped=0
+            conn=get_db(); saved=skipped=0
             for q in questions:
                 try:
                     conn.execute("""INSERT OR IGNORE INTO questions(q_code,grade,subject,level,bloom,q_type,
@@ -888,8 +810,7 @@ def admin_import():
                         q['answer'],q['score'],q['topic']))
                     saved+=1
                 except Exception as _e:
-                    print(f"INSERT error: {_e}")
-                    skipped+=1
+                    print(f"INSERT error: {_e}"); skipped+=1
             conn.commit(); conn.close()
             return jsonify({"success":True,"saved":saved,"skipped":skipped,"preview":questions[:3],"db_type":"pg" if (USE_PG and _HAS_PG) else "sqlite"})
         except Exception as e:
@@ -918,7 +839,7 @@ def admin_ai_generate():
              + (f' Сэдэв: {topic}.' if topic else '')
              + f' Блюпринт: {lvl}, Блум: {bloom}, Төрөл: {q_type}.{math_hint2}\n'
              + f'{count} даалгавар үүсгэ. Монгол хэлээр. Зөвхөн JSON array:\n'
-             + '[{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","answer":"А","topic":"' + '" + (topic or subject) + ""}]'
+             + '[{"question":"...","option_a":"...","option_b":"...","option_c":"...","option_d":"...","answer":"А","topic":"' + (topic or subject) + '"}]'
              + (' Нээлттэй: option_a..d = null.' if not has_options else '')
         )
         try:
@@ -950,493 +871,9 @@ def admin_ai_generate():
         except Exception as e:
             return jsonify({"error":str(e)}),500
     return render_template("admin_ai_generate.html",
-        subjects=SUBJECTS,
-        all_subjects=ALL_SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
-def _get_blueprint_list():
-    try:
-        conn = get_db()
-        rows = conn.execute(
-            "SELECT subject, grade, nj FROM blueprints ORDER BY subject, grade"
-        ).fetchall()
-        conn.close()
-        import json as _j
-        result = []
-        for r in rows:
-            nj = r['nj'] if isinstance(r['nj'], list) else _j.loads(r.get('nj') or '[]')
-            result.append({"subject": r['subject'], "grade": r['grade'], "nj_count": len(nj)})
-        return result
-    except Exception:
-        return []
+        subjects=SUBJECTS, all_subjects=ALL_SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
 
-@app.route("/admin/import-blueprint", methods=["GET", "POST"])
-@login_required
-def admin_import_blueprint():
-    import io as _io, json as _j
-    FORM = """
-<!DOCTYPE html><html><head><meta charset="UTF-8">
-<style>body{font-family:sans-serif;max-width:560px;margin:2rem auto;padding:1.5rem}
-.card{background:#fff;border-radius:12px;border:1.5px solid #e2e8f0;padding:1.5rem}
-h2{font-size:1.1rem;font-weight:800;margin:0 0 1rem}
-label{font-size:.8rem;font-weight:700;display:block;margin-bottom:.3rem}
-select,input[type=file]{width:100%;padding:.5rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;margin-bottom:1rem;box-sizing:border-box}
-button{width:100%;padding:.7rem;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer}
-.ok{background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:1rem;margin-bottom:1rem;color:#166534}
-.err{background:#fff3f3;border:1px solid #fca5a5;border-radius:8px;padding:1rem;margin-bottom:1rem;color:#c62828}
-.bp-row{display:flex;justify-content:space-between;padding:.3rem .5rem;font-size:.78rem;background:#f8fafc;border-radius:5px;margin-bottom:.2rem}
-a.back{display:inline-block;margin-bottom:1rem;font-size:.82rem;color:#0f766e;text-decoration:none}
-</style></head><body><div class="card">
-<a href="/admin" class="back">← Admin буцах</a>
-<h2>📋 Блюпринт PDF оруулах</h2>
-{MSG}
-<form method="POST" enctype="multipart/form-data">
-<label>Хичээл</label>
-<select name="subject">{SUBJ_OPTS}</select>
-<label>Анги</label>
-<select name="grade">{GRADE_OPTS}</select>
-<label>Блюпринт PDF файл</label>
-<input type="file" name="pdf" accept=".pdf">
-<p style="font-size:.72rem;color:#64748b;margin:-0.5rem 0 1rem">БҮТ-ийн стандарт блюпринт PDF</p>
-<button type="submit">📥 Оруулах</button>
-</form>
-<div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e2e8f0">
-<p style="font-size:.75rem;color:#64748b;font-weight:700;margin-bottom:.4rem">Хадгалагдсан блюпринтүүд:</p>
-{BP_LIST}
-</div>
-</div></body></html>"""
-
-    subj_opts = "".join(f'<option>{s}</option>' for s in ALL_SUBJECTS)
-    grade_opts = "".join(f'<option value="{g}">{g}-р анги</option>' for g in range(1,13))
-    bp_rows = "".join(
-        f'<div class="bp-row"><span>{b["subject"]} {b["grade"]}-р анги</span><span style="color:#64748b">{b["nj_count"]} нэгж</span></div>'
-        for b in _get_blueprint_list()
-    ) or '<p style="font-size:.78rem;color:#94a3b8">Одоогоор байхгүй</p>'
-
-    if request.method == "GET":
-        html = FORM.replace("{MSG}","").replace("{SUBJ_OPTS}",subj_opts).replace("{GRADE_OPTS}",grade_opts).replace("{BP_LIST}",bp_rows)
-        return html
-
-    # POST
-    f       = request.files.get("pdf")
-    subject = request.form.get("subject","Математик")
-    grade   = int(request.form.get("grade",9))
-
-    if not f or f.filename == "":
-        msg = '<div class="err">❌ PDF файл сонгоогүй байна</div>'
-        html = FORM.replace("{MSG}",msg).replace("{SUBJ_OPTS}",subj_opts).replace("{GRADE_OPTS}",grade_opts).replace("{BP_LIST}",bp_rows)
-        return html
-
-    try:
-        from blueprint_data import parse_blueprint_pdf
-        import tempfile, os as _os
-        pdf_bytes = f.read()
-        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-            tmp.write(pdf_bytes)
-            tmp_path = tmp.name
-        try:
-            nj_list = parse_blueprint_pdf(tmp_path, subject, grade)
-        finally:
-            _os.unlink(tmp_path)
-
-        if not nj_list:
-            raise ValueError("PDF-с блюпринт олдсонгүй. Хүснэгтийн бүтэц таарахгүй байж болно.")
-
-        nj_json = _j.dumps(nj_list, ensure_ascii=False)
-        conn = get_db()
-        try:
-            conn.execute(
-                "INSERT INTO blueprints (subject, grade, nj, updated_at) VALUES (%s,%s,%s,NOW()) ON CONFLICT (subject, grade) DO UPDATE SET nj=EXCLUDED.nj, updated_at=NOW()",
-                (subject, grade, nj_json))
-            conn.commit()
-        finally:
-            conn.close()
-
-        preview = "".join(f'<p style="font-size:.78rem;margin:.2rem 0">• {n["name"]}: {len(n.get("surd",[]))} үр дүн</p>' for n in nj_list[:5])
-        msg = f'<div class="ok">✅ Амжилттай! {subject} {grade}-р анги: {len(nj_list)} нэгж<br>{preview}</div>'
-
-    except ImportError:
-        msg = '<div class="err">❌ pdfplumber суулгаагүй — requirements.txt-д нэмнэ үү</div>'
-    except Exception as e:
-        msg = f'<div class="err">❌ {e}</div>'
-
-    bp_rows = "".join(
-        f'<div class="bp-row"><span>{b["subject"]} {b["grade"]}-р анги</span><span style="color:#64748b">{b["nj_count"]} нэгж</span></div>'
-        for b in _get_blueprint_list()
-    ) or '<p style="font-size:.78rem;color:#94a3b8">Одоогоор байхгүй</p>'
-    html = FORM.replace("{MSG}",msg).replace("{SUBJ_OPTS}",subj_opts).replace("{GRADE_OPTS}",grade_opts).replace("{BP_LIST}",bp_rows)
-    return html
-
-# ══ БАГШ ТАНД ══════════════════════════════════════════════
-@app.route("/teacher")
-def teacher_page():
-    return render_template("teacher.html",
-        subjects=SUBJECTS, all_subjects=ALL_SUBJECTS,
-        levels=LEVELS, blooms=BLOOM,
-        curriculum_grades=CURRICULUM.get("grades", {}),
-        curriculum_periods=CURRICULUM.get("periods", ["40","80","90"]))
-
-@app.route("/api/workplan", methods=["POST"])
-def workplan():
-    """Багшийн ажлын төлөвлөгөө — streaming"""
-    data    = request.json
-    api_key = os.environ.get("ANTHROPIC_API_KEY","")
-    if not api_key:
-        return jsonify({"error":"API тохируулаагүй"}), 400
-    if anthropic is None:
-        return jsonify({"error": "anthropic суугаагүй - requirements.txt шалгана уу"}), 500
-    teacher = data.get("teacher","")
-    year    = data.get("year","2025-2026")
-    subject = data.get("subject","")
-    exp     = data.get("exp","3")
-    extra   = data.get("extra","")
-    cats    = data.get("cats",[])
-    exp_labels = {"1":"1-3 жилийн туршлагатай залуу",
-                  "2":"4-10 жилийн туршлагатай","3":"10+ жилийн ахлах"}
-    cat_names = {"surgalt":"Сургалт","hugzhil":"Өөрийгөө хөгжүүлэх",
-                 "ecej":"Асран хамгаалагчтай хамтрах",
-                 "niigem":"Иргэд, олон нийттэй ажиллах",
-                 "yos":"Ёс зүй","huuhded":"Хүүхэд хамгаалал"}
-    selected_names = [cat_names.get(k,k) for k in cats]
-    prompt = f"""Та Монгол ЕБС-ийн багшийн ажлын жилийн төлөвлөгөө боловсруулагч AI байна.
-
-МЭДЭЭЛЭЛ:
-- Багш: {teacher or 'тодорхойгүй'}
-- Хичээлийн жил: {year}
-- Хичээл/Анги: {subject or 'тодорхойгүй'}
-- Туршлага: {exp_labels.get(exp,'10+ жил')}
-{f'- Нэмэлт: {extra}' if extra else ''}
-- Хэсгүүд: {', '.join(selected_names)}
-
-ДААЛГАВАР:
-Хэсэг бүрт 3-4 зорилт, зорилт бүрт үйл ажиллагаа, үр дүн, хугацаа бичиж JSON буцаана уу.
-
-JSON формат:
-{{
-  {', '.join([f'"{k}": {{"goals": [{{"goal":"...", "actions":["...","..."], "result":"...", "time":"..."}}]}}' for k in cats[:2]])}
-  ...
-}}
-
-Монгол хэлээр дэлгэрэнгүй. Зөвхөн JSON буцаана уу."""
-    try:
-        client = anthropic.Anthropic(api_key=api_key)
-        msg = client.messages.create(model="claude-sonnet-4-5", max_tokens=3000,
-            messages=[{"role":"user","content":prompt}])
-        raw = msg.content[0].text.strip()
-        if raw.startswith("```"):
-            raw = raw.split("```")[1]
-            if raw.startswith("json"): raw = raw[4:]
-            raw = raw.strip()
-        import json as _j
-        try:
-            plan = _j.loads(raw)
-            return jsonify({"plan": plan})
-        except:
-            return jsonify({"raw": raw})
-    except Exception as e:
-        import traceback; print(traceback.format_exc())
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/certificate")
-def certificate_page():
-    return render_template("certificate.html", all_subjects=ALL_SUBJECTS)
-
-
-@app.route("/api/certificate-ai", methods=["POST"])
-def certificate_ai():
-    """AI-аар өргөмжлөлийн агуулга үүсгэх"""
-    import json as _j
-    data = request.json
-    api_key = os.environ.get("ANTHROPIC_API_KEY","")
-    if not api_key:
-        return jsonify({"error":"API тохируулаагүй"}), 400
-    if anthropic is None:
-        return jsonify({"error":"anthropic суугаагүй"}), 500
-    cert_type = data.get("cert_type","award")
-    name = data.get("name","")
-    reason = data.get("reason","")
-    school = data.get("school","Орхонтуул ЕБС")
-    type_labels = {"award":"өргөмжлөл","cert":"сертификат","thanks":"талархал"}
-    prompt = (
-        school + "-н " + type_labels.get(cert_type,"өргөмжлөл") + " үүсгэж байна.\n"
-        + ("Хүлээн авагч: " + name + "\n" if name else "")
-        + ("Шалтгаан/Үйл ажиллагаа: " + reason + "\n" if reason else "")
-        + "\nДараах JSON форматаар монгол хэлээр буцаа (зөвхөн JSON):\n"
-        + '{"title":"ӨРГӨМЖЛӨЛ","subtitle":"Дэд гарчиг жишээ нь тэмцээний нэр","value":"Байр эзэлсэн эсвэл хийсэн зүйлийн товч тодорхойлолт"}'
-    )
-    try:
-        client = anthropic.Anthropic(api_key=api_key)
-        msg = client.messages.create(
-            model="claude-sonnet-4-5", max_tokens=500,
-            messages=[{"role":"user","content":prompt}])
-        raw = msg.content[0].text.strip()
-        if "```" in raw:
-            for part in raw.split("```"):
-                p2 = part.strip()
-                if p2.startswith("json"): p2 = p2[4:].strip()
-                if p2.startswith("{"): raw = p2; break
-        s = raw.find("{"); e = raw.rfind("}")+1
-        if s >= 0 and e > s: raw = raw[s:e]
-        result = _j.loads(raw)
-        return jsonify(result)
-    except Exception as ex:
-        import traceback; print(traceback.format_exc())
-        return jsonify({"error": str(ex)}), 500
-
-@app.route("/api/certificate", methods=["POST"])
-def gen_cert():
-    """Сертификат / Өргөмжлөл үүсгэх"""
-    from certificate_gen import gen_certificate, gen_batch
-    data = request.json
-    cert_type = data.get("cert_type", "cert")
-    school    = data.get("school", "Орхонтуул ЕБС")
-    title     = data.get("title", "СЕРТИФИКАТ")
-    subtitle  = data.get("subtitle", "")
-    date      = data.get("date", "")
-    names     = data.get("names", [])  # [{"name":"...","value":"..."}]
-
-    if not names:
-        return jsonify({"error": "Нэр оруулаагүй байна"}), 400
-
-    try:
-        if len(names) == 1:
-            pdf = gen_certificate(
-                name=names[0]["name"], value=names[0].get("value",""),
-                school=school, title=title, subtitle=subtitle,
-                date=date, cert_type=cert_type
-            )
-        else:
-            pdf = gen_batch(names, school=school, title=title,
-                         subtitle=subtitle, date=date, cert_type=cert_type)
-
-        from flask import Response
-        fname = "certificate.pdf" if len(names)==1 else "certificates_batch.pdf"
-        return Response(pdf, mimetype="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename={fname}"})
-    except Exception as e:
-        import traceback; print(traceback.format_exc())
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/lesson-plan", methods=["POST"])
-def lesson_plan():
-    import json as _j2
-    data     = request.json
-    api_key  = os.environ.get("ANTHROPIC_API_KEY", "")
-    if not api_key:
-        return jsonify({"error": "API тохируулаагүй"}), 400
-    if anthropic is None:
-        return jsonify({"error": "anthropic суугаагүй - requirements.txt шалгана уу"}), 500
-    if anthropic is None:
-        return jsonify({"error": "anthropic package суугаагүй"}), 500
-    manager  = str(data.get("manager_name") or "")
-    teacher  = str(data.get("teacher_name") or "")
-    subject  = str(data.get("subject") or "Математик")
-    topic    = str(data.get("topic") or "Хичээлийн сэдэв")
-    grade    = str(data.get("grade") or "9")
-    period   = str(data.get("period") or "40")
-    objectives = str(data.get("objectives") or "")
-    grade_label = CURRICULUM.get("grades", {}).get(grade, {}).get("label", grade + "-р анги")
-    p  = int(period)
-    t1 = max(5, p // 8)
-    t2 = p // 3 + p // 4
-    t3 = max(5, p - t1 - t2)
-    stages_template = (
-        '[{"name":"I.ЭХЛЭЛ","time":' + str(t1) + ',"purpose":"...","teacher_actions":"...","student_actions":"...","assessment":"..."},'
-        '{"name":"II.СУДЛАЛ","time":' + str(t2) + ',"purpose":"...","teacher_actions":"...","student_actions":"...","assessment":"..."},'
-        '{"name":"III.ДҮГНЭЛТ","time":' + str(t3) + ',"purpose":"...","teacher_actions":"...","student_actions":"...","assessment":"..."}]'
-    )
-    prompt = (
-        "Монгол ЕБС-ийн " + grade_label + " " + subject + " хичээлийн "
-        + topic + " сэдвийн " + period + " минутын ээлжит хичээлийн хөтөлбөр.\n"
-        "Багш: " + (teacher or "тодорхойгүй") + " Менежер: " + (manager or "тодорхойгүй") + "\n"
-        + ("Зорилт: " + objectives + "\n" if objectives else "")
-        + "\nМОНГОЛ ХЭЛЭЭР дэлгэрэнгүй бөглөж зөвхөн JSON буцаа:\n"
-        + '{"header":{"subject":"' + subject + '","topic":"' + topic + '","grade":"' + grade_label + '","period":"' + period + 'мин","teacher":"' + teacher + '","manager":"' + manager + '"},'
-        + '"objectives":{"A":"' + topic + ' үндсэн ойлголтыг мэддэг болно","B":"' + topic + ' тайлбарлаж чадна","C":"' + topic + ' амьдралд хэрэглэнэ"},'
-        + '"design":{"method":"Bloom таксономи","tools":"Сурах бичиг, самбар","engagement":"Бүлгийн ажил"},'
-        + '"stages":' + stages_template + ','
-        + '"differentiation":{"support":"Нэмэлт тайлбар, хялбар даалгавар","advanced":"Нэмэлт бодлого"},'
-        + '"homework":"' + topic + '-той холбоотой гэрийн даалгавар"}'
-    )
-    try:
-        client = anthropic.Anthropic(api_key=api_key)
-        msg = client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=4000,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        raw = msg.content[0].text.strip()
-        if "```" in raw:
-            for part in raw.split("```"):
-                p2 = part.strip()
-                if p2.startswith("json"): p2 = p2[4:].strip()
-                if p2.startswith("{"): raw = p2; break
-        s = raw.find("{")
-        e = raw.rfind("}") + 1
-        if s >= 0 and e > s:
-            raw = raw[s:e]
-        plan = _j2.loads(raw)
-        if "header" in plan:
-            plan["header"].update({"subject":subject,"topic":topic,"grade":grade_label,"period":period+"мин","teacher":teacher,"manager":manager})
-        return jsonify({"plan": plan})
-    except Exception as ex:
-        import traceback
-        print("LESSON ERROR:", traceback.format_exc())
-        return jsonify({"error": str(ex)}), 500
-
-@app.route("/api/teacher-ai", methods=["POST"])
-def teacher_ai():
-    import json as _json
-    data    = request.json
-    prompt  = data.get("prompt","")
-    api_key = os.environ.get("ANTHROPIC_API_KEY","")
-    if not api_key:
-        return jsonify({"error":"ANTHROPIC_API_KEY тохируулаагүй. Render → Environment-д нэмнэ үү."}), 400
-    if anthropic is None:
-        return jsonify({"error": "anthropic суугаагүй - requirements.txt шалгана уу"}), 500
-    if not prompt:
-        return jsonify({"error":"Prompt хоосон байна"}), 400
-    try:
-        client  = anthropic.Anthropic(api_key=api_key)
-        msg     = client.messages.create(
-            model="claude-sonnet-4-5", max_tokens=3000,
-            messages=[{"role":"user","content": prompt}])
-        result  = msg.content[0].text.strip()
-        return jsonify({"result": result})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# ══ ЧАТБОТ ════════════════════════════════════════════════
-@app.route("/api/chat", methods=["POST"])
-def chatbot():
-    data     = request.json
-    messages = data.get("messages", [])
-    api_key  = os.environ.get("ANTHROPIC_API_KEY","")
-    if not api_key:
-        return jsonify({"error":"API тохируулаагүй. Render → Environment → ANTHROPIC_API_KEY нэмнэ үү."}), 400
-    if anthropic is None:
-        return jsonify({"error": "anthropic суугаагүй - requirements.txt шалгана уу"}), 500
-    if not messages:
-        return jsonify({"error":"Мессеж хоосон"}), 400
-    try:
-        client = anthropic.Anthropic(api_key=api_key)
-        msg = client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=2000,
-            system="Та Орхонтуул ЕБС-ийн ухаалаг туслах AI. Багш, сурагчид Монгол хэлээр дэлгэрэнгүй, найрсаг хариулна.",
-            messages=messages
-        )
-        return jsonify({"reply": msg.content[0].text})
-    except Exception as e:
-        import traceback
-        print("CHAT ERROR:", traceback.format_exc())
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/teacher-login", methods=["GET", "POST"])
-def teacher_login_page():
-    if request.method == "POST":
-        pw = request.form.get("password", "")
-        if pw == TEACHER_PASSWORD:
-            session.permanent = True
-            session["teacher_logged_in"] = True
-            return redirect(url_for("questions_page"))
-        return render_template("teacher_login.html", error="Нууц үг буруу байна")
-    return render_template("teacher_login.html", error=None)
-
-@app.route("/teacher-logout")
-def teacher_logout():
-    session.pop("teacher_logged_in", None)
-    return redirect(url_for("questions_page"))
-
-@app.route("/api/upload", methods=["POST"])
-def api_upload():
-    """Файлаар даалгавар оруулах — PDF, DOCX, TXT"""
-    """Багшийн upload route"""
-    if not session.get("teacher_logged_in") and not session.get("admin"):
-        return jsonify({"error": "teacher_login_required", "redirect": "/teacher-login"}), 401
-    from file_importer import extract_from_pdf, extract_from_docx, parse_raw_text
-    f = request.files.get("file")
-    grade = int(request.form.get("grade", 9))
-    subject = request.form.get("subject", "Математик")
-    lvl = request.form.get("default_level", "auto")
-    if not f or f.filename == "":
-        return jsonify({"error": "Файл сонгоогүй байна"}), 400
-    file_bytes = f.read()
-    fname = f.filename.lower()
-    try:
-        if fname.endswith(".pdf"):
-            raw = extract_from_pdf(file_bytes)
-        elif fname.endswith((".docx", ".doc")):
-            raw = extract_from_docx(file_bytes)
-        elif fname.endswith(".txt"):
-            raw = file_bytes.decode("utf-8", errors="ignore")
-        elif fname.endswith((".jpg", ".jpeg", ".png")):
-            import base64, anthropic
-            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-            if not api_key:
-                return jsonify({"error": "API key байхгүй"}), 400
-            b64 = base64.b64encode(file_bytes).decode()
-            mt = "image/jpeg" if fname.endswith((".jpg", ".jpeg")) else "image/png"
-            cl = anthropic.Anthropic(api_key=api_key)
-            msg = cl.messages.create(model="claude-sonnet-4-5", max_tokens=3000,
-                messages=[{"role": "user", "content": [
-                    {"type": "image", "source": {"type": "base64", "media_type": mt, "data": b64}},
-                    {"type": "text", "text": "Даалгаваруудыг задлан дугаарлан жагсаа."}
-                ]}])
-            raw = msg.content[0].text
-        else:
-            return jsonify({"error": "PDF, Word, JPG эсвэл TXT файл оруулна уу"}), 400
-        questions = parse_raw_text(raw, grade, subject, lvl)
-        if not questions:
-            return jsonify({"error": "Даалгавар илрүүлж чадсангүй"}), 400
-        init_db()  # Table байгаа эсэхийг шалгаад шаардлагатай бол үүсгэнэ
-        conn = get_db()
-        saved = skipped = 0
-        for q in questions:
-            try:
-                conn.execute("""INSERT INTO questions(q_code,grade,subject,level,bloom,q_type,
-                    question,option_a,option_b,option_c,option_d,answer,score,topic)
-                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                    (q['q_code'],q['grade'],q['subject'],q.get('level',lvl),q['bloom'],
-                    q['q_type'],q['question'],q['option_a'],q['option_b'],
-                    q['option_c'],q['option_d'],q['answer'],q['score'],q['topic']))
-                saved += 1
-            except Exception as err:
-                print(f"Upload INSERT error: {err}")
-                skipped += 1
-        conn.commit(); conn.close()
-        return jsonify({"success": True, "saved": saved, "skipped": skipped,
-                        "db_type": "pg" if (USE_PG and _HAS_PG) else "sqlite"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# ══ БАГШИЙН НЭВТРЭЛТ ══════════════════════════════════════
-TEACHER_PASSWORD = os.environ.get("TEACHER_PASSWORD", "orkhontul-bagsh")
-
-def teacher_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if session.get("teacher_logged_in") or session.get("admin"):
-            return f(*args, **kwargs)
-        return redirect(url_for("teacher_login_page"))
-    return decorated
-
-# ══ БЛЮПРИНТ ИМПОРТ ════════════════════════════════════════
-def _get_blueprint_list():
-    try:
-        conn = get_db()
-        rows = conn.execute(
-            "SELECT subject, grade, nj FROM blueprints ORDER BY subject, grade"
-        ).fetchall()
-        conn.close()
-        import json as _j
-        result = []
-        for r in rows:
-            nj = r['nj'] if isinstance(r['nj'], list) else _j.loads(r.get('nj') or '[]')
-            result.append({"subject": r['subject'], "grade": r['grade'], "nj_count": len(nj)})
-        return result
-    except Exception:
-        return []
-
+# ══ БЛЮПРИНТ ИМПОРТ (admin) ════════════════════════════════
 @app.route("/admin/import-blueprint", methods=["GET", "POST"])
 @login_required
 def admin_import_blueprint():
@@ -1481,38 +918,28 @@ a.back{display:inline-block;margin-bottom:1rem;font-size:.82rem;color:#0f766e;te
             for b in rows)
 
     if request.method == "GET":
-        return (FORM.replace("{MSG}", "")
-                    .replace("{SUBJ_OPTS}", subj_opts)
-                    .replace("{GRADE_OPTS}", grade_opts)
-                    .replace("{BP_LIST}", bp_html()))
+        return (FORM.replace("{MSG}", "").replace("{SUBJ_OPTS}", subj_opts)
+                    .replace("{GRADE_OPTS}", grade_opts).replace("{BP_LIST}", bp_html()))
 
-    # ── POST ──
     f       = request.files.get("pdf")
     subject = request.form.get("subject", "Математик")
     grade   = int(request.form.get("grade", 9))
-
     if not f or f.filename == "":
         msg = '<div class="err">❌ PDF файл сонгоогүй байна</div>'
-        return (FORM.replace("{MSG}", msg)
-                    .replace("{SUBJ_OPTS}", subj_opts)
-                    .replace("{GRADE_OPTS}", grade_opts)
-                    .replace("{BP_LIST}", bp_html()))
+        return (FORM.replace("{MSG}", msg).replace("{SUBJ_OPTS}", subj_opts)
+                    .replace("{GRADE_OPTS}", grade_opts).replace("{BP_LIST}", bp_html()))
     try:
         from blueprint_data import parse_blueprint_pdf
         import tempfile, os as _os
-
         pdf_bytes = f.read()
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-            tmp.write(pdf_bytes)
-            tmp_path = tmp.name
+            tmp.write(pdf_bytes); tmp_path = tmp.name
         try:
             nj_list = parse_blueprint_pdf(tmp_path, subject, grade)
         finally:
             _os.unlink(tmp_path)
-
         if not nj_list:
             raise ValueError("PDF-с блюпринт олдсонгүй. Хүснэгтийн бүтэц таарахгүй байж болно.")
-
         nj_json = _j.dumps(nj_list, ensure_ascii=False)
         conn = get_db()
         try:
@@ -1525,23 +952,311 @@ a.back{display:inline-block;margin-bottom:1rem;font-size:.82rem;color:#0f766e;te
             conn.commit()
         finally:
             conn.close()
-
         preview = "".join(
             f'<p style="font-size:.78rem;margin:.2rem 0">• {n["name"]}: {len(n.get("surd",[]))} үр дүн</p>'
             for n in nj_list[:5])
         msg = (f'<div class="ok">✅ Амжилттай! {subject} {grade}-р анги: '
                f'{len(nj_list)} нэгж<br>{preview}</div>')
-
     except ImportError:
         msg = '<div class="err">❌ pdfplumber суулгаагүй — requirements.txt-д нэмнэ үү</div>'
     except Exception as e:
         import traceback; traceback.print_exc()
         msg = f'<div class="err">❌ {e}</div>'
+    return (FORM.replace("{MSG}", msg).replace("{SUBJ_OPTS}", subj_opts)
+                .replace("{GRADE_OPTS}", grade_opts).replace("{BP_LIST}", bp_html()))
 
-    return (FORM.replace("{MSG}", msg)
-                .replace("{SUBJ_OPTS}", subj_opts)
-                .replace("{GRADE_OPTS}", grade_opts)
-                .replace("{BP_LIST}", bp_html()))
+# ══ БАГШ ТАНД ══════════════════════════════════════════════
+@app.route("/teacher")
+def teacher_page():
+    return render_template("teacher.html",
+        subjects=SUBJECTS, all_subjects=ALL_SUBJECTS, levels=LEVELS, blooms=BLOOM,
+        curriculum_grades=CURRICULUM.get("grades", {}),
+        curriculum_periods=CURRICULUM.get("periods", ["40","80","90"]))
+
+@app.route("/api/workplan", methods=["POST"])
+def workplan():
+    data    = request.json
+    api_key = os.environ.get("ANTHROPIC_API_KEY","")
+    if not api_key:
+        return jsonify({"error":"API тохируулаагүй"}), 400
+    if anthropic is None:
+        return jsonify({"error": "anthropic суугаагүй"}), 500
+    teacher = data.get("teacher",""); year = data.get("year","2025-2026")
+    subject = data.get("subject",""); exp = data.get("exp","3")
+    extra = data.get("extra",""); cats = data.get("cats",[])
+    exp_labels = {"1":"1-3 жилийн туршлагатай залуу","2":"4-10 жилийн туршлагатай","3":"10+ жилийн ахлах"}
+    cat_names = {"surgalt":"Сургалт","hugzhil":"Өөрийгөө хөгжүүлэх","ecej":"Асран хамгаалагчтай хамтрах",
+                 "niigem":"Иргэд, олон нийттэй ажиллах","yos":"Ёс зүй","huuhded":"Хүүхэд хамгаалал"}
+    selected_names = [cat_names.get(k,k) for k in cats]
+    prompt = f"""Та Монгол ЕБС-ийн багшийн ажлын жилийн төлөвлөгөө боловсруулагч AI байна.
+
+МЭДЭЭЛЭЛ:
+- Багш: {teacher or 'тодорхойгүй'}
+- Хичээлийн жил: {year}
+- Хичээл/Анги: {subject or 'тодорхойгүй'}
+- Туршлага: {exp_labels.get(exp,'10+ жил')}
+{f'- Нэмэлт: {extra}' if extra else ''}
+- Хэсгүүд: {', '.join(selected_names)}
+
+ДААЛГАВАР:
+Хэсэг бүрт 3-4 зорилт, зорилт бүрт үйл ажиллагаа, үр дүн, хугацаа бичиж JSON буцаана уу.
+
+JSON формат:
+{{
+  {', '.join([f'"{k}": {{"goals": [{{"goal":"...", "actions":["...","..."], "result":"...", "time":"..."}}]}}' for k in cats[:2]])}
+}}
+
+Монгол хэлээр дэлгэрэнгүй. Зөвхөн JSON буцаана уу."""
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        msg = client.messages.create(model="claude-sonnet-4-5", max_tokens=3000,
+            messages=[{"role":"user","content":prompt}])
+        raw = msg.content[0].text.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"): raw = raw[4:]
+            raw = raw.strip()
+        import json as _j
+        try:
+            plan = _j.loads(raw)
+            return jsonify({"plan": plan})
+        except:
+            return jsonify({"raw": raw})
+    except Exception as e:
+        import traceback; print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/certificate")
+def certificate_page():
+    return render_template("certificate.html", all_subjects=ALL_SUBJECTS)
+
+@app.route("/api/certificate-ai", methods=["POST"])
+def certificate_ai():
+    import json as _j
+    data = request.json
+    api_key = os.environ.get("ANTHROPIC_API_KEY","")
+    if not api_key:
+        return jsonify({"error":"API тохируулаагүй"}), 400
+    if anthropic is None:
+        return jsonify({"error":"anthropic суугаагүй"}), 500
+    cert_type = data.get("cert_type","award"); name = data.get("name","")
+    reason = data.get("reason",""); school = data.get("school","Орхонтуул ЕБС")
+    type_labels = {"award":"өргөмжлөл","cert":"сертификат","thanks":"талархал"}
+    prompt = (
+        school + "-н " + type_labels.get(cert_type,"өргөмжлөл") + " үүсгэж байна.\n"
+        + ("Хүлээн авагч: " + name + "\n" if name else "")
+        + ("Шалтгаан/Үйл ажиллагаа: " + reason + "\n" if reason else "")
+        + "\nДараах JSON форматаар монгол хэлээр буцаа (зөвхөн JSON):\n"
+        + '{"title":"ӨРГӨМЖЛӨЛ","subtitle":"Дэд гарчиг","value":"Товч тодорхойлолт"}'
+    )
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        msg = client.messages.create(model="claude-sonnet-4-5", max_tokens=500,
+            messages=[{"role":"user","content":prompt}])
+        raw = msg.content[0].text.strip()
+        if "```" in raw:
+            for part in raw.split("```"):
+                p2 = part.strip()
+                if p2.startswith("json"): p2 = p2[4:].strip()
+                if p2.startswith("{"): raw = p2; break
+        s = raw.find("{"); e = raw.rfind("}")+1
+        if s >= 0 and e > s: raw = raw[s:e]
+        result = _j.loads(raw)
+        return jsonify(result)
+    except Exception as ex:
+        import traceback; print(traceback.format_exc())
+        return jsonify({"error": str(ex)}), 500
+
+@app.route("/api/certificate", methods=["POST"])
+def gen_cert():
+    from certificate_gen import gen_certificate, gen_batch
+    data = request.json
+    cert_type = data.get("cert_type", "cert"); school = data.get("school", "Орхонтуул ЕБС")
+    title = data.get("title", "СЕРТИФИКАТ"); subtitle = data.get("subtitle", "")
+    date = data.get("date", ""); names = data.get("names", [])
+    if not names:
+        return jsonify({"error": "Нэр оруулаагүй байна"}), 400
+    try:
+        if len(names) == 1:
+            pdf = gen_certificate(name=names[0]["name"], value=names[0].get("value",""),
+                school=school, title=title, subtitle=subtitle, date=date, cert_type=cert_type)
+        else:
+            pdf = gen_batch(names, school=school, title=title, subtitle=subtitle, date=date, cert_type=cert_type)
+        from flask import Response
+        fname = "certificate.pdf" if len(names)==1 else "certificates_batch.pdf"
+        return Response(pdf, mimetype="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={fname}"})
+    except Exception as e:
+        import traceback; print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/lesson-plan", methods=["POST"])
+def lesson_plan():
+    import json as _j2
+    data     = request.json
+    api_key  = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        return jsonify({"error": "API тохируулаагүй"}), 400
+    if anthropic is None:
+        return jsonify({"error": "anthropic суугаагүй"}), 500
+    manager  = str(data.get("manager_name") or ""); teacher = str(data.get("teacher_name") or "")
+    subject  = str(data.get("subject") or "Математик"); topic = str(data.get("topic") or "Хичээлийн сэдэв")
+    grade    = str(data.get("grade") or "9"); period = str(data.get("period") or "40")
+    objectives = str(data.get("objectives") or "")
+    grade_label = CURRICULUM.get("grades", {}).get(grade, {}).get("label", grade + "-р анги")
+    p  = int(period); t1 = max(5, p // 8); t2 = p // 3 + p // 4; t3 = max(5, p - t1 - t2)
+    stages_template = (
+        '[{"name":"I.ЭХЛЭЛ","time":' + str(t1) + ',"purpose":"...","teacher_actions":"...","student_actions":"...","assessment":"..."},'
+        '{"name":"II.СУДЛАЛ","time":' + str(t2) + ',"purpose":"...","teacher_actions":"...","student_actions":"...","assessment":"..."},'
+        '{"name":"III.ДҮГНЭЛТ","time":' + str(t3) + ',"purpose":"...","teacher_actions":"...","student_actions":"...","assessment":"..."}]'
+    )
+    prompt = (
+        "Монгол ЕБС-ийн " + grade_label + " " + subject + " хичээлийн "
+        + topic + " сэдвийн " + period + " минутын ээлжит хичээлийн хөтөлбөр.\n"
+        "Багш: " + (teacher or "тодорхойгүй") + " Менежер: " + (manager or "тодорхойгүй") + "\n"
+        + ("Зорилт: " + objectives + "\n" if objectives else "")
+        + "\nМОНГОЛ ХЭЛЭЭР дэлгэрэнгүй бөглөж зөвхөн JSON буцаа:\n"
+        + '{"header":{"subject":"' + subject + '","topic":"' + topic + '","grade":"' + grade_label + '","period":"' + period + 'мин","teacher":"' + teacher + '","manager":"' + manager + '"},'
+        + '"objectives":{"A":"' + topic + ' үндсэн ойлголтыг мэддэг болно","B":"' + topic + ' тайлбарлаж чадна","C":"' + topic + ' амьдралд хэрэглэнэ"},'
+        + '"design":{"method":"Bloom таксономи","tools":"Сурах бичиг, самбар","engagement":"Бүлгийн ажил"},'
+        + '"stages":' + stages_template + ','
+        + '"differentiation":{"support":"Нэмэлт тайлбар","advanced":"Нэмэлт бодлого"},'
+        + '"homework":"' + topic + '-той холбоотой гэрийн даалгавар"}'
+    )
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        msg = client.messages.create(model="claude-sonnet-4-5", max_tokens=4000,
+            messages=[{"role": "user", "content": prompt}])
+        raw = msg.content[0].text.strip()
+        if "```" in raw:
+            for part in raw.split("```"):
+                p2 = part.strip()
+                if p2.startswith("json"): p2 = p2[4:].strip()
+                if p2.startswith("{"): raw = p2; break
+        s = raw.find("{"); e = raw.rfind("}") + 1
+        if s >= 0 and e > s: raw = raw[s:e]
+        plan = _j2.loads(raw)
+        if "header" in plan:
+            plan["header"].update({"subject":subject,"topic":topic,"grade":grade_label,"period":period+"мин","teacher":teacher,"manager":manager})
+        return jsonify({"plan": plan})
+    except Exception as ex:
+        import traceback; print("LESSON ERROR:", traceback.format_exc())
+        return jsonify({"error": str(ex)}), 500
+
+@app.route("/api/teacher-ai", methods=["POST"])
+def teacher_ai():
+    data    = request.json
+    prompt  = data.get("prompt","")
+    api_key = os.environ.get("ANTHROPIC_API_KEY","")
+    if not api_key:
+        return jsonify({"error":"ANTHROPIC_API_KEY тохируулаагүй."}), 400
+    if anthropic is None:
+        return jsonify({"error": "anthropic суугаагүй"}), 500
+    if not prompt:
+        return jsonify({"error":"Prompt хоосон байна"}), 400
+    try:
+        client  = anthropic.Anthropic(api_key=api_key)
+        msg     = client.messages.create(model="claude-sonnet-4-5", max_tokens=3000,
+            messages=[{"role":"user","content": prompt}])
+        result  = msg.content[0].text.strip()
+        return jsonify({"result": result})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ══ ЧАТБОТ ════════════════════════════════════════════════
+@app.route("/api/chat", methods=["POST"])
+def chatbot():
+    data     = request.json
+    messages = data.get("messages", [])
+    api_key  = os.environ.get("ANTHROPIC_API_KEY","")
+    if not api_key:
+        return jsonify({"error":"API тохируулаагүй."}), 400
+    if anthropic is None:
+        return jsonify({"error": "anthropic суугаагүй"}), 500
+    if not messages:
+        return jsonify({"error":"Мессеж хоосон"}), 400
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        msg = client.messages.create(model="claude-sonnet-4-5", max_tokens=2000,
+            system="Та Орхонтуул ЕБС-ийн ухаалаг туслах AI. Багш, сурагчид Монгол хэлээр дэлгэрэнгүй, найрсаг хариулна.",
+            messages=messages)
+        return jsonify({"reply": msg.content[0].text})
+    except Exception as e:
+        import traceback; print("CHAT ERROR:", traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/teacher-login", methods=["GET", "POST"])
+def teacher_login_page():
+    if request.method == "POST":
+        pw = request.form.get("password", "")
+        if pw == TEACHER_PASSWORD:
+            session.permanent = True
+            session["teacher_logged_in"] = True
+            return redirect(url_for("questions_page"))
+        return render_template("teacher_login.html", error="Нууц үг буруу байна")
+    return render_template("teacher_login.html", error=None)
+
+@app.route("/teacher-logout")
+def teacher_logout():
+    session.pop("teacher_logged_in", None)
+    return redirect(url_for("questions_page"))
+
+@app.route("/api/upload", methods=["POST"])
+def api_upload():
+    if not session.get("teacher_logged_in") and not session.get("admin"):
+        return jsonify({"error": "teacher_login_required", "redirect": "/teacher-login"}), 401
+    from file_importer import extract_from_pdf, extract_from_docx, parse_raw_text
+    f = request.files.get("file")
+    grade = int(request.form.get("grade", 9))
+    subject = request.form.get("subject", "Математик")
+    lvl = request.form.get("default_level", "auto")
+    if not f or f.filename == "":
+        return jsonify({"error": "Файл сонгоогүй байна"}), 400
+    file_bytes = f.read(); fname = f.filename.lower()
+    try:
+        if fname.endswith(".pdf"):
+            raw = extract_from_pdf(file_bytes)
+        elif fname.endswith((".docx", ".doc")):
+            raw = extract_from_docx(file_bytes)
+        elif fname.endswith(".txt"):
+            raw = file_bytes.decode("utf-8", errors="ignore")
+        elif fname.endswith((".jpg", ".jpeg", ".png")):
+            import base64, anthropic
+            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+            if not api_key:
+                return jsonify({"error": "API key байхгүй"}), 400
+            b64 = base64.b64encode(file_bytes).decode()
+            mt = "image/jpeg" if fname.endswith((".jpg", ".jpeg")) else "image/png"
+            cl = anthropic.Anthropic(api_key=api_key)
+            msg = cl.messages.create(model="claude-sonnet-4-5", max_tokens=3000,
+                messages=[{"role": "user", "content": [
+                    {"type": "image", "source": {"type": "base64", "media_type": mt, "data": b64}},
+                    {"type": "text", "text": "Даалгаваруудыг задлан дугаарлан жагсаа."}
+                ]}])
+            raw = msg.content[0].text
+        else:
+            return jsonify({"error": "PDF, Word, JPG эсвэл TXT файл оруулна уу"}), 400
+        questions = parse_raw_text(raw, grade, subject, lvl)
+        if not questions:
+            return jsonify({"error": "Даалгавар илрүүлж чадсангүй"}), 400
+        init_db()
+        conn = get_db(); saved = skipped = 0
+        for q in questions:
+            try:
+                conn.execute("""INSERT INTO questions(q_code,grade,subject,level,bloom,q_type,
+                    question,option_a,option_b,option_c,option_d,answer,score,topic)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (q['q_code'],q['grade'],q['subject'],q.get('level',lvl),q['bloom'],
+                    q['q_type'],q['question'],q['option_a'],q['option_b'],
+                    q['option_c'],q['option_d'],q['answer'],q['score'],q['topic']))
+                saved += 1
+            except Exception as err:
+                print(f"Upload INSERT error: {err}"); skipped += 1
+        conn.commit(); conn.close()
+        return jsonify({"success": True, "saved": saved, "skipped": skipped,
+                        "db_type": "pg" if (USE_PG and _HAS_PG) else "sqlite"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # ══ START ══════════════════════════════════════════════════
 try:
@@ -1551,9 +1266,9 @@ except Exception as _ie:
     print(f"⚠️ init_db: {_ie}")
 
 try:
-    from blueprint_data import init_blueprint_table
-    init_blueprint_table()
-    print("✅ Blueprint table ready")
+    if _HAS_BLUEPRINT:
+        init_blueprint_table()
+        print("✅ Blueprint table ready")
 except Exception as _be:
     print(f"⚠️ blueprint table: {_be}")
 
