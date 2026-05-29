@@ -952,7 +952,118 @@ def admin_ai_generate():
     return render_template("admin_ai_generate.html",
         subjects=SUBJECTS,
         all_subjects=ALL_SUBJECTS,levels=LEVELS,blooms=BLOOM,q_types=Q_TYPES)
+def _get_blueprint_list():
+    try:
+        conn = get_db()
+        rows = conn.execute(
+            "SELECT subject, grade, nj FROM blueprints ORDER BY subject, grade"
+        ).fetchall()
+        conn.close()
+        import json as _j
+        result = []
+        for r in rows:
+            nj = r['nj'] if isinstance(r['nj'], list) else _j.loads(r.get('nj') or '[]')
+            result.append({"subject": r['subject'], "grade": r['grade'], "nj_count": len(nj)})
+        return result
+    except Exception:
+        return []
 
+@app.route("/admin/import-blueprint", methods=["GET", "POST"])
+@login_required
+def admin_import_blueprint():
+    import io as _io, json as _j
+    FORM = """
+<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>body{font-family:sans-serif;max-width:560px;margin:2rem auto;padding:1.5rem}
+.card{background:#fff;border-radius:12px;border:1.5px solid #e2e8f0;padding:1.5rem}
+h2{font-size:1.1rem;font-weight:800;margin:0 0 1rem}
+label{font-size:.8rem;font-weight:700;display:block;margin-bottom:.3rem}
+select,input[type=file]{width:100%;padding:.5rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;margin-bottom:1rem;box-sizing:border-box}
+button{width:100%;padding:.7rem;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer}
+.ok{background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:1rem;margin-bottom:1rem;color:#166534}
+.err{background:#fff3f3;border:1px solid #fca5a5;border-radius:8px;padding:1rem;margin-bottom:1rem;color:#c62828}
+.bp-row{display:flex;justify-content:space-between;padding:.3rem .5rem;font-size:.78rem;background:#f8fafc;border-radius:5px;margin-bottom:.2rem}
+a.back{display:inline-block;margin-bottom:1rem;font-size:.82rem;color:#0f766e;text-decoration:none}
+</style></head><body><div class="card">
+<a href="/admin" class="back">← Admin буцах</a>
+<h2>📋 Блюпринт PDF оруулах</h2>
+{MSG}
+<form method="POST" enctype="multipart/form-data">
+<label>Хичээл</label>
+<select name="subject">{SUBJ_OPTS}</select>
+<label>Анги</label>
+<select name="grade">{GRADE_OPTS}</select>
+<label>Блюпринт PDF файл</label>
+<input type="file" name="pdf" accept=".pdf">
+<p style="font-size:.72rem;color:#64748b;margin:-0.5rem 0 1rem">БҮТ-ийн стандарт блюпринт PDF</p>
+<button type="submit">📥 Оруулах</button>
+</form>
+<div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e2e8f0">
+<p style="font-size:.75rem;color:#64748b;font-weight:700;margin-bottom:.4rem">Хадгалагдсан блюпринтүүд:</p>
+{BP_LIST}
+</div>
+</div></body></html>"""
+
+    subj_opts = "".join(f'<option>{s}</option>' for s in ALL_SUBJECTS)
+    grade_opts = "".join(f'<option value="{g}">{g}-р анги</option>' for g in range(1,13))
+    bp_rows = "".join(
+        f'<div class="bp-row"><span>{b["subject"]} {b["grade"]}-р анги</span><span style="color:#64748b">{b["nj_count"]} нэгж</span></div>'
+        for b in _get_blueprint_list()
+    ) or '<p style="font-size:.78rem;color:#94a3b8">Одоогоор байхгүй</p>'
+
+    if request.method == "GET":
+        html = FORM.replace("{MSG}","").replace("{SUBJ_OPTS}",subj_opts).replace("{GRADE_OPTS}",grade_opts).replace("{BP_LIST}",bp_rows)
+        return html
+
+    # POST
+    f       = request.files.get("pdf")
+    subject = request.form.get("subject","Математик")
+    grade   = int(request.form.get("grade",9))
+
+    if not f or f.filename == "":
+        msg = '<div class="err">❌ PDF файл сонгоогүй байна</div>'
+        html = FORM.replace("{MSG}",msg).replace("{SUBJ_OPTS}",subj_opts).replace("{GRADE_OPTS}",grade_opts).replace("{BP_LIST}",bp_rows)
+        return html
+
+    try:
+        from blueprint_data import parse_blueprint_pdf
+        import tempfile, os as _os
+        pdf_bytes = f.read()
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+            tmp.write(pdf_bytes)
+            tmp_path = tmp.name
+        try:
+            nj_list = parse_blueprint_pdf(tmp_path, subject, grade)
+        finally:
+            _os.unlink(tmp_path)
+
+        if not nj_list:
+            raise ValueError("PDF-с блюпринт олдсонгүй. Хүснэгтийн бүтэц таарахгүй байж болно.")
+
+        nj_json = _j.dumps(nj_list, ensure_ascii=False)
+        conn = get_db()
+        try:
+            conn.execute(
+                "INSERT INTO blueprints (subject, grade, nj, updated_at) VALUES (%s,%s,%s,NOW()) ON CONFLICT (subject, grade) DO UPDATE SET nj=EXCLUDED.nj, updated_at=NOW()",
+                (subject, grade, nj_json))
+            conn.commit()
+        finally:
+            conn.close()
+
+        preview = "".join(f'<p style="font-size:.78rem;margin:.2rem 0">• {n["name"]}: {len(n.get("surd",[]))} үр дүн</p>' for n in nj_list[:5])
+        msg = f'<div class="ok">✅ Амжилттай! {subject} {grade}-р анги: {len(nj_list)} нэгж<br>{preview}</div>'
+
+    except ImportError:
+        msg = '<div class="err">❌ pdfplumber суулгаагүй — requirements.txt-д нэмнэ үү</div>'
+    except Exception as e:
+        msg = f'<div class="err">❌ {e}</div>'
+
+    bp_rows = "".join(
+        f'<div class="bp-row"><span>{b["subject"]} {b["grade"]}-р анги</span><span style="color:#64748b">{b["nj_count"]} нэгж</span></div>'
+        for b in _get_blueprint_list()
+    ) or '<p style="font-size:.78rem;color:#94a3b8">Одоогоор байхгүй</p>'
+    html = FORM.replace("{MSG}",msg).replace("{SUBJ_OPTS}",subj_opts).replace("{GRADE_OPTS}",grade_opts).replace("{BP_LIST}",bp_rows)
+    return html
 
 # ══ БАГШ ТАНД ══════════════════════════════════════════════
 @app.route("/teacher")
@@ -962,10 +1073,6 @@ def teacher_page():
         levels=LEVELS, blooms=BLOOM,
         curriculum_grades=CURRICULUM.get("grades", {}),
         curriculum_periods=CURRICULUM.get("periods", ["40","80","90"]))
-# ── Блюпринт импорт ──
-from blueprint_import_route import admin_import_blueprint, _get_blueprint_list
-app.add_url_rule('/admin/import-blueprint', 'admin_import_blueprint',
-                 admin_import_blueprint, methods=['GET','POST'])
 
 @app.route("/api/workplan", methods=["POST"])
 def workplan():
