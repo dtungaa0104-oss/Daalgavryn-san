@@ -283,8 +283,13 @@ class SupabaseRestConn:
     def lastrowid(self):
         return self._lastrowid
 
-    def commit(self): pass   # REST API auto-commit
-    def close(self):  pass   # Хаах шаардлагагүй
+    def commit(self): pass  # REST API auto-commit
+
+    def close(self):
+        try:
+            self._conn.close()
+        except Exception:
+            pass
 
 
 class PGConn:
