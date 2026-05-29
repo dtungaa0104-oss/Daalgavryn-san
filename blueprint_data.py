@@ -159,19 +159,91 @@ def _find_col(headers, keywords):
 
 
 def parse_blueprint_pdf(pdf_path, subject, grade):
+    """
+    Санах ой хэмнэх: хуудас бүрийг тус тусад нь нээж задлаад шууд хаана.
+    Зөвхөн тухайн хичээлийн гарчигтай хуудсуудыг боловсруулна.
+    """
     try:
         import pdfplumber
     except ImportError:
         raise RuntimeError("pdfplumber суулгаагүй. requirements.txt-д нэмнэ үү")
+
+    import gc
+
+    # Хичээлийн нэрийг хайх түлхүүр үгс
+    subj_low = subject.lower()
+    subj_keys = [subj_low]
+    if "математик" in subj_low:
+        subj_keys = ["математик"]
+    elif "монгол хэл" in subj_low:
+        subj_keys = ["монгол хэл"]
+    elif "физик" in subj_low:
+        subj_keys = ["физик"]
+    elif "хими" in subj_low:
+        subj_keys = ["хими"]
+    elif "биологи" in subj_low:
+        subj_keys = ["биологи"]
+    elif "газарзүй" in subj_low or "газар зүй" in subj_low:
+        subj_keys = ["газарзүй", "газар зүй"]
+    elif "түүх" in subj_low:
+        subj_keys = ["түүх"]
+    elif "нийгм" in subj_low:
+        subj_keys = ["нийгм", "нийгэм"]
+    elif "англи" in subj_low:
+        subj_keys = ["англи хэл"]
+    elif "орос" in subj_low:
+        subj_keys = ["орос хэл"]
+    elif "байгал" in subj_low:
+        subj_keys = ["байгал"]
+
     nj_list = []
     nj_map  = {}
     cur_nj  = None
+    found_subject_page = False
+
     with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            tables = page.extract_tables()
-            if not tables:
+        total_pages = len(pdf.pages)
+        for pidx in range(total_pages):
+            page = pdf.pages[pidx]
+            try:
+                page_text = (page.extract_text() or "").lower()
+            except Exception:
+                page_text = ""
+
+            # Энэ хуудас тухайн хичээлийнх мөн үү?
+            is_subj_page = any(k in page_text for k in subj_keys) and "блюпринт" in page_text
+            # Эсвэл анги тохирч буй эсэх (нэмэлт шалгуур)
+            grade_match = ("анги " + str(grade) in page_text or
+                           str(grade) + " анги" in page_text or
+                           "анги\n" + str(grade) in page_text)
+
+            if not is_subj_page and not found_subject_page:
+                # Хичээлийн эхлэлийг хараахан олоогүй — алгасна
+                page.flush_cache()
+                del page
+                gc.collect()
                 continue
-            for table in tables:
+
+            if is_subj_page:
+                found_subject_page = True
+            elif found_subject_page and is_subj_page is False:
+                # Дараагийн хичээл рүү шилжсэн бол зогсоно
+                other_subj = ("блюпринт" in page_text and
+                              not any(k in page_text for k in subj_keys) and
+                              any(s in page_text for s in
+                                  ["математик","монгол хэл","физик","хими","биологи",
+                                   "газарзүй","түүх","нийгм","англи","орос"]))
+                if other_subj:
+                    page.flush_cache()
+                    del page
+                    break
+
+            try:
+                tables = page.extract_tables()
+            except Exception:
+                tables = []
+
+            for table in (tables or []):
                 if not table or len(table) < 3:
                     continue
                 header_row = None
@@ -254,6 +326,15 @@ def parse_blueprint_pdf(pdf_path, subject, grade):
                         existing_surd['shalguur'].append({
                             'id': base_id, 'text': sh_text, 'level': 'Мэдлэг ойлголт',
                             'score': 1, 'd_too': 1, 'd_onoo': 1})
+
+            # Хуудасны cache цэвэрлэх — санах ой хэмнэх
+            try:
+                page.flush_cache()
+            except Exception:
+                pass
+            del page
+            gc.collect()
+
     return nj_list
 
 
