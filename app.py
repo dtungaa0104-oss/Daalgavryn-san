@@ -118,8 +118,10 @@ SUBJECTS = {
 
 # Бүх хичээлийн нэгдсэн жагсаалт (давхардалгүй, дарааллаар)
 ALL_SUBJECTS = [
-    "Монгол хэл, уран зохиол","Математик","Байгалийн ухаан","Нийгэм судлал",
-    "Физик","Хими","Биологи","Газарзүй","Түүх","Англи хэл","Нийгмийн ухаан"
+    "Монгол хэл, уран зохиол","Монгол хэл","Математик","Байгалийн ухаан","Нийгэм судлал",
+    "Физик","Хими","Биологи","Газарзүй","Түүх","Англи хэл","Орос хэл","Нийгмийн ухаан",
+    "Мэдээллийн технологи","Хөгжим","Технологи","Дүрслэх урлаг",
+    "Биеийн тамир","Иргэний ёс зүйн боловсрол","Эрүүл мэнд"
 ]
 
 LEVELS      = ["Мэдлэг ойлголт","Чадвар","Хэрэглээ"]
@@ -129,124 +131,141 @@ ADMIN_PW    = os.environ.get("ADMIN_PASSWORD","orkhontul2025")
 LEVEL_SCORE = {"Мэдлэг ойлголт":1,"Чадвар":2,"Хэрэглээ":3}
 
 class SupabaseRestConn:
-    """Supabase REST API ашиглан DB үйлдэл хийх
-    psycopg2 байхгүй үед ашиглана"""
-    import requests as _req
+    """Supabase REST API (PostgREST) ашиглан CRUD хийх — psycopg2 шаардахгүй"""
 
     def __init__(self):
-        self._rows  = None
+        self._rows      = []
         self._lastrowid = None
-        self._pending = []  # commit хүлээж буй үйлдлүүд
 
-    def _headers(self):
+    def _hdr(self):
         return {
             "apikey":        SUPABASE_KEY,
-            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Authorization": "Bearer " + SUPABASE_KEY,
             "Content-Type":  "application/json",
             "Prefer":        "return=representation"
         }
 
-    def _base(self, table="questions"):
-        return f"{SUPABASE_URL}/rest/v1/{table}"
+    def _url(self, table):
+        return SUPABASE_URL + "/rest/v1/" + table
 
     def execute(self, sql, params=()):
-        import re as _re, requests as _rq
+        import re as _re, requests as _rq, json as _j
         sql_s = sql.strip()
-        sql_u = sql_s.upper()
+        sql_u = sql_s.upper().replace("\n", " ").replace("  ", " ")
 
-        if sql_u.startswith("SELECT COUNT(*)"):
-            # COUNT(*) FROM table WHERE ...
-            m = _re.search(r"FROM\s+(\w+)(.*)", sql_s, _re.IGNORECASE)
-            if not m: self._rows = [{"count":0}]; return self
-            table = m.group(1)
-            where = m.group(2).strip()
-            url = f"{self._base(table)}?select=id"
-            # WHERE clause parse
-            if "WHERE" in where.upper():
-                wh = where[where.upper().index("WHERE")+5:].strip()
-                filters = self._parse_where(wh, params)
-                url += filters
-            url += "&head=true"
-            hdrs = self._headers()
-            hdrs["Prefer"] = "count=exact"
-            hdrs.pop("Prefer", None)
-            hdrs["Prefer"] = "count=exact"
-            r = _rq.head(url.replace("&head=true",""), headers=hdrs, timeout=10)
-            cnt = int(r.headers.get("content-range","0/0").split("/")[-1] or "0")
-            self._rows = [{"count": cnt}]
-            return self
+        try:
+            # ── SELECT COUNT(*) ─────────────────────────────────
+            if "SELECT COUNT(*)" in sql_u:
+                m = _re.search(r"FROM\s+(\w+)(.*)", sql_s, _re.IGNORECASE | _re.DOTALL)
+                if not m:
+                    self._rows = [{"count": 0}]; return self
+                table = m.group(1).strip()
+                rest  = m.group(2).strip() if m.group(2) else ""
+                hdrs  = dict(self._hdr())
+                hdrs["Prefer"] = "count=exact"
+                params_url = "?select=id"
+                if "WHERE" in rest.upper():
+                    params_url += self._where_params(rest, params)
+                r = _rq.head(self._url(table) + params_url,
+                             headers=hdrs, timeout=10)
+                cr = r.headers.get("content-range", "0/0")
+                cnt = int(cr.split("/")[-1]) if cr and "/" in cr else 0
+                self._rows = [{"count": cnt}]
+                return self
 
-        elif sql_u.startswith("SELECT"):
-            m = _re.search(r"FROM\s+(\w+)(.*)", sql_s, _re.IGNORECASE)
-            if not m: self._rows = []; return self
-            table = m.group(1)
-            rest  = m.group(2).strip()
-            url = self._base(table) + "?select=*"
-            if "WHERE" in rest.upper():
-                wi = rest.upper().index("WHERE")
-                wh = rest[wi+5:]
-                url += self._parse_where(wh, params)
-            if "ORDER BY RANDOM()" in sql_u:
-                pass  # Supabase random sort байхгүй
-            m2 = _re.search(r"LIMIT\s+(\d+)", sql_u)
-            if m2: url += f"&limit={m2.group(1)}"
-            r = _rq.get(url, headers=self._headers(), timeout=10)
-            self._rows = r.json() if r.status_code==200 else []
-            return self
+            # ── SELECT ─────────────────────────────────────────
+            elif sql_u.startswith("SELECT"):
+                m = _re.search(r"FROM\s+(\w+)(.*)", sql_s, _re.IGNORECASE | _re.DOTALL)
+                if not m:
+                    self._rows = []; return self
+                table = m.group(1).strip()
+                rest  = m.group(2).strip() if m.group(2) else ""
+                url   = self._url(table) + "?select=*"
+                if "WHERE" in rest.upper():
+                    url += self._where_params(rest, params)
+                m2 = _re.search(r"LIMIT\s+(\d+)", sql_u)
+                if m2: url += "&limit=" + m2.group(1)
+                url += "&limit=1000"
+                r = _rq.get(url, headers=self._hdr(), timeout=15)
+                self._rows = r.json() if r.status_code == 200 else []
+                return self
 
-        elif sql_u.startswith("INSERT"):
-            m = _re.search(r"INSERT(?:\s+OR\s+IGNORE)?\s+INTO\s+(\w+)\s*\(([^)]+)\)", sql_s, _re.IGNORECASE)
-            if not m: return self
-            table = m.group(1)
-            cols  = [col.strip() for col in m.group(2).split(",")]
-            row   = dict(zip(cols, params))
-            r = _rq.post(self._base(table), headers=self._headers(),
-                        json=row, timeout=10)
-            if r.status_code in (200,201):
-                data = r.json()
-                if data and isinstance(data, list):
-                    self._lastrowid = data[0].get("id")
-            return self
+            # ── INSERT ─────────────────────────────────────────
+            elif sql_u.startswith("INSERT"):
+                m = _re.search(
+                    r"INSERT\s+(?:OR\s+IGNORE\s+)?INTO\s+(\w+)\s*\(([^)]+)\)",
+                    sql_s, _re.IGNORECASE | _re.DOTALL)
+                if not m: return self
+                table = m.group(1).strip()
+                cols  = [col.strip() for col in m.group(2).split(",")]
+                row   = {}
+                for i, col in enumerate(cols):
+                    if i < len(params) and params[i] is not None:
+                        row[col] = params[i]
+                hdrs = dict(self._hdr())
+                hdrs["Prefer"] = "return=representation,resolution=ignore-duplicates"
+                r = _rq.post(self._url(table), headers=hdrs,
+                             json=row, timeout=15)
+                if r.status_code in (200, 201):
+                    data = r.json()
+                    if data and isinstance(data, list) and data[0].get("id"):
+                        self._lastrowid = data[0]["id"]
+                elif r.status_code == 409:
+                    pass  # UNIQUE conflict — алгасна
+                return self
 
-        elif sql_u.startswith("UPDATE"):
-            m = _re.search(r"UPDATE\s+(\w+)\s+SET\s+(.+?)\s+WHERE\s+(.+)", sql_s, _re.IGNORECASE|_re.DOTALL)
-            if not m: return self
-            table = m.group(1)
-            # Simple: build from params
-            _rq.patch(self._base(table)+"?id=eq."+str(params[-1]),
-                     headers=self._headers(), json={}, timeout=10)
-            return self
+            # ── DELETE ─────────────────────────────────────────
+            elif sql_u.startswith("DELETE"):
+                m = _re.search(r"FROM\s+(\w+)\s+WHERE\s+id\s*=", sql_s, _re.IGNORECASE)
+                if m and params:
+                    table = m.group(1).strip()
+                    _rq.delete(self._url(table) + "?id=eq." + str(params[0]),
+                               headers=self._hdr(), timeout=10)
+                return self
 
-        elif sql_u.startswith("DELETE"):
-            m = _re.search(r"DELETE\s+FROM\s+(\w+)\s+WHERE\s+id\s*=\s*[?%s]", sql_s, _re.IGNORECASE)
-            if m:
-                table = m.group(1)
-                _rq.delete(f"{self._base(table)}?id=eq.{params[0]}",
-                          headers=self._headers(), timeout=10)
-            return self
+            # ── UPDATE ─────────────────────────────────────────
+            elif sql_u.startswith("UPDATE"):
+                m = _re.search(r"UPDATE\s+(\w+)\s+SET\s+(.+?)\s+WHERE\s+id\s*=",
+                               sql_s, _re.IGNORECASE | _re.DOTALL)
+                if m and params:
+                    table = m.group(1).strip()
+                    set_part = m.group(2)
+                    cols = [c2.split("=")[0].strip() for c2 in set_part.split(",")]
+                    update_data = {col: params[i]
+                                   for i, col in enumerate(cols)
+                                   if i < len(params)-1}
+                    _rq.patch(self._url(table) + "?id=eq." + str(params[-1]),
+                              headers=self._hdr(), json=update_data, timeout=10)
+                return self
 
-        elif sql_u.startswith("CREATE TABLE"):
-            # REST API-д DDL байхгүй — анх удаа Supabase dashboard-д үүсгэсэн байна
-            return self
+            # ── DDL (CREATE/ALTER) — Supabase dashboard-д хийгдсэн байна ─
+            elif sql_u.startswith(("CREATE", "ALTER", "DROP")):
+                return self
 
-        elif sql_u.startswith("ALTER TABLE"):
-            return self
-
+        except Exception as e:
+            print(f"SupabaseREST error: {e}")
         return self
 
-    def _parse_where(self, where, params):
-        """WHERE clause → Supabase query params"""
+    def _where_params(self, rest, params):
+        """WHERE хэсгийг Supabase query params болгох"""
         import re as _re
         result = ""
-        conditions = _re.split(r"\\s+AND\\s+", where, flags=_re.IGNORECASE)
+        wi = rest.upper().find("WHERE")
+        if wi < 0: return result
+        where = rest[wi+5:].strip()
+        # AND-аар хуваах
+        parts = _re.split(r"\s+AND\s+", where, flags=_re.IGNORECASE)
         pi = 0
-        for cond in conditions:
-            m = _re.match(r"(\w+)\\s*=\\s*[?%s]", cond.strip())
+        for part in parts:
+            part = part.strip()
+            # col = ? эсвэл col = %s
+            m = _re.match(r"(\w+)\s*=\s*(?:[?]|%s)", part, _re.IGNORECASE)
             if m and pi < len(params):
                 col = m.group(1)
                 val = params[pi]
                 result += f"&{col}=eq.{val}"
                 pi += 1
+            # RANDOM() → алгасна
         return result
 
     def fetchall(self):
@@ -260,8 +279,9 @@ class SupabaseRestConn:
     def lastrowid(self):
         return self._lastrowid
 
-    def commit(self): pass  # REST API-д auto-commit
-    def close(self):  pass
+    def commit(self): pass   # REST API auto-commit
+    def close(self):  pass   # Хаах шаардлагагүй
+
 
 class PGConn:
     """psycopg2 connection-г sqlite3-тай адил interface болгох wrapper"""
@@ -663,6 +683,26 @@ def generate_exam():
             "zadgai": bp.get("zadgai",[]),
         },
         "questions":selected})
+
+
+@app.route("/api/db-init")
+def db_init():
+    """DB table шалгаж шаардлагатай бол үүсгэх"""
+    try:
+        init_db()
+        conn = get_db()
+        cnt = _fetch_scalar(conn, "SELECT COUNT(*) FROM questions") or 0
+        conn.close()
+        return jsonify({
+            "status": "ok",
+            "db": "rest_api" if (USE_PG and not _HAS_PG and SUPABASE_KEY) else
+                  "postgresql" if (USE_PG and _HAS_PG) else "sqlite",
+            "questions": cnt
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({"status": "error", "error": str(e),
+                        "trace": traceback.format_exc()[:500]}), 500
 
 @app.route("/api/version")
 def version():
