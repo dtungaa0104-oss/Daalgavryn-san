@@ -189,14 +189,23 @@ class SupabaseRestConn:
                 self._rows = r.json() if r.status_code == 200 else []
                 return self
             elif sql_u.startswith("INSERT"):
-                m = _re.search(r"INSERT\s+(?:OR\s+IGNORE\s+)?INTO\s+(\w+)\s*\(([^)]+)\)", sql_s, _re.IGNORECASE | _re.DOTALL)
-                if not m: return self
+                m = _re.search(r"INSERT\s+(?:OR\s+IGNORE\s+|OR\s+REPLACE\s+)?INTO\s+(\w+)\s*\(([^)]+)\)", sql_s, _re.IGNORECASE | _re.DOTALL)
+                if not m:
+                    print(f"SupabaseREST INSERT parse fail: {sql_s[:80]}")
+                    return self
                 table = m.group(1).strip()
                 cols  = [col.strip() for col in m.group(2).split(",")]
                 row   = {}
                 for i, col in enumerate(cols):
                     if i < len(params) and params[i] is not None:
-                        row[col] = params[i]
+                        val = params[i]
+                        # nj багана JSONB — JSON string-г parse хийж object болгох
+                        if col == "nj" and isinstance(val, str):
+                            try:
+                                val = _j.loads(val)
+                            except Exception:
+                                pass
+                        row[col] = val
                 hdrs = dict(self._hdr())
                 hdrs["Prefer"] = "return=representation,resolution=ignore-duplicates"
                 r = _rq.post(self._url(table), headers=hdrs, json=row, timeout=15)
@@ -206,6 +215,8 @@ class SupabaseRestConn:
                         self._lastrowid = data[0]["id"]
                 elif r.status_code == 409:
                     pass
+                else:
+                    print(f"SupabaseREST INSERT {table} → {r.status_code}: {r.text[:200]}")
                 return self
             elif sql_u.startswith("DELETE"):
                 m = _re.search(r"FROM\s+(\w+)\s+WHERE\s+id\s*=", sql_s, _re.IGNORECASE)
