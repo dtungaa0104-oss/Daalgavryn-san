@@ -962,7 +962,10 @@ def teacher_page():
         levels=LEVELS, blooms=BLOOM,
         curriculum_grades=CURRICULUM.get("grades", {}),
         curriculum_periods=CURRICULUM.get("periods", ["40","80","90"]))
-
+# ── Блюпринт импорт ──
+from blueprint_import_route import admin_import_blueprint, _get_blueprint_list
+app.add_url_rule('/admin/import-blueprint', 'admin_import_blueprint',
+                 admin_import_blueprint, methods=['GET','POST'])
 
 @app.route("/api/workplan", methods=["POST"])
 def workplan():
