@@ -47,13 +47,17 @@ try:
 except ImportError:
     _HAS_PG = False
     psycopg2 = None
-    # psycopg2 байхгүй ч SUPABASE_KEY байвал REST API ашиглана
-    if SUPABASE_KEY:
-        USE_PG = True  # REST API-аар хийнэ
-        print("✅ Supabase REST API ашиглана (psycopg2 байхгүй)")
-    elif USE_PG:
-        USE_PG = False
-        print("⚠️ psycopg2 болон SUPABASE_KEY байхгүй — SQLite ашиглана")
+
+# DB сонгох — SUPABASE_KEY байвал REST API, эсвэл SQLite
+if SUPABASE_KEY:
+    USE_PG = True
+    print("✅ Supabase REST API ашиглана")
+elif _HAS_PG and DATABASE_URL:
+    USE_PG = True
+    print("✅ PostgreSQL (psycopg2) ашиглана")
+else:
+    USE_PG = False
+    print("⚠️ SQLite ашиглана (data устна!) — SUPABASE_KEY тавина уу")
 
 EXAM_TYPES = {
     "ulsiin": {
