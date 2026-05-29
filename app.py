@@ -890,85 +890,43 @@ def admin_ai_generate():
 @app.route("/admin/import-blueprint", methods=["GET", "POST"])
 @login_required
 def admin_import_blueprint():
-    import io as _io, json as _j
-    FORM = """<!DOCTYPE html><html><head><meta charset="UTF-8">
-<style>body{font-family:sans-serif;max-width:560px;margin:2rem auto;padding:1.5rem}
-.card{background:#fff;border-radius:12px;border:1.5px solid #e2e8f0;padding:1.5rem}
-h2{font-size:1.1rem;font-weight:800;margin:0 0 1rem}
-label{font-size:.8rem;font-weight:700;display:block;margin-bottom:.3rem}
-select,input[type=file]{width:100%;padding:.5rem;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.88rem;margin-bottom:1rem;box-sizing:border-box}
-button{width:100%;padding:.7rem;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer}
-.ok{background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:1rem;margin-bottom:1rem;color:#166534}
-.err{background:#fff3f3;border:1px solid #fca5a5;border-radius:8px;padding:1rem;margin-bottom:1rem;color:#c62828}
-.bp-row{display:flex;justify-content:space-between;padding:.3rem .5rem;font-size:.78rem;background:#f8fafc;border-radius:5px;margin-bottom:.2rem}
-a.back{display:inline-block;margin-bottom:1rem;font-size:.82rem;color:#0f766e;text-decoration:none}
-</style></head><body><div class="card">
-<a href="/admin" class="back">← Admin буцах</a>
-<h2>📋 Блюпринт PDF оруулах</h2>
-{MSG}
-<form method="POST" enctype="multipart/form-data">
-<label>Хичээл</label><select name="subject">{SUBJ_OPTS}</select>
-<label>Анги</label><select name="grade">{GRADE_OPTS}</select>
-<label>Блюпринт PDF файл</label>
-<input type="file" name="pdf" accept=".pdf">
-<p style="font-size:.72rem;color:#64748b;margin:-0.5rem 0 1rem">БҮТ-ийн стандарт блюпринт PDF</p>
-<button type="submit">📥 Оруулах</button>
-</form>
-<div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e2e8f0">
-<p style="font-size:.75rem;color:#64748b;font-weight:700;margin-bottom:.4rem">Хадгалагдсан блюпринтүүд:</p>
-{BP_LIST}</div></div></body></html>"""
-
-    subj_opts  = "".join(f'<option>{s}</option>' for s in ALL_SUBJECTS)
-    grade_opts = "".join(f'<option value="{g}">{g}-р анги</option>' for g in range(1, 13))
-
-    def bp_html():
-        rows = _get_blueprint_list()
-        if not rows:
-            return '<p style="font-size:.78rem;color:#94a3b8">Одоогоор байхгүй</p>'
-        return "".join(
-            f'<div class="bp-row"><span>{b["subject"]} {b["grade"]}-р анги</span>'
-            f'<span style="color:#64748b">{b["nj_count"]} нэгж</span></div>'
-            for b in rows)
-
+    # GET — гараар бөглөх форм (PDF tab бас байгаа)
     if request.method == "GET":
-        return (FORM.replace("{MSG}", "").replace("{SUBJ_OPTS}", subj_opts)
-                    .replace("{GRADE_OPTS}", grade_opts).replace("{BP_LIST}", bp_html()))
+        return render_template("admin_blueprint_form.html",
+            all_subjects=ALL_SUBJECTS, saved=_get_blueprint_list())
 
+    # POST — PDF-с задлах (Математикт ажиллана)
     f       = request.files.get("pdf")
     subject = request.form.get("subject", "Математик")
     grade   = int(request.form.get("grade", 9))
+    msg_html = ""
     if not f or f.filename == "":
-        msg = '<div class="err">❌ PDF файл сонгоогүй байна</div>'
-        return (FORM.replace("{MSG}", msg).replace("{SUBJ_OPTS}", subj_opts)
-                    .replace("{GRADE_OPTS}", grade_opts).replace("{BP_LIST}", bp_html()))
-    try:
-        from blueprint_data import parse_blueprint_pdf
-        import tempfile, os as _os
-        pdf_bytes = f.read()
-        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-            tmp.write(pdf_bytes); tmp_path = tmp.name
+        msg_html = '<div class="msg-err">❌ PDF файл сонгоогүй байна</div>'
+    else:
         try:
-            nj_list = parse_blueprint_pdf(tmp_path, subject, grade)
-        finally:
-            _os.unlink(tmp_path)
-        if not nj_list:
-            raise ValueError("PDF-с блюпринт олдсонгүй. Хүснэгтийн бүтэц таарахгүй байж болно.")
-        from blueprint_data import _save_blueprint
-        if not _save_blueprint(subject, grade, nj_list):
-            raise ValueError("Өгөгдлийн санд хадгалахад алдаа гарлаа")
-        preview = "".join(
-            f'<p style="font-size:.78rem;margin:.2rem 0">• {n["name"]}: {len(n.get("surd",[]))} үр дүн</p>'
-            for n in nj_list[:5])
-        msg = (f'<div class="ok">✅ Амжилттай! {subject} {grade}-р анги: '
-               f'{len(nj_list)} нэгж<br>{preview}</div>')
-    except ImportError as ie:
-        import traceback; traceback.print_exc()
-        msg = f'<div class="err">❌ Модуль ачаалах алдаа: {ie}</div>'
-    except Exception as e:
-        import traceback; traceback.print_exc()
-        msg = f'<div class="err">❌ {e}</div>'
-    return (FORM.replace("{MSG}", msg).replace("{SUBJ_OPTS}", subj_opts)
-                .replace("{GRADE_OPTS}", grade_opts).replace("{BP_LIST}", bp_html()))
+            from blueprint_data import parse_blueprint_pdf, _save_blueprint
+            import tempfile, os as _os
+            pdf_bytes = f.read()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+                tmp.write(pdf_bytes); tmp_path = tmp.name
+            try:
+                nj_list = parse_blueprint_pdf(tmp_path, subject, grade)
+            finally:
+                _os.unlink(tmp_path)
+            if not nj_list:
+                raise ValueError("PDF-с блюпринт олдсонгүй. 'Гараар оруулах' tab ашиглана уу.")
+            if not _save_blueprint(subject, grade, nj_list):
+                raise ValueError("Өгөгдлийн санд хадгалахад алдаа гарлаа")
+            total = sum(len(s['shalguur']) for nj in nj_list for s in nj.get('surd', []))
+            msg_html = (f'<div class="msg-ok">✅ Амжилттай! {subject} {grade}-р анги: '
+                        f'{len(nj_list)} нэгж, {total} шалгуур</div>')
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            msg_html = f'<div class="msg-err">❌ {e}</div>'
+
+    return render_template("admin_blueprint_form.html",
+        all_subjects=ALL_SUBJECTS, saved=_get_blueprint_list(),
+        pdf_msg=msg_html)
 
 # ══ БАГШ ТАНД ══════════════════════════════════════════════
 @app.route("/teacher")
