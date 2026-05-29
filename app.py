@@ -212,6 +212,14 @@ class SupabaseRestConn:
                 if m and params:
                     table = m.group(1).strip()
                     _rq.delete(self._url(table) + "?id=eq." + str(params[0]), headers=self._hdr(), timeout=10)
+                    return self
+                # WHERE subject=? AND grade=? (blueprints)
+                m2 = _re.search(r"FROM\s+(\w+)\s+WHERE\s+(.+)", sql_s, _re.IGNORECASE | _re.DOTALL)
+                if m2 and params:
+                    table = m2.group(1).strip()
+                    qp = self._where_params("WHERE " + m2.group(2), params)
+                    if qp:
+                        _rq.delete(self._url(table) + "?" + qp.lstrip("&"), headers=self._hdr(), timeout=10)
                 return self
             elif sql_u.startswith("UPDATE"):
                 m = _re.search(r"UPDATE\s+(\w+)\s+SET\s+(.+?)\s+WHERE\s+id\s*=", sql_s, _re.IGNORECASE | _re.DOTALL)
@@ -309,7 +317,12 @@ def get_db():
             conn = psycopg2.connect(DATABASE_URL, sslmode='require', connect_timeout=10)
             return PGConn(conn)
         except Exception as e:
-            print(f"PG холболт алдаа: {e} — SQLite ашиглана")
+            print(f"PG холболт алдаа: {e}")
+            # psycopg2 амжилтгүй — SUPABASE_KEY байвал REST руу унана
+            if SUPABASE_KEY:
+                print(" → Supabase REST API ашиглана")
+                return SupabaseRestConn()
+            print(" → SQLite ашиглана")
     elif USE_PG and SUPABASE_KEY and not _HAS_PG:
         return SupabaseRestConn()
     conn = sqlite3.connect(DB_PATH)
