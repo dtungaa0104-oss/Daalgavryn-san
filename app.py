@@ -1069,16 +1069,58 @@ def lesson_plan():
     import json as _j2
     data     = request.json
     api_key  = os.environ.get("ANTHROPIC_API_KEY", "")
-    if not api_key:
-        return jsonify({"error": "API тохируулаагүй"}), 400
-    if anthropic is None:
-        return jsonify({"error": "anthropic суугаагүй"}), 500
     manager  = str(data.get("manager_name") or ""); teacher = str(data.get("teacher_name") or "")
     subject  = str(data.get("subject") or "Математик"); topic = str(data.get("topic") or "Хичээлийн сэдэв")
     grade    = str(data.get("grade") or "9"); period = str(data.get("period") or "40")
     objectives = str(data.get("objectives") or "")
     grade_label = CURRICULUM.get("grades", {}).get(grade, {}).get("label", grade + "-р анги")
     p  = int(period); t1 = max(5, p // 8); t2 = p // 3 + p // 4; t3 = max(5, p - t1 - t2)
+
+    # API key байхгүй бол template-д суурилсан хариу буцаана
+    if not api_key or anthropic is None:
+        plan = {
+            "header": {"subject": subject, "topic": topic, "grade": grade_label,
+                       "period": period + "мин", "teacher": teacher, "manager": manager},
+            "objectives": {
+                "A": topic + "-ийн үндсэн ойлголт, тодорхойлолтыг мэддэг болно",
+                "B": topic + "-тай холбоотой бодлого, дасгал гүйцэтгэж чадна",
+                "C": topic + "-ийн мэдлэгийг өдөр тутмын амьдралд хэрэглэж чадна"
+            },
+            "design": {
+                "method": "Bloom таксономи, идэвхтэй сургалт",
+                "tools": "Сурах бичиг, самбар, харааны материал",
+                "engagement": "Хос ажил, бүлгийн хэлэлцүүлэг"
+            },
+            "stages": [
+                {"name": "I. Эхлэл — Сэдэвлэх", "time": t1,
+                 "purpose": "Өмнөх мэдлэгийг давтаж, шинэ сэдэвт сонирхол татах",
+                 "teacher_actions": "Асуулт тавьж, өмнөх хичээлтэй холбоо тогтооно. " + topic + " сэдвийг танилцуулна.",
+                 "student_actions": "Асуултад хариулж, сэдвийн талаар санаагаа хэлнэ",
+                 "assessment": "Амаар асуух, ажиглах"},
+                {"name": "II. Судлах — Шинэ мэдлэг", "time": t2,
+                 "purpose": topic + "-ийн үндсэн ойлголт, дүрмийг эзэмшүүлэх",
+                 "teacher_actions": "Самбарт тайлбарлаж, жишээ бодлого шийднэ. Харааны материал ашиглана.",
+                 "student_actions": "Тэмдэглэл хөтөлж, жишээ бодлогыг хамтран шийдэнэ. Асуулт тавина.",
+                 "assessment": "Ажиглах, асуулт-хариулт"},
+                {"name": "III. Бататгах — Дадлага", "time": t3 // 2 + 2,
+                 "purpose": "Олж авсан мэдлэгийг бататгах, хэрэглэж сурах",
+                 "teacher_actions": "Дасгал өгч, бүлгийн ажлыг удирдана. Алдааг засна.",
+                 "student_actions": "Бодлого дасгал бие даан болон бүлгээр шийднэ",
+                 "assessment": "Дасгалын хариуг шалгах, харилцан үнэлэх"},
+                {"name": "IV. Дүгнэлт", "time": max(3, t3 // 2),
+                 "purpose": "Хичээлийг нэгтгэн дүгнэж, гэрийн даалгавар өгөх",
+                 "teacher_actions": "Хичээлийн үндсэн ойлголтыг давтаж, дүгнэлт хийнэ. Гэрийн даалгавар өгнө.",
+                 "student_actions": "Хичээлээс юу сурснаа хуваалцаж, даалгавраа бичнэ",
+                 "assessment": "Өөрийн үнэлгээ, гарах картын арга"}
+            ],
+            "differentiation": {
+                "support": "Нэмэлт тайлбар, жишээ бодлогын алхам алхмаар шийдэл өгнө. Хос ажлаар дэмжинэ.",
+                "advanced": "Нэмэлт нарийн бодлого, судалгааны даалгавар өгнө. Бусдад тайлбарлуулна."
+            },
+            "homework": subject + "-ийн сурах бичгийн " + topic + " сэдвийн дасгалуудаас 3-5 бодлого шийднэ."
+        }
+        return jsonify({"plan": plan})
+
     stages_template = (
         '[{"name":"I.ЭХЛЭЛ","time":' + str(t1) + ',"purpose":"...","teacher_actions":"...","student_actions":"...","assessment":"..."},'
         '{"name":"II.СУДЛАЛ","time":' + str(t2) + ',"purpose":"...","teacher_actions":"...","student_actions":"...","assessment":"..."},'
