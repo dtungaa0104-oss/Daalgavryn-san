@@ -59,7 +59,7 @@
 
 <!-- Tabs -->
 <div class="teacher-tabs">
-  <div class="t-tab active" onclick="showTab('plan')">📅 Жилийн төлөвлөгөө</div>
+  <div class="t-tab active" onclick="showTab('plan')">📊 Ахиц дэвшлийн тайлан</div>
   <div class="t-tab" onclick="showTab('lesson')">📖 Ээлжит хичээл</div>
   <div class="t-tab" onclick="showTab('game')">🎮 Алжаал тайлах тоглоом</div>
   <div class="t-tab" onclick="showTab('cls')">👨‍👧 Анги удирдсан багш</div>
@@ -71,59 +71,68 @@
 <!-- ══ TAB 1: ЖИЛИЙН ТӨЛӨВЛӨГӨӨ ══ -->
 <div class="t-panel active" id="panel-plan">
   <div class="tool-wrap">
-    <div class="tool-card">
-      <h3>📅 Жилийн төлөвлөгөө боловсруулагч</h3>
-      <div class="form-grid">
-        <div class="field-group">
-          <label>Анги <span class="req">*</span></label>
-          <select id="plan-grade">{% for g in range(1,13) %}<option value="{{ g }}" {% if g==9 %}selected{% endif %}>{{ g }}-р анги</option>{% endfor %}</select>
-        </div>
-        <div class="field-group">
-          <label>Хичээл <span class="req">*</span></label>
-          <select id="plan-subject">{% for s in all_subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select>
-        </div>
-        <div class="field-group">
-          <label>Долоо хоногт цаг</label>
-          <select id="plan-hours">
-            <option value="2">7 хоногт 2 цаг</option>
-            <option value="3" selected>7 хоногт 3 цаг</option>
-            <option value="4">7 хоногт 4 цаг</option>
-            <option value="5">7 хоногт 5 цаг</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label>Улирлын тоо</label>
-          <select id="plan-terms">
-            <option value="3" selected>3 улирал</option>
-            <option value="4">4 улирал</option>
-          </select>
-        </div>
+  <div class="tool-card">
+    <h3>📊 Сурагчийн ахиц дэвшлийн тайлан</h3>
+    <div class="form-grid">
+      <div class="field-group">
+        <label>Сурагчийн нэр <span class="req">*</span></label>
+        <input type="text" id="prog-name" placeholder="Жишээ: Б.Болд">
       </div>
-      <div class="field-group" style="margin-top:.8rem">
-        <label>Нэмэлт чиглэл</label>
-        <input type="text" id="plan-note" placeholder="Жишээ: Улсын шалгалтад бэлтгэх...">
+      <div class="field-group">
+        <label>Анги <span class="req">*</span></label>
+        <select id="prog-grade">
+          {% for g in range(1,13) %}<option value="{{ g }}">{{ g }}-р анги</option>{% endfor %}
+        </select>
       </div>
-      <div style="margin-top:.8rem;padding:.7rem 1rem;background:#E8F5E9;border:1.5px solid #A5D6A7;border-radius:8px;font-size:.82rem;color:#2E7D32">
-        💡 <strong>medle.mn</strong>-с жишиг хичээлийн сэдэв харах:
-        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.4rem">
-          <a href="https://medle.mn/lesson?grade=9&subject=math" target="_blank" class="medle-link">📐 Математик</a>
-          <a href="https://medle.mn/lesson?grade=9&subject=mongol" target="_blank" class="medle-link">📝 Монгол хэл</a>
-          <a href="https://medle.mn/lesson" target="_blank" class="medle-link">🌐 Бүгд →</a>
-        </div>
+      <div class="field-group">
+        <label>Хичээл</label>
+        <select id="prog-subject">
+          {% for s in all_subjects %}<option>{{ s }}</option>{% endfor %}
+        </select>
       </div>
-      <div style="margin-top:.5rem;font-size:.8rem;color:var(--text-muted)">
-  <label style="cursor:pointer"><input type="checkbox" id="plan-zorilgo" checked> Суралцахуйн зорилт нэмэх</label>
-</div>
-<button class="btn btn-primary" style="margin-top:.5rem" id="plan-btn" data-label="✦ Жилийн төлөвлөгөө гаргах" onclick="genPlan()">✦ Жилийн төлөвлөгөө гаргах</button>
-      <div class="ai-out" id="plan-out"></div>
-      <div id="plan-actions" style="display:none;gap:.6rem;margin-top:.8rem">
-        <button class="btn btn-sm btn-outline" onclick="printPlan()">🖨 Хэвлэх</button>
-        <button class="btn btn-sm btn-outline" onclick="dlOut('plan-out','plan')">⬇ Татах</button>
+      <div class="field-group">
+        <label>Улирал / Хугацаа</label>
+        <select id="prog-period">
+          <option>1-р улирал</option>
+          <option>2-р улирал</option>
+          <option>3-р улирал</option>
+          <option>1-р хагас жил</option>
+          <option>Жилийн дүн</option>
+        </select>
       </div>
+      <div class="field-group">
+        <label>Явцын дүн (%)</label>
+        <input type="number" id="prog-score" min="0" max="100" placeholder="75">
+      </div>
+      <div class="field-group">
+        <label>Ирц (%)</label>
+        <input type="number" id="prog-irts" min="0" max="100" placeholder="95">
+      </div>
+    </div>
+    <div class="field-group" style="margin-top:.8rem">
+      <label>Зан төлөв, идэвх оролцоо</label>
+      <input type="text" id="prog-behavior" placeholder="Жишээ: Идэвхтэй, бүлгийн ажилд оролцдог...">
+    </div>
+    <div class="field-group" style="margin-top:.5rem">
+      <label>Сул тал, анхаарах зүйл</label>
+      <input type="text" id="prog-weak" placeholder="Жишээ: Гэрийн даалгавар тогтмол биелүүлдэггүй...">
+    </div>
+    <div class="field-group" style="margin-top:.5rem">
+      <label>Зорилго, хүсэл тэмүүлэл</label>
+      <input type="text" id="prog-goal" placeholder="Жишээ: Инженер болно гэж хүсдэг...">
+    </div>
+    <div style="display:flex;gap:.6rem;margin-top:1rem;flex-wrap:wrap">
+      <button class="btn btn-primary" id="prog-btn" data-label="✦ AI тайлан гаргах" onclick="genProgressReport()">✦ AI тайлан гаргах</button>
+      <button class="btn btn-outline" onclick="genProgressReport('ecej')">👨‍👩‍👧 Эцэг эхэд</button>
+      <button class="btn btn-outline" onclick="genProgressReport('student')">🎓 Сурагчид</button>
+    </div>
+    <div class="ai-out" id="prog-out"></div>
+    <div id="prog-actions" style="display:none;gap:.6rem;margin-top:.8rem">
+      <button class="btn btn-sm btn-outline" onclick="printOut('prog-out','Ахиц дэвшлийн тайлан')">🖨 Хэвлэх</button>
+      <button class="btn btn-sm btn-outline" onclick="dlOut('prog-out','progress')">⬇ Татах</button>
     </div>
   </div>
 </div>
-
 <!-- ══ TAB 2: ЭЭЛЖИТ ХИЧЭЭЛ ══ -->
 <!-- ════════════════════════════════════════════════════════════════
      ЭЭЛЖИТ ХИЧЭЭЛИЙН ХӨТӨЛБӨР — Шинэ дизайн (Tab 2)
