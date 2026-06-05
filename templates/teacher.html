@@ -1111,7 +1111,35 @@ document.querySelectorAll('.wp-cat').forEach(function(el){
     el.classList.toggle('selected',el.querySelector('input').checked);
   });
 });
-
+function genProgressReport(type) {
+  var name    = document.getElementById('prog-name').value.trim();
+  var grade   = document.getElementById('prog-grade').value;
+  var subject = document.getElementById('prog-subject').value;
+  var period  = document.getElementById('prog-period').value;
+  var score   = document.getElementById('prog-score').value;
+  var irts    = document.getElementById('prog-irts').value;
+  var behavior= document.getElementById('prog-behavior').value;
+  var weak    = document.getElementById('prog-weak').value;
+  var goal    = document.getElementById('prog-goal').value;
+  if (!name) { alert('Сурагчийн нэр оруулна уу'); return; }
+  var audience = type === 'ecej' ? 'эцэг эх' : type === 'student' ? 'сурагч өөрт' : 'анги удирдсан багш';
+  var prompt =
+    'Орхонтуул ЕБС-ийн ' + grade + '-р ангийн "' + name + '" сурагчийн ' +
+    subject + ' хичээлийн ' + period + '-н ахиц дэвшлийн тайлан бич.\n\n' +
+    'МЭДЭЭЛЭЛ:\n' +
+    '- Явцын дүн: ' + (score || 'мэдэгдээгүй') + '%\n' +
+    '- Ирц: ' + (irts || 'мэдэгдээгүй') + '%\n' +
+    '- Зан төлөв: ' + (behavior || 'мэдэгдээгүй') + '\n' +
+    '- Анхаарах зүйл: ' + (weak || 'байхгүй') + '\n' +
+    '- Зорилго: ' + (goal || 'мэдэгдээгүй') + '\n\n' +
+    'ДААЛГАВАР: ' + audience + '-д зориулсан тайлан бич.\n' +
+    '1. Ерөнхий үнэлгээ (дүн, ирц шинжилгээ)\n' +
+    '2. Амжилт, давуу тал\n' +
+    '3. Хөгжүүлэх чиглэл, зөвлөмж\n' +
+    '4. Дараагийн ' + period + '-н зорилт\n' +
+    'Монгол хэлээр, дэлгэрэнгүй, бодитой.';
+  callAI(prompt, 'prog-out', 'prog-btn', 'prog-actions');
+}
 async function genWorkPlan(){
   var teacher=document.getElementById('wp-teacher').value.trim();
   var year=document.getElementById('wp-year').value;
