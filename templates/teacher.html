@@ -1539,9 +1539,10 @@ async function crtAIGenerate() {
 
 // ══ TAB ════════════════════════════════════════════
 function showTab(tab) {
-  document.querySelectorAll('.t-tab').forEach(function(t,i){
-    t.classList.toggle('active', ['plan','lesson','game','cls','grade','workplan','cert'][i] === tab);
+  document.querySelectorAll('.t-tab').forEach(function(t){
+    t.classList.remove('active');
   });
+  event.currentTarget.classList.add('active');
   document.querySelectorAll('.t-panel').forEach(function(p){
     p.classList.remove('active');
   });
